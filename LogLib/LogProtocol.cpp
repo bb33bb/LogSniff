@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include "json/json.h"
 
+#ifndef __linux__
+#include <Windows.h>
+#include "StrUtil.h"
+#else
+#endif //__linux__
+
 using namespace std;
 using namespace Json;
 
@@ -53,7 +59,7 @@ LpLogInfo &CLogProtocol::DecodeLog(const string &packet, LpLogInfo &outInfo) {
 }
 
 #ifdef __linux__
-string &CLogProtocol::EncodeDesc(const list<string> &pathSet, string &outStr) {
+string &CLogProtocol::EncodeDesc(const list<string> &pathSet, time_t startTime, string &outStr) {
     Value content;
     Value ipSet(arrayValue);
     Value pathJson(arrayValue);
@@ -61,6 +67,7 @@ string &CLogProtocol::EncodeDesc(const list<string> &pathSet, string &outStr) {
     size_t pos2 = 0;
 
     //
+    content["startCount"] = (int)(time(0) - startTime);
     string desc = ExecProc("ifconfig");
     while (string::npos != (pos1 = desc.find("inet addr:", pos1))) {
         pos1 += strlen("inet addr:");
@@ -90,8 +97,7 @@ string &CLogProtocol::EncodeDesc(const list<string> &pathSet, string &outStr) {
     outStr = FastWriter().write(content);
     return outStr;
 }
-#endif //__linux__
-
+#else
 LpServDesc &CLogProtocol::DecodeDesc(const string &packet, LpServDesc &outDesc) {
     string jsonStr = packet;
 
@@ -113,8 +119,28 @@ LpServDesc &CLogProtocol::DecodeDesc(const string &packet, LpServDesc &outDesc) 
         outDesc.mPathSet.push_back(pathSet[i].asString());
     }
     outDesc.mSystem = sys.asString();
+
+    int timeCount = content["startCount"].asInt();
+    SYSTEMTIME time = {0};
+    GetLocalTime(&time);
+
+    FILETIME fTime = {0};
+    SystemTimeToFileTime(&time, &fTime);
+    //100ƒ…√Î
+    *((ULONGLONG *)(&fTime)) -= timeCount * 1000 * 10000;
+    FileTimeToSystemTime(&fTime, &time);
+    outDesc.mStartTime = FormatA(
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        time.wYear,
+        time.wMonth,
+        time.wDay,
+        time.wHour,
+        time.wMinute,
+        time.wSecond
+        );
     return outDesc;
 }
+#endif //__linux__
 
 #ifdef __linux__
 string CLogProtocol::ExecProc(const string &proc) {

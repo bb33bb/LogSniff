@@ -10,6 +10,8 @@
 
 using namespace std;
 
+time_t gStartTime = 0;
+
 int main(int argc, char *argv[]) {
     if (argc == 1)
     {
@@ -17,6 +19,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    gStartTime = time(0);
     const char *filePath = argv[1];
     struct stat fileStat = {0};
     if (0 != stat(filePath, &fileStat) || !S_ISDIR(fileStat.st_mode)) {

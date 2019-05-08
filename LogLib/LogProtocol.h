@@ -43,6 +43,7 @@ struct LpServDesc {
     std::list<std::string> mIpSet;
     std::string mSystem;
     std::list<std::string> mPathSet;
+    std::string mUserDesc;
 };
 
 struct LpLogInfo {
@@ -62,7 +63,7 @@ public:
     LpLogInfo &DecodeLog(const std::string &packet, LpLogInfo &outInfo);
 
     //group msg
-    std::string &EncodeDesc(const std::list<std::string> &pathSet, std::string &outStr);
+    std::string &EncodeDesc(const std::list<std::string> &pathSet, time_t startCount, std::string &outStr);
     LpServDesc &DecodeDesc(const std::string &packet, LpServDesc &outDesc);
 
     int GetRecvResult(std::string &packet, std::list<LpResult> &result);

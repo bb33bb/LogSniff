@@ -80,7 +80,9 @@ void CGroupReceiver::OnRecvData(const std::string &recvStr, std::string &outStr)
         return;
     }
     string cmd = content["cmd"].asString();
-    CLogProtocol::GetInst()->EncodeDesc(CLogMonitor::GetInst()->GetPathSet(), outStr);
+
+    extern time_t gStartTime;
+    CLogProtocol::GetInst()->EncodeDesc(CLogMonitor::GetInst()->GetPathSet(), gStartTime, outStr);
 }
 
 void CGroupReceiver::run() {
