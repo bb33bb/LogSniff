@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "json/json.h"
+#include "LogUtil.h"
 
 #ifndef __linux__
 #include <Windows.h>
@@ -197,13 +198,15 @@ int CLogProtocol::GetRecvResult(std::string &packet, std::list<LpResult> &result
     while (true) {
         if (packet.size() < sizeof(LpHeader))
         {
-            return 0;
+            break;
         }
 
         memcpy(&header, packet.c_str(), sizeof(LpHeader));
-        if (0 != memcmp((const void *)header.mMagic, "logs", 4))
+        if (0 != memcmp((const void *)&header.mMagic, "logs", 4))
         {
+            dp("exit 1");
             packet.clear();
+            result.clear();
             return 0;
         }
 
@@ -219,9 +222,11 @@ int CLogProtocol::GetRecvResult(std::string &packet, std::list<LpResult> &result
         {
             tmp.mContent = packet.substr(sizeof(LpHeader), header.mLength - sizeof(LpHeader));
         }
+
         result.push_back(tmp);
         packet.erase(0, header.mLength);
     }
+    dp("ret:%d", result.size());
     return (int)result.size();
 }
 

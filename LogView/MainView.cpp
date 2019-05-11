@@ -10,6 +10,7 @@
 #pragma comment(lib, "comctl32.lib")
 
 extern HINSTANCE g_hInstance;
+static HWND gsMainWnd = NULL;
 static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
@@ -36,6 +37,7 @@ static VOID _CreateStatusBar(HWND hdlg)
 }
 
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
+    gsMainWnd = hdlg;
     gs_hFilter = GetDlgItem(hdlg, IDC_COM_FILTER);
     gs_hCkRegular = GetDlgItem(hdlg, IDC_CK_REGULAR);
     SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
@@ -75,11 +77,11 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     int cx = (cw / 4 * 3);
     int cy = (ch / 4 * 3);
 
-    SetWindowPos(hdlg, HWND_TOP, 0, 0, 200, 200, SWP_NOMOVE);
+    SetWindowPos(hdlg, HWND_TOP, 0, 0, cx, cy, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
     SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
-    gsLogView->AppendText(LABEL_DEFAULT, "aaaabbbbccccdddd");
+    ShowLogServView(gsMainWnd);
     return 0;
 }
 

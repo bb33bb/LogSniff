@@ -23,10 +23,27 @@ CLogMonitor *CLogMonitor::GetInst() {
 void CLogMonitor::FileNotifyProc(const char *filePath, unsigned int mask) {
     AutoLocker locker(GetInst());
 
-    map<string, LogFileInfo *>::iterator it = GetInst()->mLogCache.find(filePath);
     struct stat fileStat = {0};
     if (0 == stat(filePath, &fileStat))
     {
+        map<string, LogFileInfo *>::iterator it = GetInst()->mLogCache.find(filePath);
+        LogFileInfo *pFileInfo = 0;
+        if (GetInst()->mLogCache.end() == it)
+        {
+            dp("new file:%hs", filePath);
+            LogFileInfo *newFile = new LogFileInfo();
+            newFile->mFilePath = filePath;
+            newFile->mLastModified = fileStat.st_mtime;
+            newFile->mFileSize = fileStat.st_size;
+            newFile->mLastPos = 0;
+
+            GetInst()->mLogCache.insert(make_pair(filePath, newFile));
+            pFileInfo = newFile;
+        } else {
+            dp("file aaaa");
+            pFileInfo = it->second;
+        }
+
         if (fileStat.st_size > it->second->mLastPos)
         {
             GetInst()->DispatchLog(it->second, fileStat.st_size);
@@ -34,7 +51,7 @@ void CLogMonitor::FileNotifyProc(const char *filePath, unsigned int mask) {
             it->second->mFileSize = fileStat.st_size;
         }
     } else {
-        GetInst()->mLogCache.erase(it);
+        GetInst()->mLogCache.erase(filePath);
     }
 }
 
@@ -88,6 +105,7 @@ void CLogMonitor::OnServAccept(unsigned int client) {
 void CLogMonitor::OnRecvComplete(unsigned int client, const LpResult &result) {
     if (result.mCommand == em_cmd_register)
     {
+        dp("register");
         mListener.insert(client);
     }
 }
@@ -162,10 +180,12 @@ void CLogMonitor::DispatchLog(LogFileInfo *info, long fileSize) const {
 void CLogMonitor::OnServRecvData(unsigned int client, const std::string &strRecved, std::string &strResp) {
     AutoLocker locker(this);
     mDataCache[client].append(strRecved);
+    dp("recv:%d", strRecved.size());
 
     list<LpResult> result;
     if (CLogProtocol::GetInst()->GetRecvResult(mDataCache[client], result) > 0)
     {
+        dp("result size:%d", result.size());
         for (list<LpResult>::const_iterator it = result.begin() ; it != result.end() ; it++)
         {
             OnRecvComplete(client, *it);

@@ -1,8 +1,10 @@
+#include <WinSock2.h>
 #include <Windows.h>
 #include <string>
 #include "MainView.h"
 #include "GroupSender.h"
 #include "LogServView.h"
+#include "LogReceiver.h";
 
 using namespace std;
 
@@ -26,8 +28,10 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     WORD wVersionRequested = MAKEWORD(2, 2);
     WSADATA wsadata;
     WSAStartup(wVersionRequested, &wsadata);
-    ShowMainView();
-    //ShowLogServView(NULL);
+
+    CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
+    MessageBoxA(0, 0, 0, 0);
+    //ShowMainView();
     WSACleanup();
     return 0;
 }

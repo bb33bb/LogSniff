@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     }
 
     dp("logPath:%s", filePath);
+    CFileNotify::GetInst()->InitNotify();
     CLogMonitor::GetInst()->InitMonitor(filePath);
     CGroupReceiver::GetInst()->InitRecviver(GROUP_PORT);
     sleep(-1);

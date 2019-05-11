@@ -25,6 +25,7 @@ CFileNotify *CFileNotify::GetInst() {
 void CFileNotify::MonitorPath(const char *filePath, FileNotifyRegister *ptr) {
     AutoLocker locker(GetInst());
 
+    dp("mon:%hs", filePath);
     int wd = 0;
     map<string, int>::const_iterator it = mWdGlobal1.find(filePath);
     if (mWdGlobal1.end() == it)

@@ -1,3 +1,4 @@
+#include <WinSock2.h>
 #include "LogServView.h"
 #include <LogLib/LogUtil.h>
 #include <LogLib/LogProtocol.h>
@@ -6,9 +7,14 @@
 #include <CommCtrl.h>
 #include "resource.h"
 #include "GroupSender.h"
+#include "LogReceiver.h"
 
 using namespace std;
 
+#define MSG_SERVWND_ACTIVATED (WM_USER + 1011)
+
+extern HINSTANCE g_hInstance;
+static HWND gsMainWnd = NULL;
 static HWND gsStaus = NULL;
 static HWND gsListCtrl = NULL;
 static HANDLE gsNotifyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
@@ -24,14 +30,14 @@ static void _OnLogServDesc(const LpServDesc &desc) {
         if (desc.mIpSet == desc.mIpSet)
         {
             gsLogServSet[i] = desc;
-            PostMessageA(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
+            PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
             return;
         }
     }
 
     gsLogServSet.push_back(desc);
-    PostMessageA(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
-    PostMessageA(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
+    PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
+    PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
 }
 
 static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
@@ -119,7 +125,7 @@ static DWORD WINAPI _ScanThread(LPVOID param) {
     while (true) {
         WaitForSingleObject(gsNotifyEvent, INFINITE);
 
-        int count = 5;
+        int count = 1;
         while (count-- > 0) {
             sSender->Send(sScanStr);
 
@@ -161,15 +167,25 @@ static void _InitListCtrl() {
 }
 
 static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
+    gsMainWnd = hdlg;
     gsStaus = GetDlgItem(hdlg, IDC_SERV_STATUS);
     gsListCtrl = GetDlgItem(hdlg, IDC_SERV_LIST);
 
-    extern HINSTANCE g_hInstance;
     SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
 
     _InitListCtrl();
     CentreWindow(hdlg, GetParent(hdlg));
+
+    if (!gsLogServSet.empty())
+    {
+        PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
+    }
+
+    if (!gsScanThread)
+    {
+        gsScanThread = CreateThread(NULL, 0, _ScanThread, NULL, 0, NULL);
+    }
     SetEvent(gsNotifyEvent);
 }
 
@@ -196,6 +212,12 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         }
 
         AutoLocker locker(&gsLocker);
+        LpServDesc desc = gsLogServSet[sel];
+
+        if (CLogReceiver::GetInst()->ConnectServ(*desc.mIpSet.begin()))
+        {
+            SendMessageA(gsMainWnd, WM_CLOSE, 0, 0);
+        }
     }
 }
 
@@ -223,6 +245,7 @@ static void _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp)
 
 static void _OnClose(HWND hdlg) {
     EndDialog(hdlg, 0);
+    gsMainWnd = NULL;
 }
 
 static INT_PTR CALLBACK _LogServViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
@@ -245,6 +268,12 @@ static INT_PTR CALLBACK _LogServViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM 
             _OnNotify(hdlg, wp, lp);
         }
         break;
+    case MSG_SERVWND_ACTIVATED:
+        {
+            CentreWindow(gsMainWnd, GetParent(gsMainWnd));
+            SetForegroundWindow(gsMainWnd);
+        }
+        break;
     case WM_CLOSE:
         {
             _OnClose(hdlg);
@@ -255,9 +284,10 @@ static INT_PTR CALLBACK _LogServViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM 
 }
 
 void ShowLogServView(HWND hParent) {
-    if (!gsScanThread)
+    if (IsWindow(gsMainWnd))
     {
-        gsScanThread = CreateThread(NULL, 0, _ScanThread, NULL, 0, NULL);
+        SendMessageA(gsMainWnd, MSG_SERVWND_ACTIVATED, 0, 0);
+        return;
     }
-    DialogBoxW(NULL, MAKEINTRESOURCEW(IDD_LOGSERV), hParent, _LogServViewProc);
+    CreateDialogW(g_hInstance, MAKEINTRESOURCEW(IDD_LOGSERV), hParent, _LogServViewProc);
 }
