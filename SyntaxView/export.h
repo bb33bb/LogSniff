@@ -1,6 +1,14 @@
 #ifndef EXPORT_SYNTAXVIEW_H_H_
 #define EXPORT_SYNTAXVIEW_H_H_
 
+struct LabelNode {
+    const char *m_label;
+    const char *m_content;
+
+    int m_startPos;
+    int m_endPos;
+};
+
 class StyleContextBase {
 public:
     virtual void Complete() = 0;

@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include<arpa/inet.h>
 #include <errno.h>
+#include "SocketDef.h"
 #else
 #include <MSTcpIP.h>
 #pragma comment(lib, "Ws2_32.lib")
@@ -69,7 +70,7 @@ bool CTcpServ::InitServ(unsigned short uLocalPort, ServEvent *pListener) {
 #ifdef __linux__
         int opt = 1;
         if(setsockopt(mServSocket, SOL_SOCKET,SO_REUSEADDR, (const void *) &opt, sizeof(opt))){
-            dp(L"setsockopt err");
+            dp("setsockopt err");
             return -1;
         }
 #endif //__linux__
@@ -150,13 +151,13 @@ void CTcpServ::run()
         {
             if (SOCKET_ERROR == res)
             {
-                dp(L"select err:%d", GetSockErr());
+                dp("select err:%d", GetSockErr());
                 break;
             }
 
             if (FD_ISSET(mServSocket, &errSet))
             {
-                dp(L"server socket err:%d", GetSockErr());
+                dp("server socket err:%d", GetSockErr());
                 break;
             }
 
@@ -169,7 +170,7 @@ void CTcpServ::run()
                     maxSocket = client;
                 }
 
-                dp(L"accept");
+                dp("accept");
                 if (client != INVALID_SOCKET)
                 {
                     mClientSet.push_back(client);
@@ -198,7 +199,7 @@ void CTcpServ::run()
                         //½ÓÊÕ³ö´í
                         else
                         {
-                            dp(L"recv data err:%d", GetSockErr());
+                            dp("recv data err:%d", GetSockErr());
                             mListener->OnServSocketClose(sock);
                             closesocket(sock);
                             bDelete = 1;
@@ -208,7 +209,7 @@ void CTcpServ::run()
 
                 if (FD_ISSET(sock, &errSet))
                 {
-                    dp(L"client socket err:%d", GetSockErr());
+                    dp("client socket err:%d", GetSockErr());
                     mListener->OnServSocketClose(sock);
                     closesocket(sock);
                     bDelete = 1;
@@ -227,7 +228,7 @@ void CTcpServ::run()
 
     if (mServSocket != INVALID_SOCKET)
     {
-        dp(L"serv socket close");
+        dp("serv socket close");
         closesocket(mServSocket);
         mServSocket = INVALID_SOCKET;
     }

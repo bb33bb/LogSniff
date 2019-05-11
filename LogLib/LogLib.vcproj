@@ -231,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SocketDef.h"
+				>
+			</File>
+			<File
 				RelativePath=".\StrUtil.h"
 				>
 			</File>

@@ -5,6 +5,7 @@
 #include "SyntaxHlpr/SyntaxView.h"
 #include <CommCtrl.h>
 #include "LogServView.h"
+#include "LogSyntaxView.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -12,7 +13,7 @@ extern HINSTANCE g_hInstance;
 static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
-static SyntaxView *gs_pLogView = NULL;
+static CLogSyntaxView *gsLogView = NULL;
 
 #define IDC_STATUS_BAR  (WM_USER + 1123)
 
@@ -50,15 +51,15 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     GetWindowRect(gs_hStatBar, &rt2);
     MapWindowPoints(NULL, hdlg, (LPPOINT)&rt2, 2);
 
-    gs_pLogView = new SyntaxView();
+    gsLogView = new CLogSyntaxView();
     int clientWidth = clientRect.right - clientRect.left;
     int clientHigh = clientRect.bottom - clientRect.top;
 
     int top = rt1.bottom + 8;
     int bottom = rt2.top - 8;
-    gs_pLogView->CreateView(hdlg, rt1.left, rt1.bottom + 8, clientWidth - (rt1.left * 2), bottom - top);
+    gsLogView->CreateLogView(hdlg, rt1.left, rt1.bottom + 8, clientWidth - (rt1.left * 2), bottom - top);
 
-    HWND hLogView = gs_pLogView->GetWindow();
+    HWND hLogView = gsLogView->GetWindow();
     CTL_PARAMS arry[] = {
         {0, gs_hFilter, 0, 0, 1, 0},
         {0, gs_hCkRegular, 1, 0, 0, 0},
@@ -74,10 +75,11 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     int cx = (cw / 4 * 3);
     int cy = (ch / 4 * 3);
 
-    SetWindowPos(hdlg, HWND_TOP, 0, 0, cx, cy, SWP_NOMOVE);
+    SetWindowPos(hdlg, HWND_TOP, 0, 0, 200, 200, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
-    SetWindowTextA(hdlg, "LogView-日志查看分析工具");
+    SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
+    gsLogView->AppendText(LABEL_DEFAULT, "aaaabbbbccccdddd");
     return 0;
 }
 

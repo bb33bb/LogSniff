@@ -622,11 +622,35 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LexVdebug.cpp"
+				RelativePath=".\lexers\LexLabel.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LexVdebug.h"
+				RelativePath=".\lexers\LexLabel.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="common"
+			>
+			<File
+				RelativePath=".\common.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\common.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="SyntaxParser"
+			>
+			<File
+				RelativePath=".\SyntaxLabel.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SyntaxLabel.h"
 				>
 			</File>
 		</Filter>

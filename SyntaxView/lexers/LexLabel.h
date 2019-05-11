@@ -6,13 +6,14 @@
 using namespace std;
 
 //user param
+/*
 struct VdebugRuleParam {
     int startPos;
     int endPos;
     const char *label;
     const char *content;
 };
-
-void ClearVdebugRule();
-void PushVdebugRule(VdebugRuleParam *ptr);
+*/
+//void ClearVdebugRule();
+//void PushVdebugRule(VdebugRuleParam *ptr);
 #endif //LEXVDEBUG_SYNTAXVIEW_H_H_

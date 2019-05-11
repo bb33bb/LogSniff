@@ -26,8 +26,8 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     WORD wVersionRequested = MAKEWORD(2, 2);
     WSADATA wsadata;
     WSAStartup(wVersionRequested, &wsadata);
-    //ShowMainView();
-    ShowLogServView(NULL);
+    ShowMainView();
+    //ShowLogServView(NULL);
     WSACleanup();
     return 0;
 }

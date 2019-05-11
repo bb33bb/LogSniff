@@ -9,6 +9,8 @@
 #define GROUP_MSG_SCAN  "scan"
 #define GROUT_MSG_DESC  "desc"
 
+#define LOG_PORT    7991
+
 enum LpCommand {
     em_cmd_register = 0,
     em_cmd_version,
@@ -28,14 +30,9 @@ struct LpHeader {
     }
 };
 
-//
-struct LpLogStruct {
-    unsigned int mLength1;
-    const char *mContent1;
-    unsigned int mLength2;
-    const char *mContent2;
-    unsigned int mLength3;
-    const char *mContent3;
+//view register
+struct LpViewRegisger {
+    std::string mVersion;
 };
 
 struct LpServDesc {
@@ -44,6 +41,16 @@ struct LpServDesc {
     std::string mSystem;
     std::list<std::string> mPathSet;
     std::string mUserDesc;
+};
+
+//
+struct LpLogStruct {
+    unsigned int mLength1;
+    const char *mContent1;
+    unsigned int mLength2;
+    const char *mContent2;
+    unsigned int mLength3;
+    const char *mContent3;
 };
 
 struct LpLogInfo {
@@ -59,6 +66,10 @@ struct LpResult {
 class CLogProtocol {
 public:
     static CLogProtocol *GetInst();
+    //register encode, decode
+    std::string &EncodeRegister(const LpViewRegisger &info, std::string &outStr);
+    LpViewRegisger &DecodeRegister(const std::string &packet, LpViewRegisger &info);
+    //log encode
     std::string &EncodeLog(const std::string &logPath, const std::string &logContent, std::string &outStr);
     LpLogInfo &DecodeLog(const std::string &packet, LpLogInfo &outInfo);
 

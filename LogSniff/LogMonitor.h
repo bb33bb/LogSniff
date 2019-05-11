@@ -6,12 +6,14 @@
 #include "FileNotify.h"
 #include "tcpserv.h"
 #include "LogProtocol.h"
+#include "tcpserv.h"
 
 struct LogFileInfo {
     std::string mFilePath;
     long mLastPos;
     unsigned int mLastModified;
     unsigned long mFileSize;
+    std::string mLastCache;
 
     LogFileInfo() {
         mLastPos = 0;
@@ -31,7 +33,7 @@ private:
     virtual ~CLogMonitor();
     virtual void run();
 
-    void DispatchLog(const std::string &filePath, long startPos, long endPos) const;
+    void DispatchLog(LogFileInfo *info, long fileSize) const;
     void OnRecvComplete(unsigned int client, const LpResult &result);
     static void FileNotifyProc(const char *filePath, unsigned int mask);
 
@@ -42,9 +44,11 @@ private:
     virtual void OnServSocketClose(unsigned int client);
 private:
     HFileNotify mNotifyHandle;
-    std::map<std::string, LogFileInfo> mLogCache;
+    //log info and cache
+    std::map<std::string, LogFileInfo *> mLogCache;
 
     std::set<unsigned int> mListener;
     std::map<unsigned int, std::string> mDataCache;
     std::list<std::string> mPathSet;
+    CTcpServ mTcpServ;
 };

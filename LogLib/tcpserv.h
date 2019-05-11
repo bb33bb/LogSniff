@@ -37,7 +37,7 @@ private:
     ServEvent *mListener;
     bool mInit;
     bool mStop;
-    SOCKET mServSocket;
+    int mServSocket;
     unsigned short mLocalPort;
     std::vector<unsigned int> mClientSet;
 };

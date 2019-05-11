@@ -23,15 +23,15 @@ CLogMonitor *CLogMonitor::GetInst() {
 void CLogMonitor::FileNotifyProc(const char *filePath, unsigned int mask) {
     AutoLocker locker(GetInst());
 
-    map<string, LogFileInfo>::iterator it = GetInst()->mLogCache.find(filePath);
+    map<string, LogFileInfo *>::iterator it = GetInst()->mLogCache.find(filePath);
     struct stat fileStat = {0};
     if (0 == stat(filePath, &fileStat))
     {
-        if (fileStat.st_size > it->second.mLastPos)
+        if (fileStat.st_size > it->second->mLastPos)
         {
-            GetInst()->DispatchLog(filePath, it->second.mLastPos, fileStat.st_size);
-            it->second.mLastPos = fileStat.st_size;
-            it->second.mFileSize = fileStat.st_size;
+            GetInst()->DispatchLog(it->second, fileStat.st_size);
+            it->second->mLastPos = fileStat.st_size;
+            it->second->mFileSize = fileStat.st_size;
         }
     } else {
         GetInst()->mLogCache.erase(it);
@@ -47,14 +47,14 @@ void CLogMonitor::InitMonitor(const char *path) {
                 return true;
             }
 
-            map<std::string, LogFileInfo> *pCache = (map<std::string, LogFileInfo> *)param;
+            map<std::string, LogFileInfo *> *pCache = (map<std::string, LogFileInfo *> *)param;
             struct stat fileStat = {0};
             if (0 == stat(filePath, &fileStat))
             {
-                LogFileInfo newFile;
-                newFile.mFilePath = filePath;
-                newFile.mLastModified = fileStat.st_mtime;
-                newFile.mFileSize = fileStat.st_size;
+                LogFileInfo *newFile = new LogFileInfo();
+                newFile->mFilePath = filePath;
+                newFile->mLastModified = fileStat.st_mtime;
+                newFile->mFileSize = fileStat.st_size;
 
                 AutoLocker locker(CLogMonitor::GetInst());
                 pCache->insert(make_pair(filePath, newFile));
@@ -66,6 +66,7 @@ void CLogMonitor::InitMonitor(const char *path) {
     mPathSet.push_back(path);
     EnumFiles(path, true, CFileEnumProc::FileEnumProc, &mLogCache);
     mNotifyHandle = CFileNotify::GetInst()->Register(path, FD_NOTIFY_ALL, FileNotifyProc);
+    mTcpServ.InitServ(LOG_PORT, this);
 }
 
 list<string> CLogMonitor::GetPathSet() {
@@ -91,18 +92,18 @@ void CLogMonitor::OnRecvComplete(unsigned int client, const LpResult &result) {
     }
 }
 
-void CLogMonitor::DispatchLog(const std::string &filePath, long startPos, long endPos) const {
-    FILE *fp = fopen(filePath.c_str(), "rb");
+void CLogMonitor::DispatchLog(LogFileInfo *info, long fileSize) const {
+    FILE *fp = fopen(info->mFilePath.c_str(), "rb");
 
     if (0 == fp)
     {
         return;
     }
-    fseek(fp, startPos, 0);
+    fseek(fp, info->mLastPos, 0);
 
     char buffer[1024];
     string str;
-    int readCount = endPos - startPos;
+    int readCount = fileSize - info->mLastPos;
     str.reserve(readCount);
 
     while (true) {
@@ -124,11 +125,36 @@ void CLogMonitor::DispatchLog(const std::string &filePath, long startPos, long e
 
     if (str.size() > 0)
     {
-        string d;
-        CLogProtocol::GetInst()->EncodeLog(filePath, str, d);
-        for (set<unsigned int>::const_iterator it = mListener.begin() ; it != mListener.end() ; it++)
+        info->mLastCache += str;
+
+        //send log by line
+        size_t curPos = 0;
+        size_t lastPos = 0;
+        while (true) {
+            curPos = info->mLastCache.find("\n", lastPos);
+            if (string::npos == curPos) {
+                break;
+            }
+
+            if (curPos > lastPos)
+            {
+                string lineStr = info->mLastCache.substr(lastPos, curPos - lastPos);
+                if (!lineStr.empty())
+                {
+                    string d;
+                    CLogProtocol::GetInst()->EncodeLog(info->mFilePath, str, d);
+                    for (set<unsigned int>::const_iterator it = mListener.begin() ; it != mListener.end() ; it++)
+                    {
+                        send(*it, d.c_str(), d.size(), 0);
+                    }
+                }
+            }
+            lastPos = curPos + 1;
+        }
+
+        if (lastPos > 0)
         {
-            send(*it, d.c_str(), d.size(), 0);
+            info->mLastCache.erase(0, lastPos);
         }
     }
 }

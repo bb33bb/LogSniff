@@ -1,12 +1,48 @@
+#ifdef __linux__
+#include <unistd.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#else
 #include <Shlwapi.h>
 #include <iphlpapi.h>
 #include "LogUtil.h"
 #include "StrUtil.h"
 
 #pragma comment(lib, "Iphlpapi.lib")
+#endif
+
+#include <stdio.h>
+#include <string.h>
 
 using namespace std;
 
+void printDbgInternal(const char *tag, const char *file, int line, const char *fmt, ...)
+{
+    char format1[1024];
+    char format2[1024];
+    strcpy(format1, "[%hs][%hs.%d]%hs");
+    strcat(format1, "\n");
+#ifdef __linux__
+    snprintf(format2, sizeof(format2), format1, tag, file, line, fmt);
+#else
+    _snprintf(format2, sizeof(format2), format1, tag, file, line, fmt);
+#endif //__linux__
+
+    char logInfo[1024];
+    va_list vList;
+    va_start(vList, fmt);
+    vsnprintf(logInfo, sizeof(logInfo), format2, vList);
+    va_end(vList);
+
+#ifndef __linux__
+    OutputDebugStringA(logInfo);
+#else
+    fprintf(stdout, logInfo);
+#endif //__linux__
+}
+
+#ifndef __linux__
 int GetIntFromJson(const Value &json, const std::mstring &name) {
     Value node = json[name];
     if (node.type() == intValue)
@@ -162,22 +198,6 @@ void CentreWindow(HWND hSrcWnd, HWND hDstWnd)
     MoveWindow(hSrcWnd, iX, iY, icW, icH, TRUE);
 }
 
-VOID __stdcall PrintDbgInternal(LPCWSTR wszTarget, LPCSTR szFile, DWORD dwLine, LPCWSTR wszFormat, ...)
-{
-    WCHAR wszFormat1[1024] = {0};
-    WCHAR wszFormat2[1024] = {0};
-    lstrcpyW(wszFormat1, L"[%ls][%hs.%d]%ls");
-    StrCatW(wszFormat1, L"\n");
-    wnsprintfW(wszFormat2, RTL_NUMBER_OF(wszFormat2), wszFormat1, wszTarget, szFile, dwLine, wszFormat);
-
-    WCHAR wszLogInfo[1024];
-    va_list vList;
-    va_start(vList, wszFormat);
-    wvnsprintfW(wszLogInfo, sizeof(wszLogInfo), wszFormat2, vList);
-    va_end(vList);
-    OutputDebugStringW(wszLogInfo);
-}
-
 BOOL GetAdapterSet(OUT vector<AdapterMsg> &nets)
 {
     BOOL state = FALSE;
@@ -280,3 +300,4 @@ BOOL GetAdapterSet(OUT vector<AdapterMsg> &nets)
     }
     return state;
 }
+#endif //__linux__

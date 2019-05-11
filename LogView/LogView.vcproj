@@ -177,7 +177,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LogReceiver.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LogServView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LogSyntaxView.cpp"
 				>
 			</File>
 			<File
@@ -199,7 +207,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LogReceiver.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LogServView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LogSyntaxView.h"
 				>
 			</File>
 			<File
@@ -237,11 +253,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SyntaxHlpr\SyntaxParser.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SyntaxHlpr\SyntaxParser.h"
+				RelativePath=".\SyntaxHlpr\SyntaxDef.h"
 				>
 			</File>
 			<File

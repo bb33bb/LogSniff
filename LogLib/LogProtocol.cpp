@@ -22,6 +22,34 @@ CLogProtocol *CLogProtocol::GetInst() {
     return sPtr;
 }
 
+string &CLogProtocol::EncodeRegister(const LpViewRegisger &info, string &outStr) {
+    Value content;
+    content["version"] = info.mVersion;
+
+    string str = FastWriter().write(content);
+    LpHeader header;
+    header.mCommand = em_cmd_register;
+    header.mLength = sizeof(header) + str.size();
+
+    outStr.append((const char *)&header, sizeof(header));
+    outStr += str;
+    return outStr;
+}
+
+LpViewRegisger &CLogProtocol::DecodeRegister(const std::string &packet, LpViewRegisger &info) {
+    size_t pos = sizeof(LpHeader);
+
+    Value content;
+    Reader().parse(packet.c_str() + pos, content);
+
+    if (content.type() != objectValue)
+    {
+        return info;
+    }
+    info.mVersion = content["version"].asString();
+    return info;
+}
+
 string &CLogProtocol::EncodeLog(const string &logPath, const string &logContent, string &outStr) {
     string content;
     content.reserve(logContent.size() + 256);

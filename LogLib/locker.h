@@ -16,7 +16,7 @@ public:
 class RLocker : public LockerBase
 {
 public:
-    RLocker();
+    RLocker();  
     ~RLocker();
 
     void lock();

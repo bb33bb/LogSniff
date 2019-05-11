@@ -5,7 +5,6 @@
 #include <LogLib/mstring.h>
 #include <LogLib/json/json.h>
 #include <LogLib/LogUtil.h>
-#include "SyntaxParser.h"
 #include "SyntaxCfg.h"
 
 using namespace std;

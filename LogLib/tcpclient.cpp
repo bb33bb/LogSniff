@@ -32,7 +32,7 @@ bool CTcpClient::Connect(const string &strIp, unsigned short uPort, int iTimeOut
 #ifdef __linux__
     int flags = fcntl(mClientSock, F_GETFL);
     int d2 = fcntl(mClientSock, F_SETFL, flags | O_NONBLOCK);
-    dp(L"flags:%d b:%d c:%d sock:%d", flags, d2, errno, mClientSock);
+    dp("flags:%d b:%d c:%d sock:%d", flags, d2, errno, mClientSock);
     servAddr.sin_addr.s_addr = inet_addr(strIp.c_str());
 #else
     unsigned long ul = 1;
@@ -43,10 +43,10 @@ bool CTcpClient::Connect(const string &strIp, unsigned short uPort, int iTimeOut
     bool bStat = false;
     if (0 == connect(mClientSock, (sockaddr *)&servAddr, sizeof(servAddr)))
     {
-        dp(L"connect success1");
+        dp("connect success1");
         bStat = true;
     } else {
-        dp(L"111222");
+        dp("111222");
         struct timeval timeout = {0};
         fd_set r, w;
         FD_ZERO(&r);
@@ -69,7 +69,7 @@ bool CTcpClient::Connect(const string &strIp, unsigned short uPort, int iTimeOut
                     if(getsockopt(mClientSock, SOL_SOCKET, SO_ERROR, &error, &length ) < 0 || error != 0){
                         Logger::logger.warning( "get socket option failed, err:%d\n" ,error);
                     } else {
-                        dp(L"result222:%d", res);
+                        dp("result222:%d", res);
                         bStat = true;
                     }
                 } 
@@ -94,12 +94,12 @@ bool CTcpClient::Connect(const string &strIp, unsigned short uPort, int iTimeOut
 
     if (false == bStat)
     {
-        dp(L"ioctlsocket err:%d", GetSockErr());
+        dp("ioctlsocket err:%d", GetSockErr());
         closesocket(mClientSock);
         mClientSock = INVALID_SOCKET;
         return false;
     }
-    dp(L"connect success");
+    dp("connect success");
     return true;
 }
 
@@ -150,7 +150,7 @@ void CTcpClient::Close() {
 
 bool CTcpClient::TestConnect() {
     mClientSock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-    dp(L"test connect ip:%hs, port:%d", mSerIp.c_str(), mServPort);
+    dp("test connect ip:%hs, port:%d", mSerIp.c_str(), mServPort);
     if (Connect(mSerIp, mServPort, 3000))
     {
         mListener->OnClientConnect(*this);
@@ -170,14 +170,14 @@ void CTcpClient::run() {
         {
             if (!TestConnect())
             {
-                dp(L"test connect err:%d", GetSockErr());
+                dp("test connect err:%d", GetSockErr());
                 SleepMS(5000);
                 continue;
             }
         }
 
         if ((iRecv = ::recv(mClientSock, buffer, sizeof(buffer), 0)) > 0) {
-            dp(L"recv:%d", iRecv);
+            dp("recv:%d", iRecv);
 
             string strResp;
             mListener->OnClientRecvData(*this, string(buffer, iRecv), strResp);
@@ -187,7 +187,7 @@ void CTcpClient::run() {
                 Send(strResp);
             }
         } else {
-            dp(L"recv data err:%d", GetSockErr());
+            dp("recv data err:%d", GetSockErr());
             mListener->OnClientSocketErr(*this);
             //close for socket err and test connect again
             closesocket(mClientSock);
@@ -195,7 +195,7 @@ void CTcpClient::run() {
             mTestConnent = true;
 
             if (mStop) {
-                dp(L"stop socket");
+                dp("stop socket");
                 break;
             }
         }

@@ -3,7 +3,6 @@
 #include <LogLib/LogUtil.h>
 #include <SyntaxView/include/Scintilla.h>
 #include <SyntaxView/include/SciLexer.h>
-#include <SyntaxView/LexVdebug.h>
 #include "SyntaxCfg.h"
 #include "SyntaxView.h"
 
@@ -37,9 +36,20 @@ bool SyntaxView::CreateView(HWND parent, int x, int y, int cx, int cy) {
         m_pfnSend = (SCINTILLA_FUNC)::SendMessage(m_hwnd, SCI_GETDIRECTFUNCTION, 0, 0);
         m_param = (SCINTILLA_PTR)::SendMessage(m_hwnd, SCI_GETDIRECTPOINTER, 0, 0);
 
+        SendMsg(SCI_SETLEXER, SCLEX_LABEL, 0);
         SendMsg(SCI_SETCODEPAGE, 936, 0);
     }
     return (TRUE == IsWindow(m_hwnd));
+}
+
+bool SyntaxView::RegisterParser(const mstring &label, pfnLabelParser parser) {
+    if (!IsWindow(m_hwnd))
+    {
+        return false;
+    }
+
+    SendMsg(MSG_LABEL_REGISTER_PARSER, (WPARAM)label.c_str(), (LPARAM)parser);
+    return true;
 }
 
 SyntaxView::~SyntaxView() {
@@ -50,7 +60,7 @@ size_t SyntaxView::SendMsg(UINT msg, WPARAM wp, LPARAM lp) const {
 }
 
 void SyntaxView::ClearView() {
-    SetText(SCI_LABEL_DEFAULT, "");
+    SetText(LABEL_DEFAULT, "");
 }
 
 void SyntaxView::SetStyle(int type, unsigned int textColour, unsigned int backColour) {
@@ -125,31 +135,32 @@ int SyntaxView::SetScrollEndLine() {
 }
 
 void SyntaxView::AppendText(const std::mstring &label, const std::mstring &text) const {
-    VdebugRuleParam param;
-    param.label = label.c_str();
-    param.content = text.c_str();
+    LabelNode param;
+    param.m_label = label.c_str();
+    param.m_content = text.c_str();
 
     SendMsg(SCI_SETREADONLY, 0, 0);
     size_t length = SendMsg(SCI_GETLENGTH, 0, 0);
-    param.startPos = length;
-    param.endPos = length + text.size();
+    param.m_startPos = length;
+    param.m_endPos = length + text.size();
 
-    SendMsg(SCI_APPEND_VDEBUG_TEXT, 0, (LPARAM)&param);
+    SendMsg(MSG_LABEL_APPEND_LABEL, 0, (LPARAM)&param);
     SendMsg(SCI_APPENDTEXT, (WPARAM)text.size(), (LPARAM)text.c_str());
     SendMsg(SCI_SETREADONLY, 1, 0);
 }
 
 void SyntaxView::SetText(const std::mstring &label, const std::mstring &text) const {
-    VdebugRuleParam param;
-    param.label = label.c_str();
-    param.content = text.c_str();
+    LabelNode param;
+    param.m_label = label.c_str();
+    param.m_content = text.c_str();
 
     size_t length = SendMsg(SCI_GETLENGTH, 0, 0);
-    param.startPos = length;
-    param.endPos = length + text.size();
+    param.m_startPos = length;
+    param.m_endPos = length + text.size();
 
     SendMsg(SCI_SETREADONLY, 0, 0);
-    SendMsg(SCI_SET_VDEBUG_TEXT, 0, (LPARAM)&param);
+    SendMsg(MSG_LABEL_CLEAR_LABEL, 0, 0);
+    SendMsg(MSG_LABEL_APPEND_LABEL, 0, (LPARAM)&param);
     SendMsg(SCI_SETTEXT, 0, (LPARAM)text.c_str());
     SendMsg(SCI_SETREADONLY, 1, 0);
 }

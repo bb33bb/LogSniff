@@ -9,6 +9,7 @@
 
 using namespace std;
 
+static HWND gsStaus = NULL;
 static HWND gsListCtrl = NULL;
 static HANDLE gsNotifyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 static HANDLE gsScanThread = NULL;
@@ -160,6 +161,7 @@ static void _InitListCtrl() {
 }
 
 static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
+    gsStaus = GetDlgItem(hdlg, IDC_SERV_STATUS);
     gsListCtrl = GetDlgItem(hdlg, IDC_SERV_LIST);
 
     extern HINSTANCE g_hInstance;
@@ -174,9 +176,26 @@ static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
 static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     WORD id = LOWORD(wp);
 
+    if (id == IDC_SERV_LOCAL)
+    {
+    } 
+
     if (id == IDC_SERV_REFUSH)
     {
         SetEvent(gsNotifyEvent);
+    }
+
+    if (id == IDC_SERV_SELECT)
+    {
+        int sel = SendMessageA(gsListCtrl, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+
+        if (sel < 0)
+        {
+            SetWindowTextA(gsStaus, "先选择一个目标");
+            return;
+        }
+
+        AutoLocker locker(&gsLocker);
     }
 }
 

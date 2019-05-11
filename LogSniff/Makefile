@@ -9,6 +9,8 @@ CPP_SOURCES := $(wildcard ./*.cpp)
 CPP_SOURCES += $(wildcard ./common/*.cpp)
 CPP_SOURCES += $(wildcard ./common/json/*.cpp)
 CPP_SOURCES += $(wildcard ../LogLib/LogProtocol.cpp)
+CPP_SOURCES += $(wildcard ../LogLib/LogUtil.cpp)
+CPP_SOURCES += $(wildcard ../LogLib/tcpserv.cpp)
 CPP_OBJS = $(CPP_SOURCES:.cpp=.o)
 
 C_SOURCES := $(wildcard ./*.c)

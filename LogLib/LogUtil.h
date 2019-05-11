@@ -1,9 +1,17 @@
 #pragma once
+#ifndef __linux__
 #include <Windows.h>
 #include <vector>
 #include "mstring.h"
 #include "json/json.h"
+#endif //__linux__
 
+#include <stdlib.h>
+
+void printDbgInternal(const char *tag, const char *file, int line, const char *fmt, ...);
+#define dp(f, ...) printDbgInternal("LogSniff", __FILE__, __LINE__, f, ##__VA_ARGS__);
+
+#ifndef __linux__
 typedef struct _FILE_MAPPING_STRUCT
 {
     HANDLE hFile;
@@ -15,9 +23,6 @@ typedef struct _FILE_MAPPING_STRUCT
 
 PFILE_MAPPING_STRUCT __stdcall MappingFileA(LPCSTR fileName, BOOL bWrite = FALSE, DWORD maxViewSize = 1024 * 1024 * 64);
 void __stdcall CloseFileMapping(PFILE_MAPPING_STRUCT pfms);
-
-VOID __stdcall PrintDbgInternal(LPCWSTR wszTarget, LPCSTR wszFile, DWORD dwLine, LPCWSTR wszFormat, ...);
-#define dp(f, ...) PrintDbgInternal(L"LogSniff", __FILE__, __LINE__, f, ##__VA_ARGS__);
 
 std::mstring GetStrFormJson(const Json::Value &json, const std::mstring &name);
 
@@ -83,3 +88,4 @@ struct AdapterMsg
 };
 
 BOOL GetAdapterSet(std::vector<AdapterMsg> &nets);
+#endif //__linux__
