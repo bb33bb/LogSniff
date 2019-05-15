@@ -83,6 +83,12 @@ bool EnumFiles(const char *path, bool subDir, pfnFileCallback pfn, void *param) 
 
 void PrintDbgInternal(const char *tag, const char *file, unsigned int line, const char *fmt, ...)
 {
+    extern bool gDebugMode;
+    if (!gDebugMode)
+    {
+        return;
+    }
+
     char format1[1024];
     char format2[1024];
     strcpy(format1, "[%hs][%hs.%d]%hs");

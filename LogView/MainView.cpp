@@ -1,7 +1,10 @@
+#include <WinSock2.h>
 #include "MainView.h"
 #include "resource.h"
 #include <LogLib/LogUtil.h>
 #include <LogLib/winsize.h>
+#include <LogLib/locker.h>
+#include <LogLib/StrUtil.h>
 #include "SyntaxHlpr/SyntaxView.h"
 #include <CommCtrl.h>
 #include "LogServView.h"
@@ -9,31 +12,49 @@
 
 #pragma comment(lib, "comctl32.lib")
 
+using namespace std;
+
 extern HINSTANCE g_hInstance;
 static HWND gsMainWnd = NULL;
 static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
 static CLogSyntaxView *gsLogView = NULL;
+//log content cache
+static RLocker *gsLogLocker = NULL;
+static string gsLogContentCache;
 
 #define IDC_STATUS_BAR  (WM_USER + 1123)
+#define TIMER_LOG_LOAD  (2010)
+
+void PushLogContent(const LogInfoCache *cache) {
+    AutoLocker locker(gsLogLocker);
+    gsLogContentCache += cache->mContent;
+    gsLogContentCache += "\n";
+}
 
 static VOID _CreateStatusBar(HWND hdlg)
 {
     gs_hStatBar = CreateStatusWindowW(WS_CHILD | WS_VISIBLE, NULL, hdlg, IDC_STATUS_BAR);
     int wide[5] = {0};
     int length = 0;
-    //声明
     wide[0] = 280;
-    //封包统计
     wide[1] = wide[0] + 360;
-    //选择范围
     wide[2]= wide[1] + 160;
-    //选择的数值
     wide[3] = wide[2] + 360;
-    //无用的
     wide[4] = wide[3] + 256;
     SendMessage(gs_hStatBar, SB_SETPARTS, sizeof(wide) / sizeof(int), (LPARAM)(LPINT)wide); 
+}
+
+static void _TestFile() {
+    const int bufSize = 1024 * 1024 * 16;
+    static char *buffer = new char[bufSize];
+
+    FILE *fp = fopen("E:\\gdemm\\2018-03-20 030539.log", "rb+");
+    int c = fread(buffer, 1, bufSize, fp);
+    buffer[c] = 0;
+    gsLogView->AppendText(LABEL_LOG_CONTENT, UtoA(buffer));
+    fclose(fp);
 }
 
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
@@ -53,6 +74,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     GetWindowRect(gs_hStatBar, &rt2);
     MapWindowPoints(NULL, hdlg, (LPPOINT)&rt2, 2);
 
+    gsLogLocker = new RLocker();
     gsLogView = new CLogSyntaxView();
     int clientWidth = clientRect.right - clientRect.left;
     int clientHigh = clientRect.bottom - clientRect.top;
@@ -77,11 +99,14 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     int cx = (cw / 4 * 3);
     int cy = (ch / 4 * 3);
 
-    SetWindowPos(hdlg, HWND_TOP, 0, 0, cx, cy, SWP_NOMOVE);
+    SetWindowPos(hdlg, HWND_TOP, 0, 0, 300, 400, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
     SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
-    ShowLogServView(gsMainWnd);
+    SetTimer(gsMainWnd, TIMER_LOG_LOAD, 100, NULL);
+
+    _TestFile();
+    gsLogView->SetHightStr("Thread");
     return 0;
 }
 
@@ -96,10 +121,41 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
 }
 
 static INT_PTR _OnTimer(HWND hdlg, WPARAM wp, LPARAM lp) {
+    if (TIMER_LOG_LOAD == wp)
+    {
+        AutoLocker locker(gsLogLocker);
+
+        //双重缓存,避免频繁窗口消息导致窗体卡顿
+        if (gsLogContentCache.size() > 0)
+        {
+            gsLogView->AppendText(LABEL_LOG_CONTENT, gsLogContentCache);
+            gsLogContentCache.clear();
+        }
+    }
     return 0;
 }
 
 static INT_PTR _OnKeyDown(HWND hdlg, WPARAM wp, LPARAM lp) {
+    return 0;
+}
+
+static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
+    NotifyHeader *header = (NotifyHeader *)lp;
+    SCNotification *notify = (SCNotification *)lp;
+
+    switch (header->code) {
+        case SCN_UPDATEUI:
+            {
+                if (notify->updated & SC_UPDATE_SELECTION)
+                {
+                    size_t pos1 = gsLogView->SendMsg(SCI_GETSELECTIONSTART, 0, 0);
+                    size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
+                    dp("select %d-%d", pos1, pos2);
+                }
+            }
+        default:
+            break;
+    }
     return 0;
 }
 
@@ -131,6 +187,11 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case WM_KEYDOWN:
         {
             _OnKeyDown(hdlg, wp, lp);
+        }
+        break;
+    case WM_NOTIFY:
+        {
+            _OnNotify(hdlg, wp, lp);
         }
         break;
     case WM_CLOSE:

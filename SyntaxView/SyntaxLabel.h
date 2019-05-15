@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include "export.h"
+#include "Scintilla.h"
 
 using namespace std;
 
@@ -17,12 +18,19 @@ struct LabelCache {
 };
 
 class CSyntaxLabel {
+    struct ParserInfo {
+        string mLabel;
+        void *mParam;
+        pfnColouriseTextProc mParser;
+    };
+
 public:
     static CSyntaxLabel *GetLabelMgr(HLabel indee);
     static void RegisterLabel(HLabel index);
     static void UnRegisterLabel(HLabel  index);
 
-    void RegisterParser(const string &label, pfnColouriseTextProc pfn);
+    void SetStrKeyword(const string &str);
+    void RegisterParser(const LabelParser *parser);
     void PushLabel(const void *ptr);
     void ClearLabel();
     const LabelCache *GetLabelNode(int pos) const;
@@ -36,7 +44,8 @@ private:
 private:
     size_t mCurPos;
     vector<LabelCache *> mNodeSet;
-    map<string, pfnColouriseTextProc> mParserSet;
+    map<string, ParserInfo> mParserSet;
+    string mStrKeyword;
 
 private:
     static map<HLabel, CSyntaxLabel *> msMgrSet;

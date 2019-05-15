@@ -33,8 +33,10 @@ private:
     virtual ~CLogMonitor();
     virtual void run();
 
+    static bool IsLogFile(const char *filePath);
     void DispatchLog(LogFileInfo *info, long fileSize) const;
     void OnRecvComplete(unsigned int client, const LpResult &result);
+    static bool FileEnumProc(bool isDir, const char *filePath, void *param = 0);
     static void FileNotifyProc(const char *filePath, unsigned int mask);
 
     //tcp serv event
@@ -50,5 +52,6 @@ private:
     std::set<unsigned int> mListener;
     std::map<unsigned int, std::string> mDataCache;
     std::list<std::string> mPathSet;
+    std::set<std::string> mExtSet;
     CTcpServ mTcpServ;
 };

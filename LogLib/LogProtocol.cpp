@@ -74,7 +74,7 @@ string &CLogProtocol::EncodeLog(const string &logPath, const string &logContent,
 
 LpLogInfo &CLogProtocol::DecodeLog(const string &packet, LpLogInfo &outInfo) {
     outInfo.mContent.reserve(packet.size());
-    size_t pos = sizeof(LpHeader);
+    size_t pos = 0;
     unsigned int length = 0;
 
     memcpy(&length, packet.c_str() + pos, sizeof(length));

@@ -16,19 +16,31 @@ typedef void (__stdcall *pfnLabelParser)(
     unsigned int startPos,
     const char *ptr,
     int length,
-    StyleContextBase *sc
+    StyleContextBase *s,
+    void *param
     );
 
 #define SCLEX_LABEL 161
 //LabelParser消息
 //为SyntaxView注册解析器
-//wparem : label
-//lparam : pfnLabelParser
+//wparem : LabelParser
+//lparam : no used
+/*
+struct LabelParser {
+    const char *mLabel;
+    void *mParam;
+    void *mPfnParser;
+};
+*/
 #define MSG_LABEL_REGISTER_PARSER     5051
 //设置文本标签
 #define MSG_LABEL_CLEAR_LABEL         5060
 //追加文本标签
 #define MSG_LABEL_APPEND_LABEL        5061
+//设置高亮字符串
+//wparam : const char *
+//lparam : no used
+#define MSG_SET_KEYWORK_STR           5071
 
 class SyntaxView {
 public:
@@ -36,7 +48,7 @@ public:
     virtual ~SyntaxView();
 
     bool CreateView(HWND parent, int x, int y, int cx, int cy);
-    bool RegisterParser(const std::mstring &label, pfnLabelParser parser);
+    bool RegisterParser(const std::mstring &label, pfnLabelParser parser, void *param);
     size_t SendMsg(UINT msg, WPARAM wp, LPARAM lp) const;
     void AppendText(const std::mstring &label, const std::mstring &text) const;
     void SetText(const std::mstring &label, const std::mstring &text) const;
@@ -67,6 +79,7 @@ private:
     HWND m_parent;
     SCINTILLA_FUNC m_pfnSend;
     SCINTILLA_PTR m_param;
+    std::string mKeywordStr;
     std::map<int, std::string> m_SyntaxMap;
 };
 #endif //SYNTAXSHELL_H_H_

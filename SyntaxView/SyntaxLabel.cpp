@@ -23,8 +23,19 @@ void CSyntaxLabel::UnRegisterLabel(HLabel index) {
     msMgrSet.erase(index);
 }
 
-void CSyntaxLabel::RegisterParser(const string &label, pfnColouriseTextProc pfn) {
-    mParserSet[label] = pfn;
+void CSyntaxLabel::RegisterParser(const LabelParser *parser) {
+    ParserInfo info;
+    info.mLabel = parser->mLabel;
+    info.mParam = parser->mParam;
+    info.mParser = (pfnColouriseTextProc)parser->mPfnParser;
+    mParserSet[info.mLabel] = info;
+}
+
+void CSyntaxLabel::SetStrKeyword(const string &str) {
+    if (str.size() && str != mStrKeyword)
+    {
+        mStrKeyword = str;
+    }
 }
 
 void CSyntaxLabel::PushLabel(const void *ptr) {
@@ -43,10 +54,41 @@ void CSyntaxLabel::ClearLabel() {
 
 const LabelCache *CSyntaxLabel::GetLabelNode(int pos) const {
     //从上次分析的位置继续进行词法分析
-    LabelCache *ptr = mNodeSet[mCurPos];
-    if (pos >= (int)ptr->mStartPos && pos < (int)ptr->mEndPos)
     {
-        return ptr;
+        if (mNodeSet.size() == 1)
+        {
+            return mNodeSet[0];
+        }
+
+        //二分查找进行检索
+        int index1 = 0;
+        int index2 = mNodeSet.size() - 1;
+        while (true) {
+            if (index2 == (index1 + 1))
+            {
+                LabelCache *p1 = mNodeSet[index1];
+                if (pos >= (int)p1->mStartPos && pos < (int)p1->mEndPos)
+                {
+                    return p1;
+                } else {
+                    return mNodeSet[index2];
+                }
+            }
+
+            int mid = (index1 + index2) / 2;
+
+            LabelCache *ptr = mNodeSet[mid];
+            if (pos >= (int)ptr->mStartPos && pos < (int)ptr->mEndPos)
+            {
+                return ptr;
+            } else if (pos < (int)ptr->mStartPos)
+            {
+                index2 = mid;
+            } else if (pos >= (int)ptr->mEndPos)
+            {
+                index1 = mid;
+            }
+        }
     }
     return NULL;
 }
@@ -65,19 +107,19 @@ void CSyntaxLabel::OnParserStr(size_t startPos, size_t size, StyleContextBase &s
         }
 
         size_t needSize = pLabelNode->mEndPos - startPos;
-        size_t parserSize = (size_t)(count2 > needSize ? needSize : count2);
+        size_t parserSize = (size_t)(count2 >= needSize ? needSize : count2);
 
-        map<string, pfnColouriseTextProc>::const_iterator it = mParserSet.find(pLabelNode->mLabel);
+        map<string, ParserInfo>::const_iterator it = mParserSet.find(pLabelNode->mLabel);
         if (it == mParserSet.end())
         {
             sc.SetState(1);
             sc.ForwardBytes(parserSize);
         } else {
-            pfnColouriseTextProc pfnParser = it->second;
+            pfnColouriseTextProc pfnParser = it->second.mParser;
             const char *ptr1 = pLabelNode->mContent.c_str() + (startPos - pLabelNode->mStartPos);
-            pfnParser(sc.GetStat(), startPos, ptr1, parserSize, &sc);
+            pfnParser(sc.GetStat(), startPos, ptr1, parserSize, &sc, it->second.mParam);
 
-            if (count2 > needSize) 
+            if (count2 >= needSize) 
             {
                 MoveNextPos();
             }

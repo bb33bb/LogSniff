@@ -7696,8 +7696,16 @@ sptr_t Editor::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lParam) {
         {
             IDocument *hLabel = pdoc;
             CSyntaxLabel *mgr = CSyntaxLabel::GetLabelMgr(hLabel);
-            const char *label = (const char *)wParam;
-            mgr->RegisterParser(label, (pfnColouriseTextProc)lParam);
+            mgr->RegisterParser((const LabelParser *)wParam);
+        }
+        break;
+    //ÉèÖÃ¸ßÁÁ¹Ø¼ü×Ö
+    case MSG_SET_KEYWORK_STR:
+        {
+            IDocument *hLabel = pdoc;
+            CSyntaxLabel *mgr = CSyntaxLabel::GetLabelMgr(hLabel);
+            const char *str = (const char *)wParam;
+            mgr->SetStrKeyword(str);
         }
         break;
 	default:

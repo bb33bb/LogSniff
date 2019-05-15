@@ -41,7 +41,8 @@ typedef void (__stdcall *pfnColouriseTextProc)(
     unsigned int startPos,
     const char *data,
     int length,
-    StyleContextBase *sc
+    StyleContextBase *sc,
+    void *param
     );
 
 void __stdcall RegisterSyntaxProc(const char *label, pfnColouriseTextProc pfn);

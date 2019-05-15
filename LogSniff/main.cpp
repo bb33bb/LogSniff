@@ -10,6 +10,7 @@
 
 using namespace std;
 
+bool gDebugMode = true;
 time_t gStartTime = 0;
 
 int main(int argc, char *argv[]) {

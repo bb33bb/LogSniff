@@ -20,7 +20,7 @@ bool SyntaxView::CreateView(HWND parent, int x, int y, int cx, int cy) {
     extern HINSTANCE g_hInstance;
     m_parent = parent;
     m_hwnd = CreateWindowExA(
-        WS_EX_CLIENTEDGE,
+        WS_EX_STATICEDGE,
         "Scintilla",
         "SyntaxTest",
         WS_CHILD | WS_VISIBLE,
@@ -42,13 +42,17 @@ bool SyntaxView::CreateView(HWND parent, int x, int y, int cx, int cy) {
     return (TRUE == IsWindow(m_hwnd));
 }
 
-bool SyntaxView::RegisterParser(const mstring &label, pfnLabelParser parser) {
+bool SyntaxView::RegisterParser(const mstring &label, pfnLabelParser parser, void *param) {
     if (!IsWindow(m_hwnd))
     {
         return false;
     }
 
-    SendMsg(MSG_LABEL_REGISTER_PARSER, (WPARAM)label.c_str(), (LPARAM)parser);
+    LabelParser info;
+    info.mLabel = label.c_str();
+    info.mParam = param;
+    info.mPfnParser = parser;
+    SendMsg(MSG_LABEL_REGISTER_PARSER, (WPARAM)&info, 0);
     return true;
 }
 

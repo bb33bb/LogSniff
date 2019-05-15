@@ -21,8 +21,12 @@ CLogMonitor *CLogMonitor::GetInst() {
 }
 
 void CLogMonitor::FileNotifyProc(const char *filePath, unsigned int mask) {
-    AutoLocker locker(GetInst());
+    if (!IsLogFile(filePath))
+    {
+        return;
+    }
 
+    AutoLocker locker(GetInst());
     struct stat fileStat = {0};
     if (0 == stat(filePath, &fileStat))
     {
@@ -44,44 +48,71 @@ void CLogMonitor::FileNotifyProc(const char *filePath, unsigned int mask) {
             pFileInfo = it->second;
         }
 
-        if (fileStat.st_size > it->second->mLastPos)
+        if (fileStat.st_size > pFileInfo->mLastPos)
         {
-            GetInst()->DispatchLog(it->second, fileStat.st_size);
-            it->second->mLastPos = fileStat.st_size;
-            it->second->mFileSize = fileStat.st_size;
+            GetInst()->DispatchLog(pFileInfo, fileStat.st_size);
+            pFileInfo->mLastPos = fileStat.st_size;
+            pFileInfo->mFileSize = fileStat.st_size;
+        } else {
+            dp("file clear, path:%hs", filePath);
         }
     } else {
         GetInst()->mLogCache.erase(filePath);
     }
 }
 
+bool CLogMonitor::IsLogFile(const char *filePath) {
+    string str(filePath);
+    size_t pos1 = str.rfind(".");
+    size_t pos2 = str.rfind("/");
+
+    if (string::npos == pos1 || string::npos == pos2) 
+    {
+        return false;
+    }
+
+    if (pos2 > pos1)
+    {
+        return false;
+    }
+
+    if ((str.size() - pos1 - 1) > 0)
+    {
+        string ext = str.substr(pos1 + 1, str.size() - pos1 - 1);
+        return (GetInst()->mExtSet.end() != GetInst()->mExtSet.find(ext));
+    } else {
+        return false;
+    }
+}
+
+bool CLogMonitor::FileEnumProc(bool isDir, const char *filePath, void *) {
+    if (isDir || !IsLogFile(filePath))
+    {
+        return true;
+    }
+
+    struct stat fileStat = {0};
+    if (0 == stat(filePath, &fileStat))
+    {
+        LogFileInfo *newFile = new LogFileInfo();
+        newFile->mFilePath = filePath;
+        newFile->mLastModified = fileStat.st_mtime;
+        newFile->mFileSize = fileStat.st_size;
+        //文件中已有的部分就不再传输了
+        newFile->mLastPos = newFile->mFileSize;
+
+        AutoLocker locker(CLogMonitor::GetInst());
+        GetInst()->mLogCache.insert(make_pair(filePath, newFile));
+    }
+    return true;
+}
+
 void CLogMonitor::InitMonitor(const char *path) {
-    class CFileEnumProc {
-    public:
-        static bool FileEnumProc(bool isDir, const char *filePath, void *param) {
-            if (isDir)
-            {
-                return true;
-            }
-
-            map<std::string, LogFileInfo *> *pCache = (map<std::string, LogFileInfo *> *)param;
-            struct stat fileStat = {0};
-            if (0 == stat(filePath, &fileStat))
-            {
-                LogFileInfo *newFile = new LogFileInfo();
-                newFile->mFilePath = filePath;
-                newFile->mLastModified = fileStat.st_mtime;
-                newFile->mFileSize = fileStat.st_size;
-
-                AutoLocker locker(CLogMonitor::GetInst());
-                pCache->insert(make_pair(filePath, newFile));
-            }
-            return true;
-        }
-    };
+    mExtSet.insert("log");
+    mExtSet.insert("txt");
 
     mPathSet.push_back(path);
-    EnumFiles(path, true, CFileEnumProc::FileEnumProc, &mLogCache);
+    EnumFiles(path, true, FileEnumProc, &mLogCache);
     mNotifyHandle = CFileNotify::GetInst()->Register(path, FD_NOTIFY_ALL, FileNotifyProc);
     mTcpServ.InitServ(LOG_PORT, this);
 }
@@ -159,8 +190,9 @@ void CLogMonitor::DispatchLog(LogFileInfo *info, long fileSize) const {
                 string lineStr = info->mLastCache.substr(lastPos, curPos - lastPos);
                 if (!lineStr.empty())
                 {
+                    dp("new log, file:%s, data:%s", info->mFilePath.c_str(), lineStr.c_str());
                     string d;
-                    CLogProtocol::GetInst()->EncodeLog(info->mFilePath, str, d);
+                    CLogProtocol::GetInst()->EncodeLog(info->mFilePath, lineStr, d);
                     for (set<unsigned int>::const_iterator it = mListener.begin() ; it != mListener.end() ; it++)
                     {
                         send(*it, d.c_str(), d.size(), 0);

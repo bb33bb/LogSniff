@@ -4,7 +4,7 @@
 #include "MainView.h"
 #include "GroupSender.h"
 #include "LogServView.h"
-#include "LogReceiver.h";
+#include "LogReceiver.h"
 
 using namespace std;
 
@@ -29,9 +29,9 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     WSADATA wsadata;
     WSAStartup(wVersionRequested, &wsadata);
 
-    CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
-    MessageBoxA(0, 0, 0, 0);
-    //ShowMainView();
+    //CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
+    //MessageBoxA(0, 0, 0, 0);
+    ShowMainView();
     WSACleanup();
     return 0;
 }

@@ -2,6 +2,7 @@
 #include "LogReceiver.h"
 #include <LogLib/LogProtocol.h>
 #include <LogLib/StrUtil.h>
+#include "MainView.h"
 
 using namespace std;
 
@@ -84,6 +85,7 @@ void CLogReceiver::OnSingleResult(const LpResult &result) {
                 if (mFltStr.empty() || string::npos != logInfo.mContent.find(mFltStr))
                 {
                     mShowSet.push_back(cache);
+                    PushLogContent(cache);
                 }
             }
             break;

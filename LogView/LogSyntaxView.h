@@ -7,6 +7,7 @@ public:
     virtual ~CLogSyntaxView();
 
     bool CreateLogView(HWND hParent, int x, int y, int cx, int cy);
+    bool SetHightStr(const std::string &str);
 private:
     void initLogView();
 
@@ -15,6 +16,10 @@ private:
         unsigned int startPos,
         const char *ptr,
         int length,
-        StyleContextBase *sc
+        StyleContextBase *sc,
+        void *param
         );
+
+private:
+    std::string mKeywordStr;
 }; 
