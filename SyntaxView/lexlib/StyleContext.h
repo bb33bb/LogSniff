@@ -84,9 +84,12 @@ public:
 		width(0),
 		chNext(0),
 		widthNext(1) {
+        /*
 		if (styler.Encoding() != enc8bit) {
 			multiByteAccess = styler.MultiByteAccess();
 		}
+        */
+
 		styler.StartAt(startPos /*, chMask*/);
 		styler.StartSegment(startPos);
 		currentLine = styler.GetLine(startPos);
