@@ -35,4 +35,11 @@ public:
     virtual bool Stop() = 0;
     virtual bool IsStart() = 0;
     virtual std::list<std::mstring> GetPathSet() const = 0;
+
+public:
+    static bool IsLogFile(const std::mstring &filePath) {
+        std::mstring low = filePath;
+        low.makelower();
+        return (low.endwith(".txt") || low.endwith(".log"));
+    }
 };

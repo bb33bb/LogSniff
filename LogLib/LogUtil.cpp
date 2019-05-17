@@ -6,6 +6,7 @@
 #else
 #include <Shlwapi.h>
 #include <iphlpapi.h>
+#include "mstring.h"
 #include "LogUtil.h"
 #include "StrUtil.h"
 
@@ -299,5 +300,83 @@ BOOL GetAdapterSet(OUT vector<AdapterMsg> &nets)
         free(adapterInfo);
     }
     return state;
+}
+
+BOOL EnumFiles(const mstring &dir, BOOL recursion, pfnFileHandler handler, void *param) {
+    if (dir.empty() || !handler)
+    {
+        return FALSE;
+    }
+
+    DWORD attrib = GetFileAttributesA(dir.c_str());
+    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        return FALSE;
+    }
+
+    list<mstring> dirSet;
+    char findStr[MAX_PATH];
+    mstring curDir;
+    bool exit = false;
+    while (!dirSet.empty()) {
+        curDir = *dirSet.begin();
+        dirSet.pop_front();
+
+        lstrcpyA(findStr, dir.c_str());
+        PathAppendA(findStr, "*");
+
+        WIN32_FIND_DATAA findData;
+        HANDLE hFind = FindFirstFileA(findStr, &findData);
+        if (INVALID_HANDLE_VALUE == hFind) {
+            continue;
+        }
+
+        BOOL bRet = TRUE;
+        do
+        {
+            if (0 == lstrcmpA(findData.cFileName, ".") || 0 == lstrcmpA(findData.cFileName, ".."))
+            {
+                continue;
+            }
+
+            char fileName[MAX_PATH];
+            lstrcpyA(fileName, dir.c_str());
+            PathAppendA(fileName, findData.cFileName);
+
+            if (INVALID_FILE_ATTRIBUTES == findData.dwFileAttributes)
+            {
+                continue;
+            }
+
+            if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                if (recursion)
+                {
+                    dirSet.push_back(fileName);
+                }
+
+                if (!handler(true, fileName, param))
+                {
+                    exit = true;
+                    break;
+                }
+            }
+            else
+            {
+                if (!handler(false, fileName, param))
+                {
+                    exit = true;
+                    break;
+                }
+            }
+        } while (FindNextFileA(hFind, &findData));
+        FindClose(hFind);
+
+        if (true == exit)
+        {
+            break;
+        }
+    }
+    return TRUE;
 }
 #endif //__linux__

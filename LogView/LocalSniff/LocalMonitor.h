@@ -35,9 +35,12 @@ public:
     virtual std::list<std::mstring> GetPathSet() const;
 
 private:
+    bool IsFileInCache(const std::mstring &filePath) const;
     LocalLogCache *GetFileCache(const std::mstring &filePath);
     void OnLogReceived(LocalLogCache *cache);
+    static bool FileEnumProc(bool isDir, const char *filePath, void *param);
     static void FileNotify(const char *filePath, unsigned int mask);
+
 private:
     std::list<std::mstring> mPathSet;
     std::map<std::mstring, LocalLogCache *> mLogCache;

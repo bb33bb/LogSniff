@@ -88,4 +88,7 @@ struct AdapterMsg
 };
 
 BOOL GetAdapterSet(std::vector<AdapterMsg> &nets);
+
+typedef bool (* pfnFileHandler)(bool isDir, LPCSTR filePath, void *param);
+BOOL EnumFiles(const std::mstring &dir, BOOL recursion, pfnFileHandler pfn, void *param);
 #endif //__linux__

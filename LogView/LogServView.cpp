@@ -214,10 +214,12 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         AutoLocker locker(&gsLocker);
         LpServDesc desc = gsLogServSet[sel];
 
+        /*
         if (CLogReceiver::GetInst()->Start(*desc.mIpSet.begin()))
         {
             SendMessageA(gsMainWnd, WM_CLOSE, 0, 0);
         }
+        */
     }
 }
 

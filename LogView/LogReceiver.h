@@ -20,10 +20,11 @@ class CLogReceiver : public CMonitorEvent {
 public:
     static CLogReceiver *GetInst();
 
-private:
+public:
     CLogReceiver();
     virtual ~CLogReceiver();
     bool Start(MonitorCfg &cfg);
+    bool AddPath(const std::mstring &path);
     bool IsStart();
     void Stop();
 

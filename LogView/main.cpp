@@ -40,6 +40,10 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     //CWinFileNotify::GetInst()->InitNotify();
     //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);
 
+    MonitorCfg cfg;
+    cfg.mType = em_monitor_local;
+    CLogReceiver::GetInst()->Start(cfg);
+    CLogReceiver::GetInst()->AddPath("D:\\git\\LogSniff\\Debug\\test");
     MessageBoxA(0, 0, 0, 0);
     WSACleanup();
     return 0;

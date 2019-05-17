@@ -2,6 +2,7 @@
 #include "LocalMonitor.h"
 #include "WinFileNoitfy.h"
 #include "../LogReceiver.h"
+#include <LogLib/LogUtil.h>
 
 using namespace std;
 
@@ -29,6 +30,14 @@ bool CLocalMonitor::Stop() {
 }
 
 bool CLocalMonitor::AddPath(const mstring &path) {
+    if (IsFileInCache(path))
+    {
+        return true;
+    }
+
+    mPathSet.push_back(path);
+    EnumFiles(path, true, FileEnumProc, 0);
+
     CWinFileNotify::GetInst()->Register(path, -1, FileNotify);
     mPathSet.push_back(path);
     return true;
@@ -87,6 +96,35 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
     {
         cache->mLastCache.erase(0, lastPos);
     }
+}
+
+bool CLocalMonitor::IsFileInCache(const mstring &filePath) const {
+    mstring low = filePath;
+    low.makelower();
+    for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
+    {
+        mstring low2 = *it;
+        low2.makelower();
+
+        if (low.startwith(low2.c_str()))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) {
+    if (isDir)
+    {
+        return true;
+    }
+
+    if (IsLogFile(filePath))
+    {
+        GetInst()->GetFileCache(filePath);
+    }
+    return true;
 }
 
 void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
