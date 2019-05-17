@@ -91,6 +91,7 @@ void CLogSyntaxView::LogParser(
             if (curPos > lastPos)
             {
                 sc->SetState(STAT_CONTENT);
+
                 sc->ForwardBytes(curPos - lastPos);
             }
             sc->SetState(STAT_KEYWORD);

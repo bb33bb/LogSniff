@@ -223,6 +223,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MonitorBase.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>
@@ -262,6 +266,38 @@
 			</File>
 			<File
 				RelativePath=".\SyntaxHlpr\SyntaxView.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="LocalSniff"
+			>
+			<File
+				RelativePath=".\LocalSniff\LocalMonitor.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LocalSniff\LocalMonitor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LocalSniff\WinFileNoitfy.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LocalSniff\WinFileNotify.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="ServSniff"
+			>
+			<File
+				RelativePath=".\ServSniff\ServMonitor.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ServSniff\ServMonitor.h"
 				>
 			</File>
 		</Filter>

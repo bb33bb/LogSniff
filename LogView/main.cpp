@@ -5,6 +5,7 @@
 #include "GroupSender.h"
 #include "LogServView.h"
 #include "LogReceiver.h"
+#include "LocalSniff/WinFileNoitfy.h"
 
 using namespace std;
 
@@ -20,6 +21,10 @@ using namespace std;
 
 HINSTANCE g_hInstance = NULL;
 
+static void _TestFileNotify(const char *filePath, unsigned int mask) {
+    int dd = 1234;
+}
+
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
     g_hInstance = m;
@@ -31,7 +36,11 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 
     //CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
     //MessageBoxA(0, 0, 0, 0);
-    ShowMainView();
+    //ShowMainView();
+    //CWinFileNotify::GetInst()->InitNotify();
+    //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);
+
+    MessageBoxA(0, 0, 0, 0);
     WSACleanup();
     return 0;
 }

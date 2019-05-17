@@ -110,6 +110,54 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_MAIN                ICON                    "res\\main.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU_MAIN MENU 
+BEGIN
+    POPUP "文件"
+    BEGIN
+        MENUITEM "连接服务",                        ID_40001
+        MENUITEM "关闭连接",                        ID_40002
+        MENUITEM SEPARATOR
+        MENUITEM "重新加载",                        ID_40009
+        MENUITEM "连接属性",                        ID_40016
+        MENUITEM SEPARATOR
+        MENUITEM "添加路径",                        ID_40019
+    END
+    POPUP "视图"
+    BEGIN
+        MENUITEM "显示设置",                        ID_40013
+        MENUITEM "字体设置",                        ID_40014
+    END
+    POPUP "编码"
+    BEGIN
+        MENUITEM "UTF-8",                       ID_40007
+        MENUITEM "GBK",                         ID_40008
+        MENUITEM "UTF-16",                      ID_40012
+    END
+    POPUP "设置"
+    BEGIN
+        MENUITEM "过滤设置",                        ID_40003
+        MENUITEM "搜索设置",                        ID_40004
+        MENUITEM SEPARATOR
+        MENUITEM "窗口置顶",                        ID_40010
+        MENUITEM "暂停嗅探",                        ID_40011
+        MENUITEM "清空视图",                        ID_40015
+        MENUITEM "自动滚屏",                        ID_40017
+        MENUITEM SEPARATOR
+        MENUITEM "重置配置",                        ID_40018
+    END
+    POPUP "帮助"
+    BEGIN
+        MENUITEM "帮助文档",                        ID_40005
+        MENUITEM "关于LogSniff",                  ID_40006
+    END
+END
+
 #endif    // 中文(中华人民共和国) resources
 /////////////////////////////////////////////////////////////////////////////
 
