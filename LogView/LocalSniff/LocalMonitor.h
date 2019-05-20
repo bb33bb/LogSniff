@@ -24,7 +24,6 @@ class CLocalMonitor : public RLocker, public MonitorBase {
 
 public:
     static CLocalMonitor *GetInst();
-    void InitMonitor();
     void SetMonitor(const char *path);
 
     virtual bool Init(const MonitorCfg &cfg, CMonitorEvent *listener);

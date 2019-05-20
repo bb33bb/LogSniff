@@ -315,6 +315,7 @@ BOOL EnumFiles(const mstring &dir, BOOL recursion, pfnFileHandler handler, void 
     }
 
     list<mstring> dirSet;
+    dirSet.push_back(dir);
     char findStr[MAX_PATH];
     mstring curDir;
     bool exit = false;

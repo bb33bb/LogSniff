@@ -77,4 +77,5 @@ private:
     std::list<IoInfo *> mIoSet;
     HANDLE mIocp;
     CThread mThread;
+    bool mInit;
 };

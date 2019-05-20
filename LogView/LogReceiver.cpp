@@ -92,5 +92,6 @@ void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
 }
 
 void CLogReceiver::OnLogReceived(const mstring &filePath, const mstring &content) {
+    dp("filePath:%hs, content:%hs", filePath.c_str(), content.c_str());
     PushLog(filePath, content);
 }

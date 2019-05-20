@@ -16,6 +16,7 @@ CWinFileNotify *CWinFileNotify::GetInst() {
 }
 
 CWinFileNotify::CWinFileNotify() {
+    mInit = false;
     mIocp = NULL;
 }
 
@@ -76,6 +77,12 @@ void CWinFileNotify::run() {
 }
 
 void CWinFileNotify::InitNotify() {
+    if (true == mInit)
+    {
+        return;
+    }
+
+    mInit = true;
     mIocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
     mThread.StartThread(this, false);
 }

@@ -18,6 +18,7 @@ CLocalMonitor *CLocalMonitor::GetInst() {
 
 bool CLocalMonitor::Init(const MonitorCfg &cfg, CMonitorEvent *listener) {
     mCfg = cfg, mListener = listener;
+    CWinFileNotify::GetInst()->InitNotify();
     return true;
 }
 
@@ -39,7 +40,8 @@ bool CLocalMonitor::AddPath(const mstring &path) {
     EnumFiles(path, true, FileEnumProc, 0);
 
     CWinFileNotify::GetInst()->Register(path, -1, FileNotify);
-    mPathSet.push_back(path);
+    mstring low = path;
+    mPathSet.push_back(low.makelower());
     return true;
 }
 
@@ -115,14 +117,27 @@ bool CLocalMonitor::IsFileInCache(const mstring &filePath) const {
 }
 
 bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) {
-    if (isDir)
+     if (isDir)
     {
         return true;
     }
 
     if (IsLogFile(filePath))
     {
-        GetInst()->GetFileCache(filePath);
+        LocalLogCache *newCache = new LocalLogCache();
+        newCache->mFilePath = filePath;
+        newCache->mFilePath.makelower();
+        FILE *fp = fopen(filePath, "rb");
+
+        if (NULL != fp)
+        {
+            fseek(fp, 0, SEEK_END);
+            long size = ftell(fp);
+            newCache->mLastPos = size;
+            newCache->mFileSize = size;
+            fclose(fp);
+        }
+        GetInst()->mLogCache[newCache->mFilePath] = newCache;
     }
     return true;
 }
@@ -144,6 +159,11 @@ void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
    fseek(fp, 0, SEEK_END);
    int size = ftell(fp);
 
+   if (0 == size)
+   {
+       int dd = 1234;
+   }
+
    if (cache->mFileSize < (DWORD)size)
    {
        fseek(fp, cache->mLastPos, SEEK_SET);
@@ -152,9 +172,9 @@ void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
        while ((count = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
             cache->mLastCache.append(buffer, count);
        }
+       cache->mLastPos = size;
+       cache->mFileSize = size;
    }
    fclose(fp);
-   cache->mLastPos = size;
-   cache->mFileSize = size;
    GetInst()->OnLogReceived(cache);
 }
