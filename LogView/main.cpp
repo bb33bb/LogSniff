@@ -1,6 +1,9 @@
 #include <WinSock2.h>
 #include <Windows.h>
+#include <Shlwapi.h>
+#include <shlobj.h>
 #include <string>
+#include <LogLib/mstring.h>
 #include "MainView.h"
 #include "GroupSender.h"
 #include "LogServView.h"
@@ -20,6 +23,8 @@ using namespace std;
 #endif
 
 HINSTANCE g_hInstance = NULL;
+mstring gStartTime;
+mstring gCfgPath;
 
 static void _TestFileNotify(const char *filePath, unsigned int mask) {
     int dd = 1234;
@@ -36,15 +41,36 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 
     //CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
     //MessageBoxA(0, 0, 0, 0);
-    //ShowMainView();
+    SYSTEMTIME time = {0};
+    GetLocalTime(&time);
+    char timeStr[64];
+    wnsprintfA(
+        timeStr,
+        64,
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        time.wYear,
+        time.wMonth,
+        time.wDay,
+        time.wHour,
+        time.wMinute,
+        time.wSecond
+        );
+
+    char cfgPath[256];
+    GetModuleFileNameA(NULL, cfgPath, 256);
+    PathAppendA(cfgPath, "..\\DataBase");
+    SHCreateDirectoryExA(NULL, cfgPath, NULL);
+
+    gStartTime = timeStr;
+    ShowMainView();
     //CWinFileNotify::GetInst()->InitNotify();
     //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);
 
-    MonitorCfg cfg;
-    cfg.mType = em_monitor_local;
-    CLogReceiver::GetInst()->Start(cfg);
-    CLogReceiver::GetInst()->AddPath("D:\\git\\LogSniff\\Debug\\test");
-    MessageBoxA(0, 0, 0, 0);
+    //MonitorCfg cfg;
+    //cfg.mType = em_monitor_local;
+    //CLogReceiver::GetInst()->Start(cfg);
+    //CLogReceiver::GetInst()->AddPath("D:\\git\\LogSniff\\Debug\\test");
+    //MessageBoxA(0, 0, 0, 0);
     WSACleanup();
     return 0;
 }

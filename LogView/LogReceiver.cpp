@@ -38,6 +38,7 @@ bool CLogReceiver::Start(MonitorCfg &cfg) {
     {
         mCurMonitor = CLocalMonitor::GetInst();
     } else {
+        mCurMonitor = new CServMonitor();
     }
     mCurMonitor->Init(cfg, this);
     mCurMonitor->Start();
@@ -61,6 +62,11 @@ void CLogReceiver::Stop() {
     if (mCurMonitor)
     {
         mCurMonitor->Stop();
+
+        if (mCfg.mType == em_monitor_remote)
+        {
+            delete mCurMonitor;
+        }
         mCurMonitor = NULL;
     }
 }

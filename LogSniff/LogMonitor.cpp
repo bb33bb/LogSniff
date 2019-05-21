@@ -121,6 +121,10 @@ list<string> CLogMonitor::GetPathSet() {
     return mPathSet;
 }
 
+string CLogMonitor::GetUnique() {
+    return "aabbccdd";
+}
+
 CLogMonitor::CLogMonitor() {
 }
 

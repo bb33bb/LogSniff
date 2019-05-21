@@ -91,4 +91,5 @@ BOOL GetAdapterSet(std::vector<AdapterMsg> &nets);
 
 typedef bool (* pfnFileHandler)(bool isDir, LPCSTR filePath, void *param);
 BOOL EnumFiles(const std::mstring &dir, BOOL recursion, pfnFileHandler pfn, void *param);
+std::mstring GetOSVersion();
 #endif //__linux__

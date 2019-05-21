@@ -36,7 +36,8 @@ struct LpViewRegisger {
 };
 
 struct LpServDesc {
-    std::string mStartTime;
+    std::string mUnique;
+    std::string mStartTime; 
     std::list<std::string> mIpSet;
     std::string mSystem;
     std::list<std::string> mPathSet;
@@ -74,7 +75,7 @@ public:
     LpLogInfo &DecodeLog(const std::string &packet, LpLogInfo &outInfo);
 
     //group msg
-    std::string &EncodeDesc(const std::list<std::string> &pathSet, time_t startCount, std::string &outStr);
+    std::string &EncodeDesc(const std::string &unique, const std::list<std::string> &pathSet, time_t startCount, std::string &outStr);
     LpServDesc &DecodeDesc(const std::string &packet, LpServDesc &outDesc);
 
     int GetRecvResult(std::string &packet, std::list<LpResult> &result);

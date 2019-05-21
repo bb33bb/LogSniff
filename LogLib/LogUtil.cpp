@@ -380,4 +380,136 @@ BOOL EnumFiles(const mstring &dir, BOOL recursion, pfnFileHandler handler, void 
     }
     return TRUE;
 }
+
+static BOOL _GetNtVersionNumbers(DWORD&dwMajorVer, DWORD& dwMinorVer, DWORD& dwBuildNumber)
+{
+    BOOL bRet = FALSE;
+    HMODULE hModNtdll = GetModuleHandleA("ntdll.dll");
+    if (hModNtdll)
+    {
+        typedef void (WINAPI* RtlGetNtVersionNumbers)(DWORD*, DWORD*, DWORD*);
+        RtlGetNtVersionNumbers pRtlGetNtVersionNumbers = (RtlGetNtVersionNumbers)GetProcAddress(hModNtdll, "RtlGetNtVersionNumbers");
+        if (pRtlGetNtVersionNumbers)
+        {
+            pRtlGetNtVersionNumbers(&dwMajorVer, &dwMinorVer, &dwBuildNumber);
+            dwBuildNumber &= 0x0ffff;
+            bRet = TRUE;
+        }
+    }
+
+    return bRet;
+}
+
+mstring GetOSVersion()
+{
+    mstring ver;
+    OSVERSIONINFOEXA osvi = {0};
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+    GetVersionExA((OSVERSIONINFOA *)&osvi);
+
+    if (!_GetNtVersionNumbers(osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber))
+    {
+        return "UnKnown";
+    }
+
+    // 不支持非NT的系统
+    if (VER_PLATFORM_WIN32_NT != osvi.dwPlatformId)
+    {
+        return "UnKnown";
+    }
+
+    if (osvi.dwMajorVersion <= 4)
+    {
+        ver += "Microsoft Windows NT ";
+    }
+    else if (5 == osvi.dwMajorVersion)
+    {
+        switch (osvi.dwMinorVersion) {
+            case 0:
+                ver += "Microsoft Windows 2000 ";
+                break;
+            case 1:
+                ver += "Microsoft Windows XP ";
+                break;
+            case 2:
+                ver += "Microsoft Server 2003 ";
+                break;
+        }
+    }
+    else if (6 == osvi.dwMajorVersion)
+    {
+        if (0 == osvi.dwMinorVersion)
+        {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+            {
+                ver += "Microsoft Windows Vista ";
+            }
+            else
+            {
+                ver += "Microsoft Server 2008 ";
+            }
+        }
+        else if (1 == osvi.dwMinorVersion)
+        {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+            {
+                ver += "Microsoft Windows 7 ";
+            }
+            else {
+                ver += "Microsoft Windows Server 2008 R2 ";
+            }
+        }
+        else if (2 == osvi.dwMinorVersion)
+        {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+            {
+                ver += "Microsoft Windows 8 ";
+            }
+        }
+        else if (3 == osvi.dwMinorVersion)
+        {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+            {
+                ver += "Microsoft Windows 8.1 ";
+            }
+        }
+    }
+    else if (10 == osvi.dwMajorVersion)
+    {
+        if (0 == osvi.dwMinorVersion)
+        {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+            {
+                ver += "Microsoft Windows 10 ";
+            }
+        }
+    }
+
+    char temp[256];
+    if (osvi.dwMajorVersion <= 4)
+    {
+        wnsprintfA(
+            temp,
+            256,
+            "version %d.%d %s (Build %d)",
+            osvi.dwMajorVersion,
+            osvi.dwMinorVersion,
+            osvi.szCSDVersion,
+            osvi.dwBuildNumber & 0xFFFF
+            );
+        ver += temp;
+    }
+    else
+    {
+        wnsprintfA(
+            temp,
+            256,
+            "%s (Build %d)",
+            osvi.szCSDVersion,
+            osvi.dwBuildNumber & 0xFFFF
+            );
+        ver += temp;
+    }
+    return ver;
+}
 #endif //__linux__

@@ -4,6 +4,7 @@
 #include <LogLib/LogProtocol.h>
 #include <LogLib/locker.h>
 #include <LogLib/StrUtil.h>
+#include <LogLib/SqliteOperator.h>
 #include <CommCtrl.h>
 #include "resource.h"
 #include "GroupSender.h"
@@ -13,29 +14,87 @@ using namespace std;
 
 #define MSG_SERVWND_ACTIVATED (WM_USER + 1011)
 
+enum LogServType {
+    em_log_serv_local,
+    em_log_serv_remote
+};
+
+enum LogServConnectStat {
+    em_log_serv_disconnected,
+    em_log_serv_connected,
+    em_log_serv_connect_faild
+};
+
+enum LogServActiveStat {
+    em_log_serv_alive,
+    em_log_serv_closed
+};
+
+struct LocalServDesc {
+    mstring mUnique;
+    mstring mSystem;
+    mstring mStartTime;
+    list<mstring> mPathSet;
+
+    LocalServDesc() {
+        static mstring sOsVersion;
+
+        if (sOsVersion.empty())
+        {
+            sOsVersion = GetOSVersion();
+        }
+
+        extern mstring gStartTime;
+        mStartTime = gStartTime;
+        mSystem = sOsVersion;
+    }
+};
+
+typedef LpServDesc RemoteServDesc;
+
+struct LogServDesc {
+    LogServType mLogServType;
+    LogServConnectStat mConnectStat;
+    LogServActiveStat mAliveStat;
+
+    LocalServDesc mLocalServDesc;
+    RemoteServDesc mRemoteServDesc;
+
+    LogServDesc() {
+        mConnectStat = em_log_serv_disconnected;
+        mAliveStat = em_log_serv_closed;
+    }
+};
+
 extern HINSTANCE g_hInstance;
 static HWND gsMainWnd = NULL;
 static HWND gsStaus = NULL;
 static HWND gsListCtrl = NULL;
 static HANDLE gsNotifyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 static HANDLE gsScanThread = NULL;
-static vector<LpServDesc> gsLogServSet;
+static vector<LogServDesc> gsLogServSet;
 static RLocker gsLocker;
+static int gsCurSel = -1;
+static mstring gsCfgDbPath;
 
 static void _OnLogServDesc(const LpServDesc &desc) {
     AutoLocker locker(&gsLocker);
     int i = 0;
     for (i = 0 ; i < (int)gsLogServSet.size() ; i++)
     {
-        if (desc.mIpSet == desc.mIpSet)
+        LogServDesc &cache = gsLogServSet[i];
+        if (em_log_serv_remote == cache.mLogServType && desc.mIpSet == desc.mIpSet)
         {
-            gsLogServSet[i] = desc;
+            cache.mRemoteServDesc = desc;
             PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
             return;
         }
     }
 
-    gsLogServSet.push_back(desc);
+    LogServDesc newDesc;
+    newDesc.mLogServType = em_log_serv_remote;
+    newDesc.mRemoteServDesc = desc;
+    gsLogServSet.push_back(newDesc);
     PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
     PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
 }
@@ -53,7 +112,8 @@ static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
 
     static wstring sContent;
     sContent.clear();
-    LpServDesc desc = gsLogServSet[itm];
+    const LogServDesc &desc = gsLogServSet[itm];
+    bool localServ = (desc.mLogServType == em_log_serv_local);
     list<string>::const_iterator it;
     switch (sub) {
         //序号
@@ -62,29 +122,40 @@ static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
             break;
         //Ip地址
         case 1:
-            sContent = FormatW(L"%hs", desc.mIpSet.begin()->c_str());
+            if (localServ)
+            {
+                sContent = L"本地服务";
+            }
+            else {
+                sContent = FormatW(L"%hs", desc.mRemoteServDesc.mIpSet.begin()->c_str());
+            }
             break;
         //操作系统
         case 2:
-            sContent = FormatW(L"%hs", desc.mSystem.c_str());
+            if (localServ)
+            {
+                sContent = AtoW(desc.mLocalServDesc.mSystem.c_str());
+            } else {
+                sContent = AtoW(desc.mRemoteServDesc.mSystem);
+            }
             break;
         //启动时间
         case 3:
-            sContent = FormatW(L"%hs", desc.mStartTime.c_str());
-            break;
-        //日志路径
-        case 4:
+            if (localServ)
             {
-                for (it = desc.mPathSet.begin() ; it != desc.mPathSet.end() ; it++)
-                {
-                    sContent += AtoW(it->c_str());
-                    sContent += L";";
-                }
+                sContent = AtoW(desc.mLocalServDesc.mStartTime);
+            } else {
+                sContent = AtoW(desc.mRemoteServDesc.mStartTime);
             }
             break;
-        //描述
-        case 5:
-            sContent = FormatW(L"%hs", desc.mUserDesc.c_str());
+        //连接状态
+        case 4:
+            if (desc.mConnectStat == em_log_serv_connected)
+            {
+                sContent = L"已连接";
+            } else {
+                sContent = L"未连接";
+            }
             break;
         default:
             break;
@@ -149,7 +220,7 @@ static void _InitListCtrl() {
     col.pszText = (LPSTR)"Ip地址";
     SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 1, (LPARAM)&col);
 
-    col.cx = 160;
+    col.cx = 170;
     col.pszText = (LPSTR)"操作系统";
     SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 2, (LPARAM)&col);
 
@@ -157,13 +228,111 @@ static void _InitListCtrl() {
     col.pszText = (LPSTR)"启动时间";
     SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 3, (LPARAM)&col);
 
+    col.cx = 60;
+    col.pszText = (LPSTR)"连接状态";
+    SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 4, (LPARAM)&col);
+    /*
     col.cx = 220;
     col.pszText = (LPSTR)"日志路径";
-    SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 4, (LPARAM)&col);
+    SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 5, (LPARAM)&col);
 
     col.cx = 180;
     col.pszText = (LPSTR)"描述";
-    SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 5, (LPARAM)&col);
+    SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 6, (LPARAM)&col);
+    */
+}
+
+static void _InitCache() {
+    SqliteOperator opt(gsCfgDbPath);
+    srand(GetTickCount());
+    string unique = FormatA(
+        "%02x%02x%02x%02x",
+        rand() % 0xff,
+        rand() % 0xff,
+        rand() % 0xff,
+        rand() % 0xff
+        );
+
+    LocalServDesc localServ;
+    localServ.mUnique = unique;
+    mstring sql = FormatA(
+        "INSERT INTO tSessionDesc (unique, type, system, ipSet, pathSet, time)VALUES('%hs', %d, '%hs', '本地服务', '', '%hs')",
+        unique.c_str(),
+        em_log_serv_local,
+        localServ.mSystem.c_str(),
+        localServ.mStartTime.c_str()
+        );
+    opt.Insert(sql);
+
+    LogServDesc tmp;
+    tmp.mLogServType = em_log_serv_local;
+    tmp.mConnectStat = em_log_serv_disconnected;
+    tmp.mLocalServDesc = localServ;
+    gsLogServSet.push_back(tmp);
+}
+
+static void _LoadCacheFromDb() {
+    SqliteOperator opt(gsCfgDbPath);
+    SqliteResult &result = opt.Select("select * from tSessionDesc");
+
+    for (SqliteIterator it = result.begin() ; it != result.end() ; ++it)
+    {
+        LogServDesc tmp;
+        tmp.mLogServType = (LogServType)atoi(it.GetValue("type").c_str());
+
+        string pathSet;
+        list<string> strSet;
+        if (em_log_serv_local == tmp.mLogServType)
+        {
+            LocalServDesc tmp1;
+            tmp1.mUnique = it.GetValue("unique");
+            tmp1.mSystem = it.GetValue("system");
+            pathSet = it.GetValue("pathSet");
+            list<mstring> ss = SplitStrA(pathSet, ";");
+
+            for (list<mstring>::const_iterator it = ss.begin() ; it != ss.end() ; it++)
+            {
+                tmp1.mPathSet.push_back(*it);
+            }
+            tmp.mLocalServDesc = tmp1;
+        } else if (em_log_serv_remote == tmp.mLogServType)
+        {
+            RemoteServDesc tmp2;
+            tmp2.mUnique = it.GetValue("unique");
+            tmp2.mSystem = it.GetValue("system");
+            pathSet = it.GetValue("pathSet");
+            list<mstring> ss = SplitStrA(pathSet, ";");
+
+            for (list<mstring>::const_iterator it = ss.begin() ; it != ss.end() ; it++)
+            {
+                tmp2.mPathSet.push_back(*it);
+            }
+            tmp.mRemoteServDesc = tmp2;
+        }
+        gsLogServSet.push_back(tmp);
+    }
+}
+
+static void _InitConfig() {
+    extern mstring gCfgPath;
+
+    if (gsCfgDbPath.empty())
+    {
+        gsCfgDbPath = gCfgPath;
+        gsCfgDbPath += "\\config.db";
+    }
+
+    SqliteOperator opt(gsCfgDbPath);
+    opt.Exec("create table if not exists tSessionDesc (id INTEGER PRIMARY KEY, unique CHAR(32), type INTEGER, system TEXT, ipSet TEXT, pathSet TEXT, time CHAR(32))");
+    SqliteResult &result = opt.Select("select count(*) from tSessionDesc");
+
+    int count = atoi(result.begin().GetValue("count(*)").c_str());
+    opt.Close();
+    if (0 == count) {
+        _InitCache();
+    } else {
+       _LoadCacheFromDb();
+    }
 }
 
 static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
@@ -177,12 +346,18 @@ static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     _InitListCtrl();
     CentreWindow(hdlg, GetParent(hdlg));
 
+    if (gsCfgDbPath.empty())
+    {
+        _InitConfig();
+    }
+
     if (!gsLogServSet.empty())
     {
+        LogServDesc desc;
         PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
     }
 
-    if (!gsScanThread)
+    if (!gsScanThread) 
     {
         gsScanThread = CreateThread(NULL, 0, _ScanThread, NULL, 0, NULL);
     }
@@ -194,7 +369,7 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
 
     if (id == IDC_SERV_LOCAL)
     {
-    } 
+    }
 
     if (id == IDC_SERV_REFUSH)
     {
@@ -212,7 +387,7 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         }
 
         AutoLocker locker(&gsLocker);
-        LpServDesc desc = gsLogServSet[sel];
+        const LogServDesc &desc = gsLogServSet[sel];
 
         /*
         if (CLogReceiver::GetInst()->Start(*desc.mIpSet.begin()))

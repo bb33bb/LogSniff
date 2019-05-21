@@ -88,7 +88,7 @@ LpLogInfo &CLogProtocol::DecodeLog(const string &packet, LpLogInfo &outInfo) {
 }
 
 #ifdef __linux__
-string &CLogProtocol::EncodeDesc(const list<string> &pathSet, time_t startTime, string &outStr) {
+string &CLogProtocol::EncodeDesc(const string &unique, const list<string> &pathSet, time_t startTime, string &outStr) {
     Value content;
     Value ipSet(arrayValue);
     Value pathJson(arrayValue);
@@ -106,6 +106,7 @@ string &CLogProtocol::EncodeDesc(const list<string> &pathSet, time_t startTime, 
         pos1 = pos2 + 1;
     }
     content["ipSet"] = ipSet;
+    content["unique"] = unique;
 
     desc = ExecProc("cat /etc/issue");
     pos1 = desc.find("\n");
@@ -137,6 +138,7 @@ LpServDesc &CLogProtocol::DecodeDesc(const string &packet, LpServDesc &outDesc) 
     Value sys = content["system"];
     Value pathSet = content["pathSet"];
 
+    outDesc.mUnique = content["unique"].asString();
     size_t i = 0;
     for (i = 0 ; i < ipSet.size() ; i++)
     {

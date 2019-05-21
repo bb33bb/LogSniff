@@ -174,6 +174,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\sqlite3.c"
+				>
+			</File>
+			<File
+				RelativePath=".\SqliteOperator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\StrUtil.cpp"
 				>
 			</File>
@@ -233,6 +241,14 @@
 			</File>
 			<File
 				RelativePath=".\SocketDef.h"
+				>
+			</File>
+			<File
+				RelativePath=".\sqlite3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SqliteOperator.h"
 				>
 			</File>
 			<File

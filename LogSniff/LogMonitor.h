@@ -27,6 +27,7 @@ public:
     static CLogMonitor *GetInst();
     void InitMonitor(const char *path);
     std::list<std::string> GetPathSet();
+    std::string GetUnique();
 
 private:
     CLogMonitor();

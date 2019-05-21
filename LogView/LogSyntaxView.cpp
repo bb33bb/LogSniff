@@ -4,7 +4,6 @@
 using namespace std;
 
 CLogSyntaxView::CLogSyntaxView() {
-
 }
 
 CLogSyntaxView::~CLogSyntaxView() {

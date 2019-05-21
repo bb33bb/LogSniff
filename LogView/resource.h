@@ -11,6 +11,7 @@
 #define IDC_SERV_REFUSH                 1003
 #define IDC_COM_FILTER                  1004
 #define IDC_SERV_LOCAL                  1004
+#define IDC_SERV_ADD_PATH               1004
 #define IDC_LIST1                       1005
 #define IDC_SERV_LIST                   1005
 #define IDC_BUTTON1                     1006
@@ -20,6 +21,8 @@
 #define IDC_CK_REGULAR                  1008
 #define IDC_BTN_CONFIG                  1009
 #define IDC_SERV_STATUS                 1010
+#define IDC_EDIT1                       1012
+#define IDC_EDT_DESC                    1012
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -46,7 +49,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1012
+#define _APS_NEXT_CONTROL_VALUE         1013
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
