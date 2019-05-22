@@ -82,7 +82,7 @@ void CGroupReceiver::OnRecvData(const std::string &recvStr, std::string &outStr)
     string cmd = content["cmd"].asString();
 
     extern time_t gStartTime;
-    CLogProtocol::GetInst()->EncodeDesc(CLogMonitor::GetInst()->GetPathSet(), gStartTime, outStr);
+    CLogProtocol::GetInst()->EncodeDesc("aabbccdd", CLogMonitor::GetInst()->GetPathSet(), gStartTime, outStr);
 }
 
 void CGroupReceiver::run() {

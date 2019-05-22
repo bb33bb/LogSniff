@@ -60,6 +60,7 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     GetModuleFileNameA(NULL, cfgPath, 256);
     PathAppendA(cfgPath, "..\\DataBase");
     SHCreateDirectoryExA(NULL, cfgPath, NULL);
+    gCfgPath = cfgPath;
 
     gStartTime = timeStr;
     ShowMainView();

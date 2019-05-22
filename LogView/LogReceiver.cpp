@@ -27,10 +27,10 @@ CLogReceiver::CLogReceiver() {
 CLogReceiver::~CLogReceiver() {
 }
 
-bool CLogReceiver::Start(MonitorCfg &cfg) {
-    if (IsStart() && mCfg == cfg)
+bool CLogReceiver::Run(const LogServDesc &cfg) {
+    /*
+    if (cfg)
     {
-        return true;
     }
 
     Stop();
@@ -42,20 +42,17 @@ bool CLogReceiver::Start(MonitorCfg &cfg) {
     }
     mCurMonitor->Init(cfg, this);
     mCurMonitor->Start();
+    */
     return true;
 }
 
-bool CLogReceiver::AddPath(const std::mstring &path) {
-    return mCurMonitor->AddPath(path);
-}
-
-bool CLogReceiver::IsStart() {
+bool CLogReceiver::IsRunning() {
     if (!mCurMonitor)
     {
         return false;
     }
 
-    return mCurMonitor->IsStart();
+    return mCurMonitor->IsRunning();
 }
 
 void CLogReceiver::Stop() {
@@ -63,7 +60,7 @@ void CLogReceiver::Stop() {
     {
         mCurMonitor->Stop();
 
-        if (mCfg.mType == em_monitor_remote)
+        if (mCfg.mLogServType == em_log_serv_remote)
         {
             delete mCurMonitor;
         }

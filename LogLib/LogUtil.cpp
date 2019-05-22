@@ -404,7 +404,7 @@ mstring GetOSVersion()
 {
     mstring ver;
     OSVERSIONINFOEXA osvi = {0};
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
     GetVersionExA((OSVERSIONINFOA *)&osvi);
 
     if (!_GetNtVersionNumbers(osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber))

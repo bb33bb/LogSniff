@@ -26,14 +26,14 @@ public:
     static CLocalMonitor *GetInst();
     void SetMonitor(const char *path);
 
-    virtual bool Init(const MonitorCfg &cfg, CMonitorEvent *listener);
-    virtual bool Start();
-    virtual bool AddPath(const std::mstring &path);
+    virtual bool Init(CMonitorEvent *listener);
+    virtual bool Run(const LogServDesc &servDesc);
     virtual bool Stop();
-    virtual bool IsStart();
+    virtual bool IsRunning();
     virtual std::list<std::mstring> GetPathSet() const;
 
 private:
+    bool AddPath(const std::mstring &path);
     bool IsFileInCache(const std::mstring &filePath) const;
     LocalLogCache *GetFileCache(const std::mstring &filePath);
     void OnLogReceived(LocalLogCache *cache);
@@ -41,8 +41,9 @@ private:
     static void FileNotify(const char *filePath, unsigned int mask);
 
 private:
+    bool mInit;
     std::list<std::mstring> mPathSet;
     std::map<std::mstring, LocalLogCache *> mLogCache;
-    MonitorCfg mCfg;
+    LogServDesc mCfg;
     CMonitorEvent *mListener;
 };

@@ -23,9 +23,8 @@ public:
 public:
     CLogReceiver();
     virtual ~CLogReceiver();
-    bool Start(MonitorCfg &cfg);
-    bool AddPath(const std::mstring &path);
-    bool IsStart();
+    bool Run(const LogServDesc &cfg);
+    bool IsRunning();
     void Stop();
 
     void PushLog(const std::mstring &filePath, const std::mstring &content);
@@ -38,6 +37,6 @@ private:
 
     std::string mFltStr;
     std::string mLogCache;
-    MonitorCfg mCfg;
+    LogServDesc mCfg;
     MonitorBase *mCurMonitor;
 };

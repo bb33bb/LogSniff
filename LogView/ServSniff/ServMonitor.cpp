@@ -2,31 +2,28 @@
 
 using namespace std;
 
-bool CServMonitor::Init(const MonitorCfg &cfg, CMonitorEvent *listener) {
-    mCfg = cfg;
+bool CServMonitor::Init(CMonitorEvent *listener) {
     mListener = listener;
     mInit = false;
     return true;
 }
 
-bool CServMonitor::Start() {
+bool CServMonitor::Run(const LogServDesc &servDesc) {
     if (mInit)
     {
         return false;
     }
 
-    return mTcpClient.InitClient(mCfg.mServIp, LOG_PORT, this, 3000);
-}
-
-bool CServMonitor::AddPath(const std::mstring &path) {
-    return true;
+    mCfg = servDesc;
+    mstring ip = *(mCfg.mRemoteServDesc.mIpSet.begin());
+    return mTcpClient.InitClient(ip, LOG_PORT, this, 3000);
 }
 
 bool CServMonitor::Stop() {
     return true;
 }
 
-bool CServMonitor::IsStart() {
+bool CServMonitor::IsRunning() {
     return true;
 }
 

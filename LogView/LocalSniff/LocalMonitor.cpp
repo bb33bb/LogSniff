@@ -16,13 +16,73 @@ CLocalMonitor *CLocalMonitor::GetInst() {
     return sPtr;
 }
 
-bool CLocalMonitor::Init(const MonitorCfg &cfg, CMonitorEvent *listener) {
-    mCfg = cfg, mListener = listener;
+bool CLocalMonitor::Init(CMonitorEvent *listener) {
+    mListener = listener;
     CWinFileNotify::GetInst()->InitNotify();
+    mInit = false;
     return true;
 }
 
-bool CLocalMonitor::Start() {
+bool CLocalMonitor::Run(const LogServDesc &servDesc) {
+    list<mstring> added;
+    list<mstring> deled;
+
+    if (!mInit)
+    {
+        added = servDesc.mLocalServDesc.mPathSet;
+    } else {
+        list<mstring>::const_iterator it1, it2;
+        const list<mstring> &set1 = servDesc.mLocalServDesc.mPathSet;
+        const list<mstring> &set2 = mCfg.mLocalServDesc.mPathSet;
+
+        bool flag = false;
+        for (it1 = set1.begin() ; it1 != set1.end() ; it1++)
+        {
+            flag = false;
+            for (it2 = set2.begin() ; it2 != set2.end() ; it2++)
+            {
+                if (*it1 == *it2)
+                {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag)
+            {
+                added.push_back(*it1);
+            }
+        }
+
+        for (it1 = set2.begin() ; it1 != set2.end() ; it1++)
+        {
+            flag = false;
+            for (it2 = set1.begin() ; it2 != set1.end() ; it2++)
+            {
+                if (*it1 == *it2)
+                {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag)
+            {
+                deled.push_back(*it1);
+            }
+        }
+    }
+
+    list<mstring>::const_iterator it;
+    for (it = added.begin() ; it != added.end() ; it++)
+    {
+        AddPath(*it);
+    }
+
+    for (it = deled.begin() ; it != deled.end() ; it++)
+    {
+        //½â³ý¼à¿Ø
+    }
     return true;
 }
 
@@ -49,7 +109,7 @@ list<mstring> CLocalMonitor::GetPathSet() const {
     return mPathSet;
 }
 
-bool CLocalMonitor::IsStart() {
+bool CLocalMonitor::IsRunning() {
     return true;
 }
 
