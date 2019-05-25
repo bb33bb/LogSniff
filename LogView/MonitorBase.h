@@ -50,6 +50,7 @@ struct LogServDesc {
     LogServConnectStat mConnectStat;
     LogServActiveStat mAliveStat;
     mstring mUnique;
+    mstring mSystem;
 
     list<mstring> mPathSet;
     LocalServDesc mLocalServDesc;
@@ -64,6 +65,7 @@ struct LogServDesc {
         mLogServType = em_log_serv_local;
         mUnique = local.mUnique;
         mLocalServDesc = local;
+        mSystem = local.mSystem;
         return true;
     }
 
@@ -71,6 +73,7 @@ struct LogServDesc {
         mLogServType = em_log_serv_remote;
         mUnique = remote.mUnique;
         mRemoteServDesc = remote;
+        mSystem = remote.mSystem;
         return true;
     }
 

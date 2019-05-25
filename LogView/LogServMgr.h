@@ -37,6 +37,10 @@ private:
     void OnNotifyAdd(const LogServDesc *desc);
     void OnNotifySwitch(const LogServDesc *d1, const LogServDesc *d2);
     void OnNotifyAlter(const LogServDesc *desc);
+    void InitConfig();
+    void InitCache();
+    void LoadCacheFromDb();
+    void SaveDescToDb(const LogServDesc *desc);
 
 private:
     bool mInit;
@@ -45,4 +49,5 @@ private:
     LogServDesc *mCurLogServ;
     HANDLE mNotifyEvent;
     HANDLE mScanThread;
+    std::mstring mCfgDbPath;
 };

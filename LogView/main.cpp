@@ -9,6 +9,7 @@
 #include "LogServView.h"
 #include "LogReceiver.h"
 #include "LocalSniff/WinFileNoitfy.h"
+#include "LogServMgr.h"
 
 using namespace std;
 
@@ -63,6 +64,7 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
     gCfgPath = cfgPath;
 
     gStartTime = timeStr;
+    CLogServMgr::GetInst()->InitMgr();
     ShowMainView();
     //CWinFileNotify::GetInst()->InitNotify();
     //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);
