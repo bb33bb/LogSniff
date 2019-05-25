@@ -159,6 +159,29 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
+    char file[MAX_PATH] = {0x00};
+    DragQueryFileA(HDROP(wp), 0, file, MAX_PATH);
+    DragFinish(HDROP(wp));
+    if (0x00 != file[0]) {
+        mstring str(file);
+        str.makelower();
+
+        DWORD dw = GetFileAttributesA(str.c_str());
+        if (INVALID_FILE_ATTRIBUTES == dw)
+        {
+            return 0;
+        }
+
+        if (dw & FILE_ATTRIBUTE_DIRECTORY)
+        {
+        } else if (MonitorBase::IsLogFile(str))
+        {
+        }
+    }
+    return 0;
+}
+
 static INT_PTR _OnClose(HWND hdlg) {
     EndDialog(hdlg, 0);
     return 0;
@@ -192,6 +215,11 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case WM_NOTIFY:
         {
             _OnNotify(hdlg, wp, lp);
+        }
+        break;
+    case WM_DROPFILES:
+        {
+            _OnDropFiles(hdlg, wp, lp);
         }
         break;
     case WM_CLOSE:

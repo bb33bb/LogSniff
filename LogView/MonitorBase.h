@@ -49,13 +49,61 @@ struct LogServDesc {
     LogServType mLogServType;
     LogServConnectStat mConnectStat;
     LogServActiveStat mAliveStat;
+    mstring mUnique;
 
+    list<mstring> mPathSet;
     LocalServDesc mLocalServDesc;
     RemoteServDesc mRemoteServDesc;
 
     LogServDesc() {
         mConnectStat = em_log_serv_disconnected;
         mAliveStat = em_log_serv_closed;
+    }
+
+    bool SetLocalDesc(const LocalServDesc &local) {
+        mLogServType = em_log_serv_local;
+        mUnique = local.mUnique;
+        mLocalServDesc = local;
+        return true;
+    }
+
+    bool SetRemoteDesc(const RemoteServDesc &remote) {
+        mLogServType = em_log_serv_remote;
+        mUnique = remote.mUnique;
+        mRemoteServDesc = remote;
+        return true;
+    }
+
+    bool AddPath(const mstring &path) {
+        if (IsPathInCache(path))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool DelPath(const mstring &path) {
+        if (IsPathInCache(path))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool IsPathInCache(const mstring &path) {
+        mstring low(path);
+        low.makelower();
+
+        for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
+        {
+            if (mstring::npos != low.find(*it))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 };
 

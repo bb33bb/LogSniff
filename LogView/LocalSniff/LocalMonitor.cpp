@@ -81,7 +81,7 @@ bool CLocalMonitor::Run(const LogServDesc &servDesc) {
 
     for (it = deled.begin() ; it != deled.end() ; it++)
     {
-        //½â³ý¼à¿Ø
+        DelPath(*it);
     }
     return true;
 }
@@ -93,20 +93,34 @@ bool CLocalMonitor::Stop() {
 bool CLocalMonitor::AddPath(const mstring &path) {
     if (IsFileInCache(path))
     {
-        return true;
+        return false;
     }
 
-    mPathSet.push_back(path);
     EnumFiles(path, true, FileEnumProc, 0);
 
-    CWinFileNotify::GetInst()->Register(path, -1, FileNotify);
+    HFileNotify h = CWinFileNotify::GetInst()->Register(path, -1, FileNotify);
     mstring low = path;
-    mPathSet.push_back(low.makelower());
+    low.makelower();
+    mPathSet[low] = h;
+    return true;
+}
+
+bool CLocalMonitor::DelPath(const std::mstring &path) {
+    mstring low(path);
+    low.makelower();
+
+    if (!IsFileInCache(low))
+    {
+        return false;
+    }
+
+    CWinFileNotify::GetInst()->UnRegister(mPathSet[low]);
+    mPathSet.erase(low);
     return true;
 }
 
 list<mstring> CLocalMonitor::GetPathSet() const {
-    return mPathSet;
+    return list<mstring> ();
 }
 
 bool CLocalMonitor::IsRunning() {
@@ -163,17 +177,7 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
 bool CLocalMonitor::IsFileInCache(const mstring &filePath) const {
     mstring low = filePath;
     low.makelower();
-    for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
-    {
-        mstring low2 = *it;
-        low2.makelower();
-
-        if (low.startwith(low2.c_str()))
-        {
-            return true;
-        }
-    }
-    return false;
+    return (mPathSet.end() != mPathSet.find(filePath));
 }
 
 bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) {

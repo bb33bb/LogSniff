@@ -44,6 +44,7 @@ static void _OnLogServDesc(const LpServDesc &desc) {
     LogServDesc newDesc;
     newDesc.mLogServType = em_log_serv_remote;
     newDesc.mRemoteServDesc = desc;
+    newDesc.mUnique = desc.mUnique;
     gsLogServSet.push_back(newDesc);
     PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
     PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
@@ -193,6 +194,7 @@ static void _InitCache() {
     opt.Insert(sql);
 
     LogServDesc tmp;
+    tmp.mUnique = localServ.mUnique;
     tmp.mLogServType = em_log_serv_local;
     tmp.mConnectStat = em_log_serv_disconnected;
     tmp.mLocalServDesc = localServ;
@@ -223,6 +225,7 @@ static void _LoadCacheFromDb() {
                 tmp1.mPathSet.push_back(*it);
             }
             tmp.mLocalServDesc = tmp1;
+            tmp.mUnique = tmp1.mUnique;
         } else if (em_log_serv_remote == tmp.mLogServType)
         {
             RemoteServDesc tmp2;
@@ -236,6 +239,7 @@ static void _LoadCacheFromDb() {
                 tmp2.mPathSet.push_back(*it);
             }
             tmp.mRemoteServDesc = tmp2;
+            tmp.mUnique = tmp2.mUnique;
         }
         gsLogServSet.push_back(tmp);
     }
@@ -320,12 +324,10 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         AutoLocker locker(&gsLocker);
         const LogServDesc &desc = gsLogServSet[sel];
 
-        /*
-        if (CLogReceiver::GetInst()->Start(*desc.mIpSet.begin()))
+        if (CLogReceiver::GetInst()->Run(desc))
         {
             SendMessageA(gsMainWnd, WM_CLOSE, 0, 0);
         }
-        */
     }
 }
 

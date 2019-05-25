@@ -28,21 +28,28 @@ CLogReceiver::~CLogReceiver() {
 }
 
 bool CLogReceiver::Run(const LogServDesc &cfg) {
-    /*
-    if (cfg)
+    if (cfg.mUnique == mCfg.mUnique)
     {
-    }
-
-    Stop();
-    if (em_monitor_local == cfg.mType)
-    {
-        mCurMonitor = CLocalMonitor::GetInst();
+        if (mCurMonitor)
+        {
+            mCurMonitor->Run(cfg);
+        }
     } else {
-        mCurMonitor = new CServMonitor();
+        if (mCurMonitor)
+        {
+            mCurMonitor->Stop();
+        }
+
+        if (em_log_serv_local == cfg.mLogServType)
+        {
+            mCurMonitor = CLocalMonitor::GetInst();
+        } else {
+            mCurMonitor = new CServMonitor();
+        }
+
+        mCfg = cfg;
+        mCurMonitor->Run(mCfg);
     }
-    mCurMonitor->Init(cfg, this);
-    mCurMonitor->Start();
-    */
     return true;
 }
 

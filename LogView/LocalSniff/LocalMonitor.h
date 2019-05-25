@@ -34,6 +34,7 @@ public:
 
 private:
     bool AddPath(const std::mstring &path);
+    bool DelPath(const std::mstring &path);
     bool IsFileInCache(const std::mstring &filePath) const;
     LocalLogCache *GetFileCache(const std::mstring &filePath);
     void OnLogReceived(LocalLogCache *cache);
@@ -42,7 +43,7 @@ private:
 
 private:
     bool mInit;
-    std::list<std::mstring> mPathSet;
+    std::map<std::mstring, DWORD> mPathSet;
     std::map<std::mstring, LocalLogCache *> mLogCache;
     LogServDesc mCfg;
     CMonitorEvent *mListener;
