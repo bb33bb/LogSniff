@@ -105,8 +105,8 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
     SetTimer(gsMainWnd, TIMER_LOG_LOAD, 100, NULL);
 
-    _TestFile();
-    gsLogView->SetHightStr("Thread");
+    //_TestFile();
+    //gsLogView->SetHightStr("Thread");
     return 0;
 }
 
@@ -175,6 +175,7 @@ static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
 
         if (dw & FILE_ATTRIBUTE_DIRECTORY)
         {
+            CLogServMgr::GetInst()->AddPath(str);
         } else if (MonitorBase::IsLogFile(str))
         {
         }

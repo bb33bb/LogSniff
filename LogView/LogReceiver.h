@@ -7,6 +7,7 @@
 #include <LogLib/tcpclient.h>
 #include <LogLib/mstring.h>
 #include "MonitorBase.h"
+#include "LogServMgr.h"
 
 struct LogInfoCache {
     std::string mTime;
@@ -16,20 +17,25 @@ struct LogInfoCache {
 
 #define LOGVIEW_VERSION     "1001"
 
-class CLogReceiver : public CMonitorEvent {
+class CLogReceiver : public CMonitorEvent, public LogServEvent {
 public:
     static CLogReceiver *GetInst();
+    void InitReceiver();
 
 public:
     CLogReceiver();
     virtual ~CLogReceiver();
-    bool Run(const LogServDesc &cfg);
+    bool Run(const LogServDesc *cfg);
     bool IsRunning();
     void Stop();
 
     void PushLog(const std::mstring &filePath, const std::mstring &content);
     virtual void OnLogReceived(const std::mstring &filePath, const std::mstring &content);
 
+    //LogServ Event
+    virtual void OnLogServAdd(const LogServDesc *d);
+    virtual void OnLogServSwitch(const LogServDesc *d1, const LogServDesc *d2);
+    virtual void OnLogServAlter(const LogServDesc *d);
 private:
     bool mInit;
     std::vector<LogInfoCache *> mLogSet;
@@ -37,6 +43,6 @@ private:
 
     std::string mFltStr;
     std::string mLogCache;
-    LogServDesc mCfg;
+    const LogServDesc *mCfg;
     MonitorBase *mCurMonitor;
 };

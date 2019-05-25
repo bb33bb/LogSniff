@@ -27,12 +27,15 @@ public:
     void SetMonitor(const char *path);
 
     virtual bool Init(CMonitorEvent *listener);
-    virtual bool Run(const LogServDesc &servDesc);
+    virtual bool Run(const LogServDesc *desc);
     virtual bool Stop();
     virtual bool IsRunning();
     virtual std::list<std::mstring> GetPathSet() const;
 
 private:
+    CLocalMonitor();
+    virtual ~CLocalMonitor();
+
     bool AddPath(const std::mstring &path);
     bool DelPath(const std::mstring &path);
     bool IsFileInCache(const std::mstring &filePath) const;
@@ -45,6 +48,6 @@ private:
     bool mInit;
     std::map<std::mstring, DWORD> mPathSet;
     std::map<std::mstring, LocalLogCache *> mLogCache;
-    LogServDesc mCfg;
+    const LogServDesc *mCfg;
     CMonitorEvent *mListener;
 };

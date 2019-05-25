@@ -2,20 +2,27 @@
 
 using namespace std;
 
+CServMonitor::CServMonitor() {
+    mCfg = NULL;
+}
+
+CServMonitor::~CServMonitor() {
+}
+
 bool CServMonitor::Init(CMonitorEvent *listener) {
     mListener = listener;
     mInit = false;
     return true;
 }
 
-bool CServMonitor::Run(const LogServDesc &servDesc) {
+bool CServMonitor::Run(const LogServDesc *servDesc) {
     if (mInit)
     {
         return false;
     }
 
     mCfg = servDesc;
-    mstring ip = *(mCfg.mRemoteServDesc.mIpSet.begin());
+    mstring ip = *(mCfg->mRemoteServDesc.mIpSet.begin());
     return mTcpClient.InitClient(ip, LOG_PORT, this, 3000);
 }
 

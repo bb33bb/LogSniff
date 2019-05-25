@@ -8,6 +8,7 @@
 #include "GroupSender.h"
 #include "LogServView.h"
 #include "LogReceiver.h"
+#include "LocalSniff/LocalMonitor.h"
 #include "LocalSniff/WinFileNoitfy.h"
 #include "LogServMgr.h"
 
@@ -65,6 +66,7 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 
     gStartTime = timeStr;
     CLogServMgr::GetInst()->InitMgr();
+    CLogReceiver::GetInst()->InitReceiver();
     ShowMainView();
     //CWinFileNotify::GetInst()->InitNotify();
     //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);

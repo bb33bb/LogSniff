@@ -86,6 +86,9 @@ public:
     bool TransSubmit();
     std::mstring GetError();
 
+    //对输入输出进行编解码,主要做两件事,转义和UTF8编码
+    std::mstring EncodeStr(const std::mstring &str);
+    std::mstring DecodeStr(const std::mstring &str);
 private:
     void Clear();
     static int SelectCallback(void *data, int argc, char **argv, char **name);

@@ -29,6 +29,8 @@ void CLogServMgr::InitMgr() {
         mInit = true;
         InitConfig();
 
+        SetCurServ(mLogServCache[0]);
+        OnNotifySwitch(NULL, mCurLogServ);
         mNotifyEvent = CreateEventA(NULL, FALSE, FALSE, NULL);
         mScanThread = CreateThread(NULL, 0, ScanThread, NULL, 0, NULL);
     }
@@ -44,6 +46,7 @@ HLogIndex CLogServMgr::Register(LogServEvent *listener) {
         LogServDesc *ptr = *it;
         listener->OnLogServAdd(ptr);
     }
+    listener->OnLogServSwitch(NULL, mCurLogServ);
     return h;
 }
 
@@ -63,19 +66,19 @@ const LogServDesc *CLogServMgr::GetCurServ() {
     return mCurLogServ;
 }
 
-bool CLogServMgr::AddPath(LogServDesc *serv, const std::mstring &path) {
-    if (serv->AddPath(path))
+bool CLogServMgr::AddPath(const std::mstring &path) {
+    if (mCurLogServ->AddPath(path))
     {
-        OnNotifyAlter(serv);
+        OnNotifyAlter(mCurLogServ);
         return true;
     }
     return false;
 }
 
-bool CLogServMgr::DelPath(LogServDesc *serv, const std::mstring &path) {
-    if (serv->DelPath(path))
+bool CLogServMgr::DelPath(const std::mstring &path) {
+    if (mCurLogServ->DelPath(path))
     {
-        OnNotifyAlter(serv);
+        OnNotifyAlter(mCurLogServ);
         return true;
     }
     return false;
@@ -297,16 +300,16 @@ void CLogServMgr::SaveDescToDb(const LogServDesc *desc) {
             "INSERT INTO tSessionDesc (servUnique, type, system, ipSet, pathSet)VALUES('%hs', %d, '%hs', '%hs', '%hs')",
             desc->mUnique.c_str(),
             desc->mLogServType,
-            desc->mSystem.c_str(),
-            ipSet.c_str(),
-            pathSet.c_str()
+            opt.EncodeStr(desc->mSystem).c_str(),
+            opt.EncodeStr(ipSet).c_str(),
+            opt.EncodeStr(pathSet).c_str()
             );
     } else {
         sql = FormatA(
             "UPDATE tSessionDesc SET system='%hs', ipSet='%hs', pathSet='%hs' WHERE servUnique='%hs'",
-            desc->mSystem.c_str(),
-            ipSet.c_str(),
-            pathSet.c_str(),
+            opt.EncodeStr(desc->mSystem).c_str(),
+            opt.EncodeStr(ipSet).c_str(),
+            opt.EncodeStr(pathSet).c_str(),
             desc->mUnique.c_str()
             );
     }

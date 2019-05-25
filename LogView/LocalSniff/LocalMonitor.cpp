@@ -6,6 +6,15 @@
 
 using namespace std;
 
+CLocalMonitor::CLocalMonitor() {
+    mInit = false;
+    mListener = NULL;
+    mCfg = NULL;
+}
+
+CLocalMonitor::~CLocalMonitor() {
+}
+
 CLocalMonitor *CLocalMonitor::GetInst() {
     static CLocalMonitor *sPtr = NULL;
 
@@ -20,20 +29,21 @@ bool CLocalMonitor::Init(CMonitorEvent *listener) {
     mListener = listener;
     CWinFileNotify::GetInst()->InitNotify();
     mInit = false;
+    mCfg = NULL;
     return true;
 }
 
-bool CLocalMonitor::Run(const LogServDesc &servDesc) {
+bool CLocalMonitor::Run(const LogServDesc *servDesc) {
     list<mstring> added;
     list<mstring> deled;
 
-    if (!mInit)
+    if (!mInit || !mCfg)
     {
-        added = servDesc.mLocalServDesc.mPathSet;
+        added = servDesc->mLocalServDesc.mPathSet;
     } else {
         list<mstring>::const_iterator it1, it2;
-        const list<mstring> &set1 = servDesc.mLocalServDesc.mPathSet;
-        const list<mstring> &set2 = mCfg.mLocalServDesc.mPathSet;
+        const list<mstring> &set1 = servDesc->mLocalServDesc.mPathSet;
+        const list<mstring> &set2 = mCfg->mLocalServDesc.mPathSet;
 
         bool flag = false;
         for (it1 = set1.begin() ; it1 != set1.end() ; it1++)
@@ -83,6 +93,7 @@ bool CLocalMonitor::Run(const LogServDesc &servDesc) {
     {
         DelPath(*it);
     }
+    mCfg = servDesc;
     return true;
 }
 

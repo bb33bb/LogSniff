@@ -10,6 +10,7 @@
 #include "resource.h"
 #include "GroupSender.h"
 #include "LogReceiver.h"
+#include "LogServMgr.h"
 
 using namespace std;
 
@@ -20,35 +21,8 @@ static HWND gsMainWnd = NULL;
 static HWND gsStaus = NULL;
 static HWND gsListCtrl = NULL;
 static HWND gsDescEdit = NULL;
-static HANDLE gsNotifyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 static HANDLE gsScanThread = NULL;
-static vector<LogServDesc> gsLogServSet;
 static RLocker gsLocker;
-static int gsCurSel = -1;
-static mstring gsCfgDbPath;
-
-static void _OnLogServDesc(const LpServDesc &desc) {
-    AutoLocker locker(&gsLocker);
-    int i = 0;
-    for (i = 0 ; i < (int)gsLogServSet.size() ; i++)
-    {
-        LogServDesc &cache = gsLogServSet[i];
-        if (em_log_serv_remote == cache.mLogServType && desc.mIpSet == desc.mIpSet)
-        {
-            cache.mRemoteServDesc = desc;
-            PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
-            return;
-        }
-    }
-
-    LogServDesc newDesc;
-    newDesc.mLogServType = em_log_serv_remote;
-    newDesc.mRemoteServDesc = desc;
-    newDesc.mUnique = desc.mUnique;
-    gsLogServSet.push_back(newDesc);
-    PostMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
-    PostMessageW(gsListCtrl, LVM_REDRAWITEMS, i, i + 1);
-}
 
 static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
 {
@@ -56,15 +30,15 @@ static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
     int sub = plvdi->item.iSubItem;
 
     AutoLocker locker(&gsLocker);
-    if (itm >= (int)gsLogServSet.size())
+    if (itm >= (int)CLogServMgr::GetInst()->GetServCount())
     {
         return;
     }
 
     static wstring sContent;
     sContent.clear();
-    const LogServDesc &desc = gsLogServSet[itm];
-    bool localServ = (desc.mLogServType == em_log_serv_local);
+    const LogServDesc *desc = CLogServMgr::GetInst()->GetServDesc(itm);
+    bool localServ = (desc->mLogServType == em_log_serv_local);
     list<string>::const_iterator it;
     switch (sub) {
         //序号
@@ -78,21 +52,21 @@ static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
                 sContent = L"本地服务";
             }
             else {
-                sContent = FormatW(L"%hs", desc.mRemoteServDesc.mIpSet.begin()->c_str());
+                sContent = FormatW(L"%hs", desc->mRemoteServDesc.mIpSet.begin()->c_str());
             }
             break;
         //启动时间
         case 2:
             if (localServ)
             {
-                sContent = AtoW(desc.mLocalServDesc.mStartTime);
+                sContent = AtoW(desc->mLocalServDesc.mStartTime);
             } else {
-                sContent = AtoW(desc.mRemoteServDesc.mStartTime);
+                sContent = AtoW(desc->mRemoteServDesc.mStartTime);
             }
             break;
         //连接状态
         case 3:
-            if (desc.mConnectStat == em_log_serv_connected)
+            if (desc->mConnectStat == em_log_serv_connected)
             {
                 sContent = L"已连接";
             } else {
@@ -103,49 +77,6 @@ static void _OnGetListCtrlDisplsy(NMLVDISPINFOW* plvdi)
             break;
     }
     plvdi->item.pszText = (LPWSTR)sContent.c_str();
-}
-
-static void OnGroupRecv(const string &recvStr, string &respStr) {
-    Value content;
-    Reader().parse(recvStr, content);
-
-    if (content.type() != objectValue || content["cmd"].type() != stringValue)
-    {
-        return;
-    }
-
-    string cmd = content["cmd"].asString();
-    if (cmd == GROUT_MSG_DESC)
-    {
-        LpServDesc desc;
-        CLogProtocol::GetInst()->DecodeDesc(recvStr, desc);
-        _OnLogServDesc(desc);
-    }
-}
-
-static DWORD WINAPI _ScanThread(LPVOID param) {
-    static CGroupSender *sSender = NULL;
-    static string sScanStr;
-
-    if (NULL == sSender)
-    {
-        sSender = new CGroupSender();
-        sSender->Init(OnGroupRecv);
-        sSender->Bind(GROUP_ADDR, GROUP_PORT);
-        sScanStr = "{\"cmd\":\"scan\"}";
-    }
-
-    while (true) {
-        WaitForSingleObject(gsNotifyEvent, INFINITE);
-
-        int count = 1;
-        while (count-- > 0) {
-            sSender->Send(sScanStr);
-
-            Sleep(500);
-        }
-    }
-    return 0;
 }
 
 static void _InitListCtrl() {
@@ -171,102 +102,6 @@ static void _InitListCtrl() {
     SendMessageA(gsListCtrl, LVM_INSERTCOLUMNA, 3, (LPARAM)&col);
 }
 
-static void _InitCache() {
-    SqliteOperator opt(gsCfgDbPath);
-    srand(GetTickCount());
-    string unique = FormatA(
-        "%02x%02x%02x%02x",
-        rand() % 0xff,
-        rand() % 0xff,
-        rand() % 0xff,
-        rand() % 0xff
-        );
-
-    LocalServDesc localServ;
-    localServ.mUnique = unique;
-    mstring sql = FormatA(
-        "INSERT INTO tSessionDesc (servUnique, type, system, ipSet, pathSet, time)VALUES('%hs', %d, '%hs', '本地服务', '', '%hs')",
-        unique.c_str(),
-        em_log_serv_local,
-        localServ.mSystem.c_str(),
-        localServ.mStartTime.c_str()
-        );
-    opt.Insert(sql);
-
-    LogServDesc tmp;
-    tmp.mUnique = localServ.mUnique;
-    tmp.mLogServType = em_log_serv_local;
-    tmp.mConnectStat = em_log_serv_disconnected;
-    tmp.mLocalServDesc = localServ;
-    gsLogServSet.push_back(tmp);
-}
-
-static void _LoadCacheFromDb() {
-    SqliteOperator opt(gsCfgDbPath);
-    SqliteResult &result = opt.Select("select * from tSessionDesc");
-
-    for (SqliteIterator it = result.begin() ; it != result.end() ; ++it)
-    {
-        LogServDesc tmp;
-        tmp.mLogServType = (LogServType)atoi(it.GetValue("type").c_str());
-
-        string pathSet;
-        list<string> strSet;
-        if (em_log_serv_local == tmp.mLogServType)
-        {
-            LocalServDesc tmp1;
-            tmp1.mUnique = it.GetValue("servUnique");
-            tmp1.mSystem = it.GetValue("system");
-            pathSet = it.GetValue("pathSet");
-            list<mstring> ss = SplitStrA(pathSet, ";");
-
-            for (list<mstring>::const_iterator it = ss.begin() ; it != ss.end() ; it++) 
-            {
-                tmp1.mPathSet.push_back(*it);
-            }
-            tmp.mLocalServDesc = tmp1;
-            tmp.mUnique = tmp1.mUnique;
-        } else if (em_log_serv_remote == tmp.mLogServType)
-        {
-            RemoteServDesc tmp2;
-            tmp2.mUnique = it.GetValue("servUnique");
-            tmp2.mSystem = it.GetValue("system");
-            pathSet = it.GetValue("pathSet");
-            list<mstring> ss = SplitStrA(pathSet, ";");
-
-            for (list<mstring>::const_iterator it = ss.begin() ; it != ss.end() ; it++)
-            {
-                tmp2.mPathSet.push_back(*it);
-            }
-            tmp.mRemoteServDesc = tmp2;
-            tmp.mUnique = tmp2.mUnique;
-        }
-        gsLogServSet.push_back(tmp);
-    }
-}
-
-static void _InitConfig() {
-    extern mstring gCfgPath;
-
-    if (gsCfgDbPath.empty())
-    {
-        gsCfgDbPath = gCfgPath;
-        gsCfgDbPath += "\\config.db";
-    }
-
-    SqliteOperator opt(gsCfgDbPath);
-    opt.Exec("create table if not exists tSessionDesc (id INTEGER PRIMARY KEY, servUnique CHAR(32), type INTEGER, system TEXT, ipSet TEXT, pathSet TEXT, time CHAR(32))");
-    SqliteResult &result = opt.Select("select count(*) from tSessionDesc");
-
-    int count = atoi(result.begin().GetValue("count(*)").c_str());
-    opt.Close();
-    if (0 == count) {
-        _InitCache();
-    } else {
-       _LoadCacheFromDb();
-    }
-}
-
 static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gsStaus = GetDlgItem(hdlg, IDC_SERV_STATUS);
@@ -279,24 +114,10 @@ static void _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     _InitListCtrl();
     CentreWindow(hdlg, GetParent(hdlg));
 
-    if (gsCfgDbPath.empty())
-    {
-        _InitConfig();
-    }
-
-    if (!gsLogServSet.empty())
-    {
-        SendMessageW(gsListCtrl, LVM_SETITEMCOUNT, gsLogServSet.size(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
-    }
-
+    SendMessageW(gsListCtrl, LVM_SETITEMCOUNT, CLogServMgr::GetInst()->GetServCount(), LVSICF_NOSCROLL | LVSICF_NOINVALIDATEALL);
     int c = ListView_GetItemCount(gsListCtrl);
     ListView_SetItemState(gsListCtrl, 0, LVIS_SELECTED, LVIS_SELECTED);
-
-    if (!gsScanThread) 
-    {
-        gsScanThread = CreateThread(NULL, 0, _ScanThread, NULL, 0, NULL);
-    }
-    SetEvent(gsNotifyEvent);
+    CLogServMgr::GetInst()->Refush();
 }
 
 static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
@@ -308,7 +129,7 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
 
     if (id == IDC_SERV_REFUSH)
     {
-        SetEvent(gsNotifyEvent);
+        CLogServMgr::GetInst()->Refush();
     }
 
     if (id == IDC_SERV_SELECT)
@@ -322,7 +143,7 @@ static void _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         }
 
         AutoLocker locker(&gsLocker);
-        const LogServDesc &desc = gsLogServSet[sel];
+        const LogServDesc *desc = CLogServMgr::GetInst()->GetServDesc(sel);
 
         if (CLogReceiver::GetInst()->Run(desc))
         {
@@ -394,9 +215,9 @@ static void _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp)
         {
             AutoLocker locker(&gsLocker);
             NMLISTVIEW *viewer = (NMLISTVIEW *)lp;
-            if (viewer->iItem >= 0 && viewer->iItem < (int)gsLogServSet.size())
+            if (viewer->iItem >= 0 && viewer->iItem < (int)CLogServMgr::GetInst()->GetServCount())
             {
-                LogServDesc desc = gsLogServSet[viewer->iItem];
+                LogServDesc desc = *CLogServMgr::GetInst()->GetServDesc(viewer->iItem);
                 mstring str = _GetLogServDesc(desc);
                 SetWindowTextA(gsDescEdit, str.c_str());
             }

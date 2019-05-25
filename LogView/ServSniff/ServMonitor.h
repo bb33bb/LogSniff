@@ -7,8 +7,11 @@
 
 class CServMonitor : public MonitorBase, public ClientEvent {
 public:
+    CServMonitor();
+    virtual ~CServMonitor();
+
     virtual bool Init(CMonitorEvent *listener);
-    virtual bool Run(const LogServDesc &servDesc);
+    virtual bool Run(const LogServDesc *servDesc);
     virtual bool IsRunning();
     virtual bool Stop();
     virtual std::list<std::mstring> GetPathSet() const;
@@ -21,7 +24,7 @@ private:
 
 private:
     CTcpClient mTcpClient;
-    LogServDesc mCfg;
+    const LogServDesc *mCfg;
     CMonitorEvent *mListener;
     std::list<std::mstring> mPathSet;
     std::mstring mLogCache;

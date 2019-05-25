@@ -323,7 +323,7 @@ BOOL EnumFiles(const mstring &dir, BOOL recursion, pfnFileHandler handler, void 
         curDir = *dirSet.begin();
         dirSet.pop_front();
 
-        lstrcpyA(findStr, dir.c_str());
+        lstrcpyA(findStr, curDir.c_str());
         PathAppendA(findStr, "*");
 
         WIN32_FIND_DATAA findData;
@@ -341,7 +341,7 @@ BOOL EnumFiles(const mstring &dir, BOOL recursion, pfnFileHandler handler, void 
             }
 
             char fileName[MAX_PATH];
-            lstrcpyA(fileName, dir.c_str());
+            lstrcpyA(fileName, curDir.c_str());
             PathAppendA(fileName, findData.cFileName);
 
             if (INVALID_FILE_ATTRIBUTES == findData.dwFileAttributes)

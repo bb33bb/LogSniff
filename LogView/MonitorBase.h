@@ -66,6 +66,7 @@ struct LogServDesc {
         mUnique = local.mUnique;
         mLocalServDesc = local;
         mSystem = local.mSystem;
+        mPathSet = local.mPathSet;
         return true;
     }
 
@@ -74,6 +75,11 @@ struct LogServDesc {
         mUnique = remote.mUnique;
         mRemoteServDesc = remote;
         mSystem = remote.mSystem;
+
+        for (list<string>::const_iterator it = remote.mPathSet.begin() ; it != remote.mPathSet.end() ; it++)
+        {
+            mPathSet.push_back(*it);
+        }
         return true;
     }
 
@@ -83,16 +89,28 @@ struct LogServDesc {
             return false;
         }
 
+        mPathSet.push_back(path);
         return true;
     }
 
     bool DelPath(const mstring &path) {
-        if (IsPathInCache(path))
+        if (!IsPathInCache(path))
         {
             return false;
         }
 
-        return true;
+        mstring low(path);
+        low.makelower();
+
+        for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
+        {
+            if (*it == low)
+            {
+                mPathSet.erase(it);
+                return true;
+            }
+        }
+        return false;
     }
 
     bool IsPathInCache(const mstring &path) {
@@ -118,7 +136,7 @@ public:
 class MonitorBase {
 public:
     virtual bool Init(CMonitorEvent *listener) = 0;
-    virtual bool Run(const LogServDesc &servDesc) = 0;
+    virtual bool Run(const LogServDesc *servDesc) = 0;
     virtual bool Stop() = 0;
     virtual bool IsRunning() = 0;
     virtual std::list<std::mstring> GetPathSet() const = 0;

@@ -21,8 +21,12 @@ public:
     void UnRegister(HLogIndex h);
     void SetCurServ(LogServDesc *serv);
     const LogServDesc *GetCurServ();
-    bool AddPath(LogServDesc *serv, const std::mstring &path);
-    bool DelPath(LogServDesc *serv, const std::mstring &path);
+    bool AddPath(const std::mstring &path);
+    bool DelPath(const std::mstring &path);
+
+    bool AddSpecServPath(LogServDesc *serv, const std::mstring &path);
+    bool DelSpecServPath(LogServDesc *serv, const std::mstring &path);
+
     size_t GetServCount();
     const LogServDesc *GetServDesc(size_t index);
     void Refush();

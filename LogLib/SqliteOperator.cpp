@@ -1,4 +1,5 @@
 #include "SqliteOperator.h"
+#include "StrUtil.h"
 
 using namespace std;
 
@@ -104,7 +105,7 @@ int SqliteOperator::SelectCallback(void *data, int argc, char **argv, char **nam
     newData->mNext = NULL;
     for (int i = 0 ; i < argc ; i++)
     {
-        newData->mCurData.insert(make_pair(name[i], argv[i]));
+        newData->mCurData.insert(make_pair(ptr->DecodeStr(name[i]), ptr->DecodeStr(argv[i])));
     }
 
     if (!ptr->mCacheSet.empty())
@@ -176,4 +177,30 @@ bool SqliteOperator::TransBegin() {
 
 bool SqliteOperator::TransSubmit() {
     return true;
+}
+
+mstring SqliteOperator::EncodeStr(const std::mstring &str) {
+    mstring result = str;
+    result.repsub("/", "//");
+    result.repsub("'", "''");
+    result.repsub("[", "/[");
+    result.repsub("]", "/]");
+    result.repsub("%", "/%");
+    result.repsub("&","/&");
+    result.repsub("_", "/_");
+    result.repsub("(", "/(");
+    return AtoU(result);
+}
+
+mstring SqliteOperator::DecodeStr(const std::mstring &str) {
+    mstring result = UtoA(str);
+    result.repsub("//", "/");
+    result.repsub("''", "'");
+    result.repsub("/[", "[");
+    result.repsub("/]", "]");
+    result.repsub("/%", "%");
+    result.repsub("/&", "&");
+    result.repsub("/_", "_");
+    result.repsub("/(", "(");
+    return result;
 }

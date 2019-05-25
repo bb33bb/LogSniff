@@ -6,6 +6,7 @@
 #include "LocalSniff/LocalMonitor.h"
 #include "ServSniff/ServMonitor.h"
 #include "MainView.h"
+#include "LogServMgr.h"
 
 using namespace std;
 
@@ -19,6 +20,11 @@ CLogReceiver *CLogReceiver::GetInst() {
     return sPtr;
 }
 
+void CLogReceiver::InitReceiver() {
+    CLocalMonitor::GetInst()->Init(this);
+    CLogServMgr::GetInst()->Register(this);
+}
+
 CLogReceiver::CLogReceiver() {
     mInit = false;
     mCurMonitor = NULL;
@@ -27,8 +33,8 @@ CLogReceiver::CLogReceiver() {
 CLogReceiver::~CLogReceiver() {
 }
 
-bool CLogReceiver::Run(const LogServDesc &cfg) {
-    if (cfg.mUnique == mCfg.mUnique)
+bool CLogReceiver::Run(const LogServDesc *cfg) {
+    if (cfg == mCfg)
     {
         if (mCurMonitor)
         {
@@ -40,7 +46,7 @@ bool CLogReceiver::Run(const LogServDesc &cfg) {
             mCurMonitor->Stop();
         }
 
-        if (em_log_serv_local == cfg.mLogServType)
+        if (em_log_serv_local == cfg->mLogServType)
         {
             mCurMonitor = CLocalMonitor::GetInst();
         } else {
@@ -67,7 +73,7 @@ void CLogReceiver::Stop() {
     {
         mCurMonitor->Stop();
 
-        if (mCfg.mLogServType == em_log_serv_remote)
+        if (mCfg->mLogServType == em_log_serv_remote)
         {
             delete mCurMonitor;
         }
@@ -104,4 +110,15 @@ void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
 void CLogReceiver::OnLogReceived(const mstring &filePath, const mstring &content) {
     dp("filePath:%hs, content:%hs", filePath.c_str(), content.c_str());
     PushLog(filePath, content);
+}
+
+void CLogReceiver::OnLogServAdd(const LogServDesc *d) {
+}
+
+void CLogReceiver::OnLogServSwitch(const LogServDesc *d1, const LogServDesc *d2) {
+    Run(d2);
+}
+
+void CLogReceiver::OnLogServAlter(const LogServDesc *d) {
+    Run(d);
 }
