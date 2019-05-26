@@ -194,6 +194,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\TextDecoder.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\tpool.cpp"
 				>
 			</File>
@@ -261,6 +265,10 @@
 			</File>
 			<File
 				RelativePath=".\tcpserv.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TextDecoder.h"
 				>
 			</File>
 			<File
