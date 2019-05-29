@@ -110,6 +110,10 @@ DWORD CWinFileNotify::LogChangeNotifyThread(LPVOID param) {
                 if (h)
                 {
                     GetFileTime(h, &t1, NULL, &t2);
+
+                    DWORD s1 = 0;
+                    DWORD s2 = GetFileSize(h, &s1);
+                    ULONGLONG fileSize = (((ULONGLONG)s1 << 32) | (ULONGLONG)s2);
                     CloseHandle(h);
 
                     bool notify = false;
@@ -119,6 +123,10 @@ DWORD CWinFileNotify::LogChangeNotifyThread(LPVOID param) {
                         ptr->mNewFile = false;
                     } else if (0 != memcmp(&t2, &ptr->mLastWriteTime, sizeof(FILETIME))) {
                         memcpy(&ptr->mLastWriteTime, &t2, sizeof(FILETIME));
+                        notify = true;
+                    } else if (fileSize > ptr->mLastSize)
+                    {
+                        ptr->mLastSize = fileSize;
                         notify = true;
                     }
 
@@ -279,7 +287,8 @@ CWinFileNotify::FileCacheData *CWinFileNotify::GetFileCacheData(const string &fi
     }
 
     DWORD high = 0;
-    cache->mLastSize = GetFileSize(h, &high);
+    DWORD low = GetFileSize(h, &high);
+    cache->mLastSize = (((ULONGLONG)high << 32) | (ULONGLONG)low);
     GetFileTime(h, &cache->mCreateTime, NULL, &cache->mLastWriteTime);
     CloseHandle(h);
     return cache;

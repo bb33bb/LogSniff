@@ -7,6 +7,7 @@
 #include <LogLib/StrUtil.h>
 #include "SyntaxHlpr/SyntaxView.h"
 #include <CommCtrl.h>
+#include <Shlwapi.h>
 #include "LogServView.h"
 #include "LogSyntaxView.h"
 
@@ -29,6 +30,8 @@ static string gsLogContentCache;
 
 void PushLogContent(const LogInfoCache *cache) {
     AutoLocker locker(gsLogLocker);
+    gsLogContentCache += PathFindFileNameA(cache->mFilePath.c_str());
+    gsLogContentCache += " ";
     gsLogContentCache += cache->mContent;
     gsLogContentCache += "\n";
 }
