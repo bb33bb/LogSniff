@@ -163,10 +163,16 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
         return;
     }
 
+    mstring lineEnd = "\n";
+    if (cache->mEncodeType == em_text_unicode_le)
+    {
+        lineEnd.assign((const char *)L"\n", 2);
+    }
+
     size_t curPos = 0;
     size_t lastPos = 0;
     while (true) {
-        curPos = cache->mLastCache.find("\n", lastPos);
+        curPos = cache->mLastCache.find(lineEnd, lastPos);
         if (string::npos == curPos) {
             break;
         }
@@ -189,12 +195,7 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
             }
         }
 
-        if (cache->mEncodeType == em_text_unicode_le)
-        {
-            lastPos = curPos + 2;
-        } else {
-            lastPos = curPos + 1;
-        }
+        lastPos = curPos + lineEnd.size();
     }
 
     if (lastPos > 0)
