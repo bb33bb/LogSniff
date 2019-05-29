@@ -65,7 +65,7 @@ void CLogSyntaxView::LogParser(
     )
 {
     CLogSyntaxView *pThis = (CLogSyntaxView *)param;
-    dp("start:%d, length:%d, str:%hs", startPos, length, ptr);
+    //dp("start:%d, length:%d, str:%hs", startPos, length, ptr);
 
     if (!pThis->mKeywordStr.empty())
     {

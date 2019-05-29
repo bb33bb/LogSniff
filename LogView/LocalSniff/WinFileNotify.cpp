@@ -1,5 +1,8 @@
 #include "WinFileNoitfy.h"
 #include <LogLib/StrUtil.h>
+#include <LogLib/LogUtil.h>
+#include <LogLib/crc32.h>
+#include "../MonitorBase.h"
 
 using namespace std;
 
@@ -44,12 +47,14 @@ bool CWinFileNotify::IsPathInCache(const std::string &filePath) const {
     return false;
 }
 
-void CWinFileNotify::run() {
+DWORD CWinFileNotify::LogCreateNotifyThread(LPVOID param) {
+    CWinFileNotify *pThis = (CWinFileNotify *)param;
+
     while (true) {
         DWORD dwBytesTransferred = 0;
         ULONG_PTR key = 0;
         LPOVERLAPPED lpOl = NULL;
-        BOOL result = GetQueuedCompletionStatus(mIocp, &dwBytesTransferred, &key, &lpOl, 1023);
+        BOOL result = GetQueuedCompletionStatus(pThis->mIocp, &dwBytesTransferred, &key, &lpOl, 1023);
 
         if (lpOl && key == gsDefaultCompleteKey)
         {
@@ -59,21 +64,82 @@ void CWinFileNotify::run() {
             {
                 PFILE_NOTIFY_INFORMATION pFni = &pIoData->mNotify;
 
+                dp("@@@@@@@@@@@@@@@11111111111111111");
                 while (true) {
-                    OnFileEvent(pIoData->mDirPath + "\\" + WtoA(wstring(pFni->FileName, pFni->FileNameLength / sizeof(WCHAR))), pFni->Action, pIoData);
+                    string filePath = pIoData->mDirPath + "\\" + WtoA(wstring(pFni->FileName, pFni->FileNameLength / sizeof(WCHAR)));
+
+                    GetInst()->OnFileNotify(filePath, true);
+                    int size = 0;
+                    FILE *fp = fopen(filePath.c_str(), "rb");
+                    if (fp)
+                    {
+                        fseek(fp, 0, SEEK_END);
+                        size = ftell(fp);
+                        fclose(fp);
+                    }
+                    dp("test:%hs, size:%d", filePath.c_str(), size);
 
                     if (pFni->NextEntryOffset)
                     {
-                        (DWORD_PTR &)pFni = (DWORD_PTR)pFni + pFni->NextEntryOffset;
+                        (DWORD_PTR &)pFni = (DWORD_PTR)((const char *)pFni + pFni->NextEntryOffset);
                     } else {
                         break;
                     }
                 }
+                dp("@@@@@@@@@@@@@@@22222222222222222");
             }
-            PostRequest(pIoData);
+            pThis->PostRequest(pIoData);
         }
     }
-    CloseHandle(mIocp);
+    CloseHandle(pThis->mIocp);
+}
+
+DWORD CWinFileNotify::LogChangeNotifyThread(LPVOID param) {
+    CWinFileNotify *pThis = (CWinFileNotify *)param;
+
+    while (true) {
+        {
+            AutoLocker locker(pThis);
+            for (map<ULONG, FileCacheData *>::iterator it = pThis->mFileCache.begin() ; it != pThis->mFileCache.end() ; it++)
+            {
+                FileCacheData *ptr = it->second;
+
+                FILETIME t1 = {0}, t2 = {0};
+                HANDLE h = CreateFileA(ptr->mFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+                if (h)
+                {
+                    GetFileTime(h, &t1, NULL, &t2);
+                    CloseHandle(h);
+
+                    bool notify = false;
+                    if (true == ptr->mNewFile)
+                    {
+                        notify = true;
+                        ptr->mNewFile = false;
+                    } else if (0 != memcmp(&t2, &ptr->mLastWriteTime, sizeof(FILETIME))) {
+                        memcpy(&ptr->mLastWriteTime, &t2, sizeof(FILETIME));
+                        notify = true;
+                    }
+
+                    if (notify)
+                    {
+                        for (list<IoInfo *>::const_iterator it = pThis->mIoSet.begin() ; it != pThis->mIoSet.end() ; it++)
+                        {
+                            IoInfo *pInfo = *it;
+                            if (ptr->mFilePath.startwith(pInfo->mDirPath.c_str()))
+                            {
+                                pInfo->pfnFileNotify(ptr->mFilePath.c_str(), -1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Sleep(1000);
+    }
+    return 0;
 }
 
 void CWinFileNotify::InitNotify() {
@@ -84,14 +150,14 @@ void CWinFileNotify::InitNotify() {
 
     mInit = true;
     mIocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-    mThread.StartThread(this, false);
+    CloseHandle(CreateThread(NULL, 0, LogCreateNotifyThread, this, 0, NULL));
+    CloseHandle(CreateThread(NULL, 0, LogChangeNotifyThread, this, 0, NULL));
 }
 
 void CWinFileNotify::PostRequest(IoInfo *info) const {
     const DWORD sDirChangeMask = 
         FILE_NOTIFY_CHANGE_FILE_NAME |
         FILE_NOTIFY_CHANGE_DIR_NAME |
-        FILE_NOTIFY_CHANGE_LAST_WRITE |
         FILE_NOTIFY_CHANGE_CREATION;
 
     ReadDirectoryChangesW(
@@ -106,7 +172,39 @@ void CWinFileNotify::PostRequest(IoInfo *info) const {
         );
 }
 
-HFileNotify CWinFileNotify::Register(const std::string &filePath, unsigned int mask, pfnWinFileNotify pfn, bool withSub) {
+bool CWinFileNotify::LogEnumHandler(bool isDir, LPCSTR filePath, void *param) {
+    if (isDir)
+    {
+        return true;
+    }
+
+    if (MonitorBase::IsLogFile(filePath))
+    {
+        GetInst()->OnFileNotify(filePath, false);
+    }
+    return true;
+}
+
+void CWinFileNotify::LoadLogFiles(const std::string &filePath) {
+    DWORD attr = GetFileAttributesA(filePath.c_str());
+
+    if (INVALID_FILE_ATTRIBUTES == attr)
+    {
+        return;
+    }
+
+    if (attr & FILE_ATTRIBUTE_DIRECTORY)
+    {
+        EnumFiles(filePath, TRUE, LogEnumHandler, NULL);
+    } else {
+        if (MonitorBase::IsLogFile(filePath))
+        {
+            OnFileNotify(filePath);
+        }
+    }
+}
+
+HFileNotify CWinFileNotify::Register(const std::string &filePath, const std::string &ext, unsigned int mask, pfnWinFileNotify pfn, bool withSub) {
     static DWORD sMagic = 0xff11;
 
     if (IsPathInCache(filePath))
@@ -129,6 +227,8 @@ HFileNotify CWinFileNotify::Register(const std::string &filePath, unsigned int m
 
     if (INVALID_HANDLE_VALUE != newInfo->mhDir)
     {
+        EnumFiles(filePath, TRUE, LogEnumHandler, NULL);
+
         newInfo->mIocp = CreateIoCompletionPort(newInfo->mhDir, mIocp, gsDefaultCompleteKey, 0);
         PostRequest(newInfo);
         mIoSet.push_back(newInfo);
@@ -158,6 +258,43 @@ void CWinFileNotify::CloseAll() {
         Close(*it);
     }
     mIoSet.clear();
+}
+
+ULONG CWinFileNotify::GetFilePathCrc32(const string &filePath) const {
+    mstring str = filePath;
+    str.makelower();
+
+    return crc32(str.c_str(), str.size(), 0xff11);
+}
+
+CWinFileNotify::FileCacheData *CWinFileNotify::GetFileCacheData(const string &filePath) const {
+    FileCacheData *cache = new FileCacheData();
+    cache->mCRC32 = GetFilePathCrc32(filePath);
+    cache->mFilePath = filePath;
+
+    HANDLE h = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    if (!h)
+    {
+        return cache;
+    }
+
+    DWORD high = 0;
+    cache->mLastSize = GetFileSize(h, &high);
+    GetFileTime(h, &cache->mCreateTime, NULL, &cache->mLastWriteTime);
+    CloseHandle(h);
+    return cache;
+}
+
+void CWinFileNotify::OnFileNotify(const std::string &filePath, bool newFile) {
+    ULONG dd = GetFilePathCrc32(filePath);
+    AutoLocker locker(this);
+
+    if (mFileCache.end() == mFileCache.find(dd))
+    {
+        FileCacheData *cache = GetFileCacheData(filePath);
+        cache->mNewFile = newFile;
+        mFileCache[cache->mCRC32] = cache;
+    }
 }
 
 void CWinFileNotify::UnRegister(HFileNotify h) {

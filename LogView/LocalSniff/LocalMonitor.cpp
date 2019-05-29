@@ -3,6 +3,7 @@
 #include "WinFileNoitfy.h"
 #include "../LogReceiver.h"
 #include <LogLib/LogUtil.h>
+#include <LogLib/StrUtil.h>
 
 using namespace std;
 
@@ -107,9 +108,11 @@ bool CLocalMonitor::AddPath(const mstring &path) {
         return false;
     }
 
+    DWORD t1 = GetTickCount();
     EnumFiles(path, true, FileEnumProc, 0);
+    DWORD t2 = GetTickCount() - t1;
 
-    HFileNotify h = CWinFileNotify::GetInst()->Register(path, -1, FileNotify);
+    HFileNotify h = CWinFileNotify::GetInst()->Register(path, "log;txt",-1, FileNotify);
     mstring low = path;
     low.makelower();
     mPathSet[low] = h;
@@ -170,13 +173,28 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
 
         if (curPos > lastPos)
         {
-            string lineStr = cache->mLastCache.substr(lastPos, curPos - lastPos);
+            string lineStr = cache->mLastCache.substr(lastPos, curPos - lastPos );
             if (!lineStr.empty())
             {
+                if (cache->mEncodeType == em_text_unicode_le)
+                {
+                    ustring wstr((const wchar_t *)lineStr.c_str(), lineStr.size() / 2);
+                    lineStr = WtoA(wstr);
+                } else if (cache->mEncodeType == em_text_utf8)
+                {
+                    lineStr = UtoA(lineStr);
+                }
+
                 mListener->OnLogReceived(cache->mFilePath, lineStr);
             }
         }
-        lastPos = curPos + 1;
+
+        if (cache->mEncodeType == em_text_unicode_le)
+        {
+            lastPos = curPos + 2;
+        } else {
+            lastPos = curPos + 1;
+        }
     }
 
     if (lastPos > 0)
@@ -192,7 +210,7 @@ bool CLocalMonitor::IsFileInCache(const mstring &filePath) const {
 }
 
 bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) {
-     if (isDir)
+    if (isDir)
     {
         return true;
     }
@@ -212,6 +230,9 @@ bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) 
             newCache->mFileSize = size;
             fclose(fp);
         }
+
+        int bomLen = 0;
+        newCache->mEncodeType = GetInst()->GetFileEncodeType(filePath);
         GetInst()->mLogCache[newCache->mFilePath] = newCache;
     }
     return true;
@@ -233,23 +254,96 @@ void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
    }
    fseek(fp, 0, SEEK_END);
    int size = ftell(fp);
+   fclose(fp);
+   dp("##################################filePath:%hs, fileSize:%d", filePath, size);
 
    if (0 == size)
    {
        int dd = 1234;
    }
 
+   long lastPos = cache->mLastPos;
    if (cache->mFileSize < (DWORD)size)
    {
-       fseek(fp, cache->mLastPos, SEEK_SET);
-       char buffer[1024];
-       int count = 0;
-       while ((count = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-            cache->mLastCache.append(buffer, count);
-       }
+       cache->mLastCache += GetInst()->GetFileContent(filePath, lastPos);
+
        cache->mLastPos = size;
        cache->mFileSize = size;
    }
-   fclose(fp);
+
+   if (cache->mEncodeType == em_text_unknown || cache->mEncodeType == em_text_no_unicode)
+   {
+       cache->mEncodeType = GetInst()->GetFileEncodeType(filePath, lastPos);
+   }
    GetInst()->OnLogReceived(cache);
+}
+
+TextEncodeType CLocalMonitor::GetFileEncodeType(const mstring &filePath, long lastPos) const {
+    TextEncodeType type = em_text_unknown;
+
+    int bomLen = 0;
+    type = CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
+
+    if (0 != bomLen)
+    {
+        return type;
+    }
+
+    //从文件内容分析
+    mstring content;
+    FILE *fp = fopen(filePath.c_str(), "rb");
+    if (!fp)
+    {
+        return type;
+    }
+
+    int readCount = 0;
+    char buffer[1024];
+    fseek(fp, 0, SEEK_SET);
+
+    while (true) {
+        readCount = fread(buffer, 1, 1024, fp);
+
+        if (readCount <= 0)
+        {
+            break;
+        }
+        content.append(buffer, readCount);
+    }
+    fclose(fp);
+
+    type = CTextDecoder::GetInst()->GetTextType(content);
+    return type;
+}
+
+mstring CLocalMonitor::GetFileContent(const mstring &filePath, long lastPos) {
+    if (0 == lastPos)
+    {
+        int bomLen = 0;
+        CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
+        lastPos += bomLen;
+    }
+
+    mstring result;
+    FILE *fp = fopen(filePath.c_str(), "rb");
+    if (!fp)
+    {
+        return result;
+    }
+
+    fseek(fp, lastPos, SEEK_SET);
+    char buffer[1024];
+    int count = 0;
+
+    while (true) {
+        count = fread(buffer, 1, 1024, fp);
+
+        if (count <= 0)
+        {
+            break;
+        }
+        result.append(buffer, count);
+    }
+    fclose(fp);
+    return result;
 }

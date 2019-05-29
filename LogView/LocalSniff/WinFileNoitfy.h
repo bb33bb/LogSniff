@@ -6,6 +6,7 @@
 #include <list>
 #include <LogLib/thread.h>
 #include <LogLib/locker.h>
+#include <LogLib/mstring.h>
 
 #define FD_NOTIFY_MODIFIED      (1 << 0)
 #define FD_NOTIFY_CREATE        (1 << 2)
@@ -32,7 +33,7 @@ struct FileNotifyRegister {
     }
 };
 
-class CWinFileNotify : public ThreadRunable, public RLocker {
+class CWinFileNotify : public RLocker {
     struct IoInfo {
         HANDLE mIocp;
         std::string mDirPath;
@@ -56,26 +57,48 @@ class CWinFileNotify : public ThreadRunable, public RLocker {
             pfnFileNotify = NULL;
         }
     };
+
+    struct FileCacheData {
+        ULONG mCRC32;
+        std::mstring mFilePath;
+        FILETIME mCreateTime;
+        FILETIME mLastWriteTime;
+        ULONGLONG mLastSize;
+        bool mNewFile;
+
+        FileCacheData() {
+            mCRC32 = 0, mLastSize = 0;
+            memset(&mCreateTime, 0x00, sizeof(FILETIME));
+            memset(&mLastWriteTime, 0x00, sizeof(FILETIME));
+            mNewFile = false;
+        }
+    };
 public:
     static CWinFileNotify *GetInst();
 
     void InitNotify();
-    HFileNotify Register(const std::string &filePath, unsigned int mask, pfnWinFileNotify pfn, bool withSub = true);
+    HFileNotify Register(const std::string &filePath, const std::string &ext, unsigned int mask, pfnWinFileNotify pfn, bool withSub = true);
     void UnRegister(HFileNotify h);
 
 private:
     CWinFileNotify();
     virtual ~CWinFileNotify();
-    virtual void run();
     void PostRequest(IoInfo *info) const; 
     void OnFileEvent(const std::string &filePath, DWORD action, const IoInfo *info);
     bool IsPathInCache(const std::string &filePath) const;
     void Close(const IoInfo *info) const;
     void CloseAll();
+    ULONG GetFilePathCrc32(const std::string &filePath) const;
+    void OnFileNotify(const std::string &filePath, bool newFile = false);
+    FileCacheData *GetFileCacheData(const std::string &filePath) const;
 
+    void LoadLogFiles(const std::string &dir);
+    static bool LogEnumHandler(bool isDir, LPCSTR filePath, void *param);
+    static DWORD WINAPI LogCreateNotifyThread(LPVOID param);
+    static DWORD WINAPI LogChangeNotifyThread(LPVOID param);
 private:
     std::list<IoInfo *> mIoSet;
     HANDLE mIocp;
-    CThread mThread;
     bool mInit;
+    std::map<ULONG, FileCacheData *> mFileCache;
 };

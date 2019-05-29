@@ -32,8 +32,46 @@ static void _TestFileNotify(const char *filePath, unsigned int mask) {
     int dd = 1234;
 }
 
+static void _GetFileTime(const mstring &filePath) {
+    HANDLE h = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+    FILETIME t1 = {0}, t2 = {0}, t3 = {0};
+    GetFileTime(h, &t1, &t2, &t3);
+    CloseHandle(h);
+}
+
+static bool _TestFileEnumProc(bool isDir, const char *filePath, void *param) {
+    if (isDir)
+    {
+        return true;
+    }
+
+    if (MonitorBase::IsLogFile(filePath))
+    {
+        list<mstring> *ptr = (list<mstring> *)param;
+        ptr->push_back(filePath);
+    }
+    return true;
+}
+
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
+    /*
+    list<mstring> set1;
+    EnumFiles("C:\\Windows\\dpsoft\\dpsoft", TRUE, _TestFileEnumProc, &set1);
+
+    while (true) {
+        DWORD t1 = GetTickCount();
+        for (list<mstring>::const_iterator it = set1.begin() ; it != set1.end() ; it++)
+        {
+            _GetFileTime(*it);
+        }
+        DWORD t2 = GetTickCount() - t1;
+        Sleep(2000);
+    }
+    */
+
+    const char *ptr =  (const char *)L"abbcc";
     g_hInstance = m;
     LoadLibraryA("SyntaxView.dll");
 
