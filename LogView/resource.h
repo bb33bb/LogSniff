@@ -20,7 +20,6 @@
 #define IDC_SERV_SELECT                 1006
 #define IDC_MAIN_SELECT                 1006
 #define IDC_LOGPATH_ADD                 1006
-#define IDC_LOGPATH_ADD2                1007
 #define IDC_LOGPATH_SET                 1007
 #define IDC_CK_REG                      1008
 #define IDC_CK_REGULAR                  1008
@@ -28,6 +27,7 @@
 #define IDC_SERV_STATUS                 1010
 #define IDC_EDT_DESC                    1012
 #define IDC_LOGPATH_LIST                1013
+#define IDC_EDIT1                       1014
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -54,7 +54,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1014
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -11,6 +11,7 @@
 #include "LocalSniff/LocalMonitor.h"
 #include "LocalSniff/WinFileNoitfy.h"
 #include "LogServMgr.h"
+#include "DbgMsg.h"
 
 using namespace std;
 
@@ -56,22 +57,10 @@ static bool _TestFileEnumProc(bool isDir, const char *filePath, void *param) {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    /*
-    list<mstring> set1;
-    EnumFiles("C:\\Windows\\dpsoft\\dpsoft", TRUE, _TestFileEnumProc, &set1);
+    CDbgCapturer::GetInst()->InitCapturer();
+    MessageBoxA(0, 0, 0, 0);
+    return 0;
 
-    while (true) {
-        DWORD t1 = GetTickCount();
-        for (list<mstring>::const_iterator it = set1.begin() ; it != set1.end() ; it++)
-        {
-            _GetFileTime(*it);
-        }
-        DWORD t2 = GetTickCount() - t1;
-        Sleep(2000);
-    }
-    */
-
-    const char *ptr =  (const char *)L"abbcc";
     g_hInstance = m;
     LoadLibraryA("SyntaxView.dll");
 

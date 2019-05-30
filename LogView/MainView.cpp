@@ -63,6 +63,11 @@ static void _TestFile() {
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gs_hFilter = GetDlgItem(hdlg, IDC_COM_FILTER);
+
+    RECT rt12 = {0};
+    GetWindowRect(gs_hFilter, &rt12);
+    SetWindowPos(gs_hFilter, 0, rt12.right, rt12.top, rt12.right - rt12.left, 10, SWP_NOMOVE | SWP_NOZORDER);
+
     gs_hCkRegular = GetDlgItem(hdlg, IDC_CK_REGULAR);
     SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));

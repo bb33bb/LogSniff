@@ -323,6 +323,18 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="DbgMsg"
+			>
+			<File
+				RelativePath=".\DbgMsg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\DbgMsg.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

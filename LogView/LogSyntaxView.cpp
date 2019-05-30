@@ -29,7 +29,8 @@ void CLogSyntaxView::initLogView() {
     ShowMargin(true);
     SetCaretColour(RGB(255, 255, 255));
 
-    SetFont("Lucida Console");
+    //SetFont("Lucida Console");
+    SetFont("ËÎÌו");
     SetCaretSize(1);
 
     SendMsg(SCI_STYLESETSIZE, STYLE_DEFAULT, 10);
@@ -44,7 +45,7 @@ void CLogSyntaxView::initLogView() {
     SetStyle(STAT_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
     SendMsg(SCI_SETMARGINTYPEN, 0, SC_MARGIN_NUMBER);
-    int w = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)"_99999");
+    int w = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)"_999");
     SendMsg(SCI_SETMARGINWIDTHN, 0, w);
     SendMsg(SCI_SETMARGINWIDTHN, 1, 0);
     SendMsg(SCI_SETMARGINCURSORN, 0, SC_CURSORARROW);
