@@ -8,6 +8,7 @@
 #define IDI_MAIN                        104
 #define IDR_MENU_MAIN                   105
 #define IDD_MON_PATH                    106
+#define IDD_SERV_TREE                   107
 #define IDC_BUTTON2                     1003
 #define IDC_SERV_REFUSH                 1003
 #define IDC_LOGPATH_DELETE              1003
@@ -20,6 +21,7 @@
 #define IDC_SERV_SELECT                 1006
 #define IDC_MAIN_SELECT                 1006
 #define IDC_LOGPATH_ADD                 1006
+#define IDC_BTN_REFUSH                  1006
 #define IDC_LOGPATH_SET                 1007
 #define IDC_CK_REG                      1008
 #define IDC_CK_REGULAR                  1008
@@ -28,6 +30,9 @@
 #define IDC_EDT_DESC                    1012
 #define IDC_LOGPATH_LIST                1013
 #define IDC_EDIT1                       1014
+#define IDC_MAIN_SERV_TREE              1016
+#define IDC_TREE1                       1019
+#define IDC_SERV_TREE                   1019
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -52,9 +57,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        107
+#define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1015
+#define _APS_NEXT_CONTROL_VALUE         1020
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

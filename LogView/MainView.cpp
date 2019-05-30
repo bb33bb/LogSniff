@@ -10,6 +10,7 @@
 #include <Shlwapi.h>
 #include "LogServView.h"
 #include "LogSyntaxView.h"
+#include "ServTreeView.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -21,6 +22,7 @@ static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
 static CLogSyntaxView *gsLogView = NULL;
+static CServTreeDlg *gsServTreeView = NULL;
 //log content cache
 static RLocker *gsLogLocker = NULL;
 static string gsLogContentCache;
@@ -60,36 +62,49 @@ static void _TestFile() {
     fclose(fp);
 }
 
-static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
-    gsMainWnd = hdlg;
-    gs_hFilter = GetDlgItem(hdlg, IDC_COM_FILTER);
-
+//页面布局
+static void _OnMainViewLayout() {
     RECT rt12 = {0};
     GetWindowRect(gs_hFilter, &rt12);
     SetWindowPos(gs_hFilter, 0, rt12.right, rt12.top, rt12.right - rt12.left, 10, SWP_NOMOVE | SWP_NOZORDER);
 
-    gs_hCkRegular = GetDlgItem(hdlg, IDC_CK_REGULAR);
-    SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
-    SendMessageW(hdlg, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
-    _CreateStatusBar(hdlg);
-
     RECT clientRect = {0};
-    GetClientRect(hdlg, &clientRect);
+    GetClientRect(gsMainWnd, &clientRect);
     RECT rt1 = {0};
     GetWindowRect(gs_hFilter, &rt1);
-    MapWindowPoints(NULL, hdlg, (LPPOINT)&rt1, 2);
+    MapWindowPoints(NULL, gsMainWnd, (LPPOINT)&rt1, 2);
     RECT rt2 = {0};
     GetWindowRect(gs_hStatBar, &rt2);
-    MapWindowPoints(NULL, hdlg, (LPPOINT)&rt2, 2);
+    MapWindowPoints(NULL, gsMainWnd, (LPPOINT)&rt2, 2);
 
-    gsLogLocker = new RLocker();
-    gsLogView = new CLogSyntaxView();
     int clientWidth = clientRect.right - clientRect.left;
     int clientHigh = clientRect.bottom - clientRect.top;
+    int statusHigh = rt2.bottom - rt2.top;
 
     int top = rt1.bottom + 8;
     int bottom = rt2.top - 8;
-    gsLogView->CreateLogView(hdlg, rt1.left, rt1.bottom + 8, clientWidth - (rt1.left * 2), bottom - top);
+
+    //上下左右间距
+    const int spaceWidth = 3;
+    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 180, clientHigh - statusHigh - spaceWidth * 2);
+    //gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 60, 60);
+    InvalidateRect(gsMainWnd, NULL, TRUE);
+}
+
+static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
+    gsMainWnd = hdlg;
+    gsServTreeView = new CServTreeDlg();
+    gsServTreeView->CreateDlg(hdlg);
+    gs_hFilter = GetDlgItem(hdlg, IDC_COM_FILTER);
+    _CreateStatusBar(hdlg);
+    gsLogLocker = new RLocker();
+    gsLogView = new CLogSyntaxView();
+    gsLogView->CreateLogView(gsMainWnd, 0, 0, 1, 1);
+
+    gs_hCkRegular = GetDlgItem(gsMainWnd, IDC_CK_REGULAR);
+    SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
+    SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
+    _OnMainViewLayout();
 
     HWND hLogView = gsLogView->GetWindow();
     CTL_PARAMS arry[] = {
@@ -107,12 +122,11 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     int cx = (cw / 4 * 3);
     int cy = (ch / 4 * 3);
 
-    SetWindowPos(hdlg, HWND_TOP, 0, 0, 300, 400, SWP_NOMOVE);
+    //SetWindowPos(hdlg, HWND_TOP, 0, 0, 300, 400, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
     SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
     SetTimer(gsMainWnd, TIMER_LOG_LOAD, 100, NULL);
-
     //_TestFile();
     //gsLogView->SetHightStr("Thread");
     return 0;

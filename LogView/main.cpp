@@ -12,6 +12,7 @@
 #include "LocalSniff/WinFileNoitfy.h"
 #include "LogServMgr.h"
 #include "DbgMsg.h"
+#include "ServTreeView.h"
 
 using namespace std;
 
@@ -57,10 +58,11 @@ static bool _TestFileEnumProc(bool isDir, const char *filePath, void *param) {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    CDbgCapturer::GetInst()->InitCapturer();
-    MessageBoxA(0, 0, 0, 0);
-    return 0;
-
+    //CDbgCapturer::GetInst()->InitCapturer();
+    //CServTreeDlg dlg;
+    //dlg.CreateDlg(NULL);
+    //MessageBoxA(0, 0, 0, 0);
+    //return 0;
     g_hInstance = m;
     LoadLibraryA("SyntaxView.dll");
 

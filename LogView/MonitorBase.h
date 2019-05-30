@@ -130,6 +130,7 @@ struct LogServDesc {
 
 class CMonitorEvent {
 public:
+    virtual void OnNewLogFiles(const list<mstring> &fileSet) {}
     virtual void OnLogReceived(const std::mstring &filePath, const std::mstring &content) = 0;
 };
 
