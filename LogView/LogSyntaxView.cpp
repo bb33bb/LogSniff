@@ -14,6 +14,8 @@ bool CLogSyntaxView::CreateLogView(HWND hParent, int x, int y, int cx, int cy) {
     {
         initLogView();
     }
+
+    InitCache(LABEL_LOG_CONTENT, 500);
     return true;
 }
 

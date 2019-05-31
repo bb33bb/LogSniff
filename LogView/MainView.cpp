@@ -11,10 +11,16 @@
 #include "LogServView.h"
 #include "LogSyntaxView.h"
 #include "ServTreeView.h"
+#include "DbgView.h"
 
 #pragma comment(lib, "comctl32.lib")
 
 using namespace std;
+
+enum LogViewMode {
+    em_mode_debugMsg = 0,
+    em_mode_logFile
+};
 
 extern HINSTANCE g_hInstance;
 static HWND gsMainWnd = NULL;
@@ -23,20 +29,34 @@ static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
 static HWND gsFindMode = NULL;
 static CLogSyntaxView *gsLogView = NULL;
+static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
-//log content cache
-static RLocker *gsLogLocker = NULL;
-static string gsLogContentCache;
 
+static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR  (WM_USER + 1123)
 #define TIMER_LOG_LOAD  (2010)
 
+static void _SwitchWorkMode(LogViewMode mode) {
+    gsWorkMode = mode;
+    HWND logView = gsLogView->GetWindow();
+    HWND dbgView = gsDbgView->GetWindow();
+    if (em_mode_debugMsg == gsWorkMode)
+    {
+        ShowWindow(logView, SW_HIDE);
+        ShowWindow(dbgView, SW_SHOW);
+    } else if (em_mode_logFile == gsWorkMode)
+    {
+        ShowWindow(dbgView, SW_HIDE);
+        ShowWindow(logView, SW_SHOW);
+    }
+}
+
 void PushLogContent(const LogInfoCache *cache) {
-    AutoLocker locker(gsLogLocker);
-    gsLogContentCache += PathFindFileNameA(cache->mFilePath.c_str());
-    gsLogContentCache += " ";
-    gsLogContentCache += cache->mContent;
-    gsLogContentCache += "\n";
+    gsLogView->PushToCache(cache->mContent);
+}
+
+void PushDbgContent(const std::mstring &content) {
+    gsDbgView->PushToCache(content);
 }
 
 static VOID _CreateStatusBar(HWND hdlg)
@@ -91,7 +111,6 @@ static void _OnMainViewLayout() {
 
     RECT rtTreeView = {0};
     GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
-    HWND hLogView = gsLogView->GetWindow();
 
     int treeWidth = rtTreeView.right - rtTreeView.left;
     int treeHigh = rtTreeView.bottom - rtTreeView.top;
@@ -109,7 +128,10 @@ static void _OnMainViewLayout() {
     int modeWidth = 80;
     MoveWindow(gsFindMode, modeX, modeY, modeWidth, modeHigh, TRUE);
 
+    HWND hLogView = gsLogView->GetWindow();
+    HWND hDbgView = gsDbgView->GetWindow();
     MoveWindow(hLogView, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
+    MoveWindow(hDbgView, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
     InvalidateRect(gsMainWnd, NULL, TRUE);
 }
 
@@ -125,22 +147,25 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SendMessageA(gsFindMode, CB_SETCURSEL, 0, 0);
 
     _CreateStatusBar(hdlg);
-    gsLogLocker = new RLocker();
     gsLogView = new CLogSyntaxView();
     gsLogView->CreateLogView(gsMainWnd, 0, 0, 1, 1);
+    gsDbgView = new CDbgView();
+    gsDbgView->CreateDbgView(gsMainWnd, 0, 0, 1, 1);
 
     gs_hCkRegular = GetDlgItem(gsMainWnd, IDC_CK_REGULAR);
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     _OnMainViewLayout();
+    _SwitchWorkMode(em_mode_debugMsg);
 
     HWND hLogView = gsLogView->GetWindow();
+    HWND hDbgView = gsDbgView->GetWindow();
     CTL_PARAMS arry[] = {
         {0, gs_hFilter, 0, 0, 1, 0},
         {0, gs_hCkRegular, 1, 0, 0, 0},
         {IDC_MAIN_SELECT, NULL, 1, 0, 0, 0},
-        {IDC_BTN_CONFIG, 0, 1, 0, 0, 0},
         {0, hLogView, 0, 0, 1, 1},
+        {0, hDbgView, 0, 0, 1, 1},
         {0, gs_hStatBar, 0, 1, 1, 0},
         {0, gsServTreeView->GetWindow(), 0, 0, 0, 1},
         {IDC_COM_MODE, 0, 1, 0, 0, 0}
@@ -175,14 +200,6 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
 static INT_PTR _OnTimer(HWND hdlg, WPARAM wp, LPARAM lp) {
     if (TIMER_LOG_LOAD == wp)
     {
-        AutoLocker locker(gsLogLocker);
-
-        //Ë«ÖØ»º´æ,±ÜÃâÆµ·±´°¿ÚÏûÏ¢µ¼ÖÂ´°Ìå¿¨¶Ù
-        if (gsLogContentCache.size() > 0)
-        {
-            gsLogView->AppendText(LABEL_LOG_CONTENT, gsLogContentCache);
-            gsLogContentCache.clear();
-        }
     }
     return 0;
 }

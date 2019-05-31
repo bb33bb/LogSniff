@@ -3,6 +3,7 @@
 
 #define LABEL_DEFAULT       "Default"
 #define LABEL_LOG_CONTENT   "LogContent"
+#define LABEL_DBG_CONTENT   "DbgContent"
 #define LABEL_CALLSTACK     "CallStack"
 
 #define SCI_PARSER_STAT_DEFAULT     1       //for default style

@@ -183,27 +183,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LogServView.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\LogSyntaxView.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MainView.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\PathEditer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ServTreeView.cpp"
 				>
 			</File>
 		</Filter>
@@ -221,31 +201,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LogServView.h"
-				>
-			</File>
-			<File
-				RelativePath=".\LogSyntaxView.h"
-				>
-			</File>
-			<File
-				RelativePath=".\MainView.h"
-				>
-			</File>
-			<File
 				RelativePath=".\MonitorBase.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PathEditer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ServTreeView.h"
 				>
 			</File>
 		</Filter>
@@ -266,6 +226,18 @@
 		<Filter
 			Name="SyntaxHlpr"
 			>
+			<File
+				RelativePath=".\SyntaxHlpr\export.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SyntaxHlpr\SyntaxCache.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SyntaxHlpr\SyntaxCache.h"
+				>
+			</File>
 			<File
 				RelativePath=".\SyntaxHlpr\SyntaxCfg.cpp"
 				>
@@ -340,6 +312,58 @@
 			</File>
 			<File
 				RelativePath=".\DbgMsg.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="View"
+			>
+			<File
+				RelativePath=".\DbgView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\DbgView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LogServView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LogServView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LogSyntaxView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LogSyntaxView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MainView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MainView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PathEditer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PathEditer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ServTreeView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ServTreeView.h"
 				>
 			</File>
 		</Filter>

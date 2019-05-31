@@ -4,9 +4,16 @@
 struct LabelNode {
     const char *m_label;
     const char *m_content;
+    void *mParam;
 
     int m_startPos;
     int m_endPos;
+
+    LabelNode() {
+        m_label = NULL, m_content = NULL;
+        mParam = NULL;
+        m_startPos = 0, m_endPos = 0;
+    }
 };
 
 class StyleContextBase {

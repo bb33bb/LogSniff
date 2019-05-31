@@ -1,7 +1,7 @@
 #pragma once
-#include "SyntaxHlpr/SyntaxView.h"
+#include "SyntaxHlpr/SyntaxCache.h"
 
-class CLogSyntaxView : public SyntaxView {
+class CLogSyntaxView : public CSyntaxCache {
 public:
     CLogSyntaxView();
     virtual ~CLogSyntaxView();
