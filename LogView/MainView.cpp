@@ -17,11 +17,6 @@
 
 using namespace std;
 
-enum LogViewMode {
-    em_mode_debugMsg = 0,
-    em_mode_logFile
-};
-
 extern HINSTANCE g_hInstance;
 static HWND gsMainWnd = NULL;
 static HWND gs_hStatBar = NULL;
@@ -36,7 +31,7 @@ static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR  (WM_USER + 1123)
 #define TIMER_LOG_LOAD  (2010)
 
-static void _SwitchWorkMode(LogViewMode mode) {
+void SwitchWorkMode(LogViewMode mode) {
     gsWorkMode = mode;
     HWND logView = gsLogView->GetWindow();
     HWND dbgView = gsDbgView->GetWindow();
@@ -44,10 +39,12 @@ static void _SwitchWorkMode(LogViewMode mode) {
     {
         ShowWindow(logView, SW_HIDE);
         ShowWindow(dbgView, SW_SHOW);
+        SetWindowTextA(gsMainWnd, "LogView//本地服务//调试信息...");
     } else if (em_mode_logFile == gsWorkMode)
     {
         ShowWindow(dbgView, SW_HIDE);
         ShowWindow(logView, SW_SHOW);
+        SetWindowTextA(gsMainWnd, "LogView//本地服务//文件日志...");
     }
 }
 
@@ -156,7 +153,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     _OnMainViewLayout();
-    _SwitchWorkMode(em_mode_debugMsg);
+    SwitchWorkMode(em_mode_debugMsg);
 
     HWND hLogView = gsLogView->GetWindow();
     HWND hDbgView = gsDbgView->GetWindow();
