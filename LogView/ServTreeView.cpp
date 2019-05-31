@@ -1,6 +1,7 @@
 #include "ServTreeView.h"
 #include "resource.h"
 #include <CommCtrl.h>
+#include <LogLib/winsize.h>
 
 using namespace std;
 
@@ -82,6 +83,13 @@ INT_PTR CServTreeDlg::OnInitDialog(WPARAM wp, LPARAM lp) {
     UINT tt = TreeView_GetItemState(mTreeCtrl, newItem, TVIS_EXPANDED);
     SendMessage(mTreeCtrl, TVM_EXPAND, TVE_EXPAND, (LPARAM)newItem);
     SendMessage(mTreeCtrl, TVM_SELECTITEM, TVGN_CARET, (LPARAM)item2);
+
+    CTL_PARAMS arry[] =
+    {
+        {NULL, mTreeCtrl, 0, 0, 1, 1},
+        {IDC_BTN_REFUSH, NULL, 1, 1, 0, 0}
+    };
+    SetCtlsCoord(mhWnd, arry, sizeof(arry) / sizeof(CTL_PARAMS));
     return 0;
 }
 

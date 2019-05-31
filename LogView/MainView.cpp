@@ -21,6 +21,7 @@ static HWND gsMainWnd = NULL;
 static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
+static HWND gsFindMode = NULL;
 static CLogSyntaxView *gsLogView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
 //log content cache
@@ -87,7 +88,28 @@ static void _OnMainViewLayout() {
     //上下左右间距
     const int spaceWidth = 3;
     gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 180, clientHigh - statusHigh - spaceWidth * 2);
-    //gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 60, 60);
+
+    RECT rtTreeView = {0};
+    GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
+    HWND hLogView = gsLogView->GetWindow();
+
+    int treeWidth = rtTreeView.right - rtTreeView.left;
+    int treeHigh = rtTreeView.bottom - rtTreeView.top;
+    int logWidth = clientWidth - (spaceWidth * 2 + treeWidth) - spaceWidth;
+
+    int filterX = spaceWidth * 2 + treeWidth;
+    int filterY = 0;
+    int filterHigh = 28;
+    int filterWidth = logWidth - 160;
+    MoveWindow(gs_hFilter, filterX, filterY, filterWidth, filterHigh, TRUE);
+
+    int modeX = filterX + filterWidth + 10;
+    int modeY = filterY;
+    int modeHigh = filterHigh;
+    int modeWidth = 80;
+    MoveWindow(gsFindMode, modeX, modeY, modeWidth, modeHigh, TRUE);
+
+    MoveWindow(hLogView, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
     InvalidateRect(gsMainWnd, NULL, TRUE);
 }
 
@@ -95,7 +117,13 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gsServTreeView = new CServTreeDlg();
     gsServTreeView->CreateDlg(hdlg);
-    gs_hFilter = GetDlgItem(hdlg, IDC_COM_FILTER);
+    gs_hFilter = GetDlgItem(hdlg, IDC_EDT_FILTER);
+    gsFindMode = GetDlgItem(hdlg, IDC_COM_MODE);
+
+    SendMessageA(gsFindMode, CB_INSERTSTRING, 0, (LPARAM)"过滤模式");
+    SendMessageA(gsFindMode, CB_INSERTSTRING, 1, (LPARAM)"查找模式");
+    SendMessageA(gsFindMode, CB_SETCURSEL, 0, 0);
+
     _CreateStatusBar(hdlg);
     gsLogLocker = new RLocker();
     gsLogView = new CLogSyntaxView();
@@ -113,7 +141,9 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
         {IDC_MAIN_SELECT, NULL, 1, 0, 0, 0},
         {IDC_BTN_CONFIG, 0, 1, 0, 0, 0},
         {0, hLogView, 0, 0, 1, 1},
-        {0, gs_hStatBar, 0, 1, 1, 0}
+        {0, gs_hStatBar, 0, 1, 1, 0},
+        {0, gsServTreeView->GetWindow(), 0, 0, 0, 1},
+        {IDC_COM_MODE, 0, 1, 0, 0, 0}
     };
     SetCtlsCoord(hdlg, arry, RTL_NUMBER_OF(arry));
 

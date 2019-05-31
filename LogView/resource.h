@@ -30,9 +30,11 @@
 #define IDC_EDT_DESC                    1012
 #define IDC_LOGPATH_LIST                1013
 #define IDC_EDIT1                       1014
-#define IDC_MAIN_SERV_TREE              1016
-#define IDC_TREE1                       1019
 #define IDC_SERV_TREE                   1019
+#define IDC_EDIT2                       1020
+#define IDC_EDT_FILTER                  1020
+#define IDC_COMBO1                      1026
+#define IDC_COM_MODE                    1026
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -59,7 +61,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
