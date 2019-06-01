@@ -304,7 +304,7 @@ mstring &mstring::format(const char *format, ...)
     return *this;
 }
 
-size_t mstring::sfind(const mstring &str, size_t offset, size_t range, bool v)
+size_t mstring::sfind(const mstring &str, size_t offset, size_t range, bool v) const
 {
     const char *ptr = c_str();
     const char *sub = str.c_str();
@@ -493,7 +493,7 @@ size_t mstring::find_in_range(const mstring &str, size_t offset, size_t range)
 }
 
 //ºöÂÔ´óÐ¡Ð´²éÕÒ
-size_t mstring::find_in_rangei(const char *str, size_t offset, size_t range)
+size_t mstring::find_in_rangei(const char *str, size_t offset, size_t range) const
 {
     if (!str || !*str)
     {
@@ -502,7 +502,7 @@ size_t mstring::find_in_rangei(const char *str, size_t offset, size_t range)
     return find_in_rangei(mstring(str), offset, range);
 }
 
-size_t mstring::find_in_rangei(const mstring &str, size_t offset, size_t range)
+size_t mstring::find_in_rangei(const mstring &str, size_t offset, size_t range) const
 {
     if (offset >= size())
     {

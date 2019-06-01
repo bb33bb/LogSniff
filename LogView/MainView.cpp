@@ -12,6 +12,7 @@
 #include "LogSyntaxView.h"
 #include "ServTreeView.h"
 #include "DbgView.h"
+#include <LogLib/TextDecoder.h>
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -30,6 +31,21 @@ static CServTreeDlg *gsServTreeView = NULL;
 static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR  (WM_USER + 1123)
 #define TIMER_LOG_LOAD  (2010)
+#define MSG_SET_FILTER  (WM_USER + 1160)
+
+typedef LRESULT (CALLBACK *PWIN_PROC)(HWND, UINT, WPARAM, LPARAM);
+static PWIN_PROC gsPfnFilterProc = NULL;
+
+static HHOOK gsPfnKeyboardHook = NULL;
+static DWORD gsLastEnterCount = 0;
+
+static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+    if ('\r' == wParam && gs_hFilter == GetFocus())
+    {
+        SendMessageA(gsMainWnd, MSG_SET_FILTER, 0, 0);
+    }
+    return CallNextHookEx(gsPfnKeyboardHook, code, wParam, lParam);
+}
 
 void SwitchWorkMode(LogViewMode mode) {
     gsWorkMode = mode;
@@ -39,12 +55,12 @@ void SwitchWorkMode(LogViewMode mode) {
     {
         ShowWindow(logView, SW_HIDE);
         ShowWindow(dbgView, SW_SHOW);
-        SetWindowTextA(gsMainWnd, "LogView//本地服务//调试信息...");
+        SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 调试信息");
     } else if (em_mode_logFile == gsWorkMode)
     {
         ShowWindow(dbgView, SW_HIDE);
         ShowWindow(logView, SW_SHOW);
-        SetWindowTextA(gsMainWnd, "LogView//本地服务//文件日志...");
+        SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 文件日志");
     }
 }
 
@@ -132,6 +148,26 @@ static void _OnMainViewLayout() {
     InvalidateRect(gsMainWnd, NULL, TRUE);
 }
 
+static DWORD WINAPI _TestSelect(LPVOID param) {
+    const char *filePath = "D:\\git\\LogSniff\\Debug\\YoudaoNote.exe.log";
+
+    int bomLen = 0;
+    TextEncodeType type = CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
+
+    FILE *fp = fopen(filePath, "rb");
+    fseek(fp, bomLen, SEEK_CUR);
+
+    int size = 1024 * 1024 * 4;
+    wchar_t *buff = new wchar_t[size];
+    int count = fread(buff, 2, size, fp);
+    buff[count] = L'\0';
+    fclose(fp);
+
+    gsLogView->PushToCache(WtoA(buff));
+    Sleep(1000);
+    return 0;
+}
+
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gsServTreeView = new CServTreeDlg();
@@ -153,7 +189,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     _OnMainViewLayout();
-    SwitchWorkMode(em_mode_debugMsg);
+    SwitchWorkMode(em_mode_logFile);
 
     HWND hLogView = gsLogView->GetWindow();
     HWND hDbgView = gsDbgView->GetWindow();
@@ -174,13 +210,17 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     int cx = (cw / 4 * 3);
     int cy = (ch / 4 * 3);
 
-    //SetWindowPos(hdlg, HWND_TOP, 0, 0, 300, 400, SWP_NOMOVE);
+    SetWindowPos(hdlg, HWND_TOP, 0, 0, cx, cy, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
-    SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
+    //SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
     SetTimer(gsMainWnd, TIMER_LOG_LOAD, 100, NULL);
     //_TestFile();
     //gsLogView->SetHightStr("Thread");
+    //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
+    gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
+
+    CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
     return 0;
 }
 
@@ -249,6 +289,14 @@ static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+static INT_PTR _OnSetFilter() {
+    char filter[256] = {0};
+
+    GetWindowTextA(gs_hFilter, filter, 256);
+    gsLogView->SetFilter(filter);
+    return 0;
+}
+
 static INT_PTR _OnClose(HWND hdlg) {
     EndDialog(hdlg, 0);
     return 0;
@@ -277,6 +325,11 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case WM_KEYDOWN:
         {
             _OnKeyDown(hdlg, wp, lp);
+        }
+        break;
+    case MSG_SET_FILTER:
+        {
+            _OnSetFilter();
         }
         break;
     case WM_NOTIFY:

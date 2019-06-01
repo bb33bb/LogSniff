@@ -14,10 +14,13 @@ typedef int (* SCINTILLA_FUNC) (void*, int, int, int);
 typedef void * SCINTILLA_PTR;
 
 SyntaxView::SyntaxView() {
+    mLineNum = false;
 }
 
 bool SyntaxView::CreateView(HWND parent, int x, int y, int cx, int cy) {
     extern HINSTANCE g_hInstance;
+    mLineNum = false;
+    mLineCount = 0;
     m_parent = parent;
     m_hwnd = CreateWindowExA(
         WS_EX_STATICEDGE,
@@ -138,7 +141,46 @@ int SyntaxView::SetScrollEndLine() {
     return SendMsg(SCI_SCROLLTOEND, 0, 0);
 }
 
-void SyntaxView::AppendText(const std::mstring &label, const std::mstring &text) const {
+void SyntaxView::CheckLineNum() {
+    int cur = SendMsg(SCI_GETLINECOUNT, 0, 0);
+
+    int t1 = 1;
+    while (cur >= 10) {
+        t1++;
+        cur /= 10;
+    }
+
+    int t2 = 1;
+    int cc = mLineCount;
+    while (cc >= 10) {
+        t2++;
+        cc /= 10;
+    }
+
+    if (t1 > t2)
+    {
+        mstring str = "_";
+        while (t1 >= 0) {
+            t1--;
+            str += "0";
+        }
+
+        int width = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)str.c_str());
+        SendMsg(SCI_SETMARGINWIDTHN, 0, width);
+        SendMsg(SCI_SETMARGINWIDTHN, 1, 0);
+    }
+    mLineCount = cur;
+}
+
+void SyntaxView::ResetLineNum() {
+    mLineCount = 0;
+    int width = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)"_0");
+    SendMsg(SCI_SETMARGINWIDTHN, 0, width);
+    SendMsg(SCI_SETMARGINWIDTHN, 1, 0);
+    CheckLineNum();
+}
+
+void SyntaxView::AppendText(const std::mstring &label, const std::mstring &text) {
     LabelNode param;
     param.m_label = label.c_str();
     param.m_content = text.c_str();
@@ -151,9 +193,36 @@ void SyntaxView::AppendText(const std::mstring &label, const std::mstring &text)
     SendMsg(MSG_LABEL_APPEND_LABEL, 0, (LPARAM)&param);
     SendMsg(SCI_APPENDTEXT, (WPARAM)text.size(), (LPARAM)text.c_str());
     SendMsg(SCI_SETREADONLY, 1, 0);
+
+    if (mLineNum)
+    {
+        CheckLineNum();
+    }
 }
 
-void SyntaxView::SetText(const std::mstring &label, const std::mstring &text) const {
+void SyntaxView::SetLineNum(bool lineNum) {
+    mLineNum = lineNum;
+
+    if (mLineNum)
+    {
+        int lineCount = SendMsg(SCI_GETLINECOUNT, 0, 0);
+        SendMsg(SCI_SETMARGINTYPEN, 0, SC_MARGIN_NUMBER);
+
+        mstring test = "_";
+        while (lineCount-- >= 0) {
+            test += "0";
+        }
+
+        int w = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)test.c_str());
+        SendMsg(SCI_SETMARGINWIDTHN, 0, w);
+        SendMsg(SCI_SETMARGINWIDTHN, 1, 0);
+    } else {
+        SendMsg(SCI_SETMARGINWIDTHN, 0, 0);
+        SendMsg(SCI_SETMARGINWIDTHN, 1, 0);
+    }
+}
+
+void SyntaxView::SetText(const std::mstring &label, const std::mstring &text) {
     LabelNode param;
     param.m_label = label.c_str();
     param.m_content = text.c_str();
@@ -167,6 +236,7 @@ void SyntaxView::SetText(const std::mstring &label, const std::mstring &text) co
     SendMsg(MSG_LABEL_APPEND_LABEL, 0, (LPARAM)&param);
     SendMsg(SCI_SETTEXT, 0, (LPARAM)text.c_str());
     SendMsg(SCI_SETREADONLY, 1, 0);
+    ResetLineNum();
 }
 
 mstring SyntaxView::GetText() const {

@@ -14,6 +14,7 @@ public:
 
     bool InitCache(const std::mstring &label, int interval);
     void PushToCache(const std::mstring &content);
+    void SetFilter(const std::mstring &rule);
 private:
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,
@@ -35,4 +36,6 @@ private:
     std::mstring mLabel;
     std::mstring mCache;
     static std::map<HWND, CSyntaxCache *> msTimerCache;
+    std::mstring mContent;
+    std::mstring mRule;
 };

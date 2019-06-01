@@ -125,9 +125,9 @@ namespace std
         size_t find_in_range(const mstring &str, size_t offset = 0, size_t range = -1);
 
         //忽略大小写查找
-        size_t find_in_rangei(const char *str, size_t offset = 0, size_t range = -1);
+        size_t find_in_rangei(const char *str, size_t offset = 0, size_t range = -1) const;
 
-        size_t find_in_rangei(const mstring &str, size_t offset = 0, size_t range = -1);
+        size_t find_in_rangei(const mstring &str, size_t offset = 0, size_t range = -1) const;
 
         //比较字符串（忽略大小小写）
         int comparei(const char *str, size_t offset = 0);
@@ -205,7 +205,7 @@ namespace std
         bool isnumber();
 
     protected:
-        size_t sfind(const mstring &str, size_t offset, size_t range, bool v);
+        size_t sfind(const mstring &str, size_t offset, size_t range, bool v) const;
 
         void initstring();
 

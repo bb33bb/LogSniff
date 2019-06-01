@@ -50,13 +50,18 @@ public:
     bool CreateView(HWND parent, int x, int y, int cx, int cy);
     bool RegisterParser(const std::mstring &label, pfnLabelParser parser, void *param);
     size_t SendMsg(UINT msg, WPARAM wp, LPARAM lp) const;
-    void AppendText(const std::mstring &label, const std::mstring &text) const;
-    void SetText(const std::mstring &label, const std::mstring &text) const;
+    void AppendText(const std::mstring &label, const std::mstring &text);
+    void SetText(const std::mstring &label, const std::mstring &text);
     std::mstring GetText() const;
+    void SetLineNum(bool lineNum);
     void ClearView();
     HWND GetWindow() {
         return m_hwnd;
     }
+
+    void CheckLineNum();
+    void ResetLineNum();
+
     void SetStyle(int type, unsigned int textColour, unsigned int backColour);
     void ShowCaretLine(bool show, unsigned int colour);
     void ShowMargin(bool bShow);
@@ -74,6 +79,9 @@ public:
     int SetScrollEndLine();
 
 private:
+    bool mLineNum;
+    int mLineCount;
+
     std::string m_path;
     HWND m_hwnd;
     HWND m_parent;
