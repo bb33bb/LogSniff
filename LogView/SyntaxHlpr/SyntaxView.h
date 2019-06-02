@@ -87,7 +87,6 @@ private:
     HWND m_parent;
     SCINTILLA_FUNC m_pfnSend;
     SCINTILLA_PTR m_param;
-    std::string mKeywordStr;
     std::map<int, std::string> m_SyntaxMap;
 };
 #endif //SYNTAXSHELL_H_H_

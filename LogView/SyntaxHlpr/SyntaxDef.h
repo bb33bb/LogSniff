@@ -27,6 +27,8 @@
 
 //log content stat
 #define STAT_CONTENT    101
-#define STAT_KEYWORD    102
-#define STAT_ERROR      103
+#define STAT_FILTER     102
+#define STAT_KEYWORD    121
+#define STAT_SELECT     124
+#define STAT_ERROR      131
 #endif //SYNTAXDEF_COMLIB_H_H_

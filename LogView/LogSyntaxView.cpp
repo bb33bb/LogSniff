@@ -26,7 +26,7 @@ bool CLogSyntaxView::SetHightStr(const std::string &str) {
 }
 
 void CLogSyntaxView::initLogView() {
-    RegisterParser(LABEL_LOG_CONTENT, LogParser, this);
+    //RegisterParser(LABEL_LOG_CONTENT, LogParser, this);
 
     ShowMargin(true);
     SetLineNum(true);

@@ -164,6 +164,12 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     fclose(fp);
 
     gsLogView->PushToCache(WtoA(buff));
+    /*
+    gsLogView->PushToCache("abcdefghijk");
+    gsLogView->SetKeyWord("abc", STAT_KEYWORD);
+    gsLogView->SetKeyWord("cdefghijk", STAT_KEYWORD);
+    gsLogView->SetKeyWord("ijk", STAT_KEYWORD);
+    */
     Sleep(1000);
     return 0;
 }
@@ -294,6 +300,7 @@ static INT_PTR _OnSetFilter() {
 
     GetWindowTextA(gs_hFilter, filter, 256);
     gsLogView->SetFilter(filter);
+    gsLogView->SetKeyWord(filter, STAT_KEYWORD);
     return 0;
 }
 

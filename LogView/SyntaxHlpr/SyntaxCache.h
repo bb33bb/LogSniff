@@ -6,6 +6,14 @@
 #include <LogLib/mstring.h>
 #include <LogLib/locker.h>
 #include <map>
+#include <vector>
+
+struct RuleStatNode {
+    size_t mStartPos;
+    size_t mEndPos;
+    int mStat;
+    std::mstring mRule;
+};
 
 class CSyntaxCache : public SyntaxView, public RLocker {
 public:
@@ -15,11 +23,25 @@ public:
     bool InitCache(const std::mstring &label, int interval);
     void PushToCache(const std::mstring &content);
     void SetFilter(const std::mstring &rule);
+
+    void SetKeyWord(const std::mstring &keyWord, int stat);
+    void DelKeyWord(const std::mstring &keyWord);
+    void ClearKeyWord();
 private:
+    void InsertRuleNode(const RuleStatNode &node);
+    void UpdateView();
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,
         UINT_PTR id,
         DWORD time
+        );
+    static void __stdcall LogParser(
+        int initStyle,
+        unsigned int startPos,
+        const char *ptr,
+        int length,
+        StyleContextBase *sc,
+        void *param
         );
 
     struct DataCache {
@@ -37,5 +59,11 @@ private:
     std::mstring mCache;
     static std::map<HWND, CSyntaxCache *> msTimerCache;
     std::mstring mContent;
+    std::mstring mShowData;
     std::mstring mRule;
+    std::map<std::mstring, int> mKeyWordSet;
+
+    int mStartPos;
+    int mEndPos;
+    std::vector<RuleStatNode> mRuleNodeSet;
 };

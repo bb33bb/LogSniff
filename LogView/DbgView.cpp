@@ -13,7 +13,7 @@ bool CDbgView::CreateDbgView(HWND hParent, int x, int y, int cx, int cy) {
         initDbgView();
     }
 
-    InitCache(LABEL_LOG_CONTENT, 500);
+    InitCache(LABEL_DBG_CONTENT, 500);
     CDbgCapturer::GetInst()->InitCapturer();
     return true;
 }
