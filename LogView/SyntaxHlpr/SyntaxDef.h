@@ -31,4 +31,7 @@
 #define STAT_KEYWORD    121
 #define STAT_SELECT     124
 #define STAT_ERROR      131
+
+#define NOTE_KEYWORD    SCE_UNIVERSAL_FOUND_STYLE_EXT1      //关键字高亮
+#define NOTE_SELECT     SCE_UNIVERSAL_FOUND_STYLE_EXT2      //选择高亮
 #endif //SYNTAXDEF_COMLIB_H_H_

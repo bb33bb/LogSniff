@@ -130,10 +130,10 @@ namespace std
         size_t find_in_rangei(const mstring &str, size_t offset = 0, size_t range = -1) const;
 
         //比较字符串（忽略大小小写）
-        int comparei(const char *str, size_t offset = 0);
+        int comparei(const char *str, size_t offset = 0) const;
 
         //
-        int comparei(const mstring &str, size_t offset = 0);
+        int comparei(const mstring &str, size_t offset = 0) const;
 
         //覆盖写数据
         //buffer：要覆盖写入的缓冲区

@@ -69,6 +69,11 @@ void PushLogContent(const LogInfoCache *cache) {
 }
 
 void PushDbgContent(const std::mstring &content) {
+    if (mstring::npos != content.find("guid"))
+    {
+        int dd = 1234;
+    }
+
     gsDbgView->PushToCache(content);
 }
 
@@ -149,7 +154,9 @@ static void _OnMainViewLayout() {
 }
 
 static DWORD WINAPI _TestSelect(LPVOID param) {
-    const char *filePath = "D:\\git\\LogSniff\\Debug\\YoudaoNote.exe.log";
+    char filePath[256];
+    GetModuleFileNameA(NULL, filePath, 256);
+    PathAppendA(filePath, "..\\test.log");
 
     int bomLen = 0;
     TextEncodeType type = CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
@@ -158,12 +165,14 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     fseek(fp, bomLen, SEEK_CUR);
 
     int size = 1024 * 1024 * 4;
-    wchar_t *buff = new wchar_t[size];
-    int count = fread(buff, 2, size, fp);
-    buff[count] = L'\0';
+    char *buff = new char[size];
+    int count = fread(buff, 1, size, fp);
+    buff[count] = '\0';
     fclose(fp);
 
-    gsLogView->PushToCache(WtoA(buff));
+    gsLogView->SendMsg(SCI_SETIDENTIFIERS, STAT_KEYWORD, (LPARAM)"location");
+    gsLogView->PushToCache(UtoA(buff));
+    gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
     /*
     gsLogView->PushToCache("abcdefghijk");
     gsLogView->SetKeyWord("abc", STAT_KEYWORD);
@@ -171,6 +180,18 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     gsLogView->SetKeyWord("ijk", STAT_KEYWORD);
     */
     Sleep(1000);
+
+    /*
+    #define TEST1 51
+    gsLogView->SendMsg(SCI_INDICSETSTYLE, SCE_UNIVERSAL_FOUND_STYLE_EXT1, INDIC_ROUNDBOX);
+    gsLogView->SendMsg(SCI_INDICSETALPHA, SCE_UNIVERSAL_FOUND_STYLE_EXT1, 100);
+    gsLogView->SendMsg(SCI_INDICSETFORE, SCE_UNIVERSAL_FOUND_STYLE_EXT1, RGB(0, 255, 0));
+
+    gsLogView->SendMsg(SCI_SETINDICATORCURRENT, SCE_UNIVERSAL_FOUND_STYLE_EXT1, 0);
+    gsLogView->SendMsg(SCI_INDICATORFILLRANGE, 0, 102);
+
+    gsLogView->SendMsg(SCI_INDICATORFILLRANGE, 106, 4);
+    */
     return 0;
 }
 
@@ -251,6 +272,22 @@ static INT_PTR _OnKeyDown(HWND hdlg, WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+static INT_PTR _OnHighLightKeyword() {
+    int firstLine = gsLogView->SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
+    int lineCount = gsLogView->SendMsg(SCI_LINESONSCREEN, 0, 0);
+    int lastLine = firstLine + lineCount;
+    int curLine = firstLine;
+
+    int startPos = gsLogView->SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
+    int lastPos = gsLogView->SendMsg(SCI_GETLINEENDPOSITION, lastLine, 0);
+
+    if (lastPos > startPos)
+    {
+        gsLogView->OnViewUpdate(startPos, lastPos - startPos);
+    }
+    return 0;
+}
+
 static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
     NotifyHeader *header = (NotifyHeader *)lp;
     SCNotification *notify = (SCNotification *)lp;
@@ -264,6 +301,8 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                     size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
                     dp("select %d-%d", pos1, pos2);
                 }
+
+                _OnHighLightKeyword();
             }
         default:
             break;
@@ -300,7 +339,6 @@ static INT_PTR _OnSetFilter() {
 
     GetWindowTextA(gs_hFilter, filter, 256);
     gsLogView->SetFilter(filter);
-    gsLogView->SetKeyWord(filter, STAT_KEYWORD);
     return 0;
 }
 

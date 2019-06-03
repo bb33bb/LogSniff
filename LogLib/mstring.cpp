@@ -522,7 +522,7 @@ size_t mstring::find_in_rangei(const mstring &str, size_t offset, size_t range) 
 }
 
 //比较字符串（忽略大小小写）
-int mstring::comparei(const char *str, size_t offset)
+int mstring::comparei(const char *str, size_t offset) const
 {
     if (!str || !*str)
     {
@@ -532,7 +532,7 @@ int mstring::comparei(const char *str, size_t offset)
 }
 
 //
-int mstring::comparei(const mstring &str, size_t offset)
+int mstring::comparei(const mstring &str, size_t offset) const
 {
     if (offset >= size())
     {

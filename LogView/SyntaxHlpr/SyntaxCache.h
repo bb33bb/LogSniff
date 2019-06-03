@@ -24,12 +24,13 @@ public:
     void PushToCache(const std::mstring &content);
     void SetFilter(const std::mstring &rule);
 
-    void SetKeyWord(const std::mstring &keyWord, int stat);
-    void DelKeyWord(const std::mstring &keyWord);
-    void ClearKeyWord();
+    std::mstring GetViewStr(int startPos, int length) const;
+    void OnViewUpdate(int startPos, int length) const;
+    void SetSelStr(const std::mstring &str);
+    void UpdateView() const;
 private:
+    bool IsKeyWordInCache(const std::mstring &keyWord) const;
     void InsertRuleNode(const RuleStatNode &node);
-    void UpdateView();
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,
         UINT_PTR id,
@@ -60,10 +61,6 @@ private:
     static std::map<HWND, CSyntaxCache *> msTimerCache;
     std::mstring mContent;
     std::mstring mShowData;
-    std::mstring mRule;
-    std::map<std::mstring, int> mKeyWordSet;
-
-    int mStartPos;
-    int mEndPos;
-    std::vector<RuleStatNode> mRuleNodeSet;
+    std::mstring mRuleStr;
+    std::mstring mSelStr;
 };

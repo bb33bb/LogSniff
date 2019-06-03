@@ -1,5 +1,7 @@
 #include "SyntaxCache.h"
 #include <assert.h>
+#include <LogLib/LogUtil.h>
+#include <Shlwapi.h>
 
 using namespace std;
 
@@ -8,8 +10,6 @@ map<HWND, CSyntaxCache *> CSyntaxCache::msTimerCache;
 
 CSyntaxCache::CSyntaxCache() {
     mInterval = 0;
-    mStartPos = -1;
-    mEndPos = -1;
 }
 
 CSyntaxCache::~CSyntaxCache() {
@@ -26,6 +26,14 @@ bool CSyntaxCache::InitCache(const mstring &label, int interval) {
 
     msTimerCache[hwnd] = this;
     SetTimer(hwnd, TIMER_CACHE, interval, TimerCache);
+
+    SendMsg(SCI_INDICSETSTYLE, NOTE_KEYWORD, INDIC_ROUNDBOX);
+    SendMsg(SCI_INDICSETALPHA, NOTE_KEYWORD, 100);
+    SendMsg(SCI_INDICSETFORE, NOTE_KEYWORD, RGB(0x63, 0xb8, 0xff));
+
+    SendMsg(SCI_INDICSETSTYLE, NOTE_SELECT, INDIC_ROUNDBOX);
+    SendMsg(SCI_INDICSETALPHA, NOTE_SELECT, 100);
+    SendMsg(SCI_INDICSETFORE, NOTE_SELECT, RGB(0, 0xff, 0));
     return true;
 }
 
@@ -52,16 +60,17 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
 }
 
 void CSyntaxCache::SetFilter(const mstring &rule) {
-    if (rule == mRule)
+    if (rule == mRuleStr)
     {
         return;
     }
 
     //清理缓存,防止数据重复录入
     mCache.clear();
-    mRule = rule;
-    if (mRule.empty())
+    mRuleStr = rule;
+    if (mRuleStr.empty())
     {
+        mShowData = mContent;
         SetText(mLabel, mContent);
     } else {
         mShowData.clear();
@@ -71,7 +80,7 @@ void CSyntaxCache::SetFilter(const mstring &rule) {
         size_t pos4 = 0;
 
         while (true) {
-            pos1 = mContent.find_in_rangei(mRule, pos2);
+            pos1 = mContent.find_in_rangei(mRuleStr, pos2);
 
             if (mstring::npos == pos1)
             {
@@ -86,121 +95,45 @@ void CSyntaxCache::SetFilter(const mstring &rule) {
 
             pos4 = mContent.find("\n", pos1);
             mShowData += mContent.substr(pos3 + 1, pos4 - pos3);
-            pos2 = pos1 + mRule.size();
+            pos2 = pos4 + 1;
         }
         SetText(mLabel, mShowData);
     }
 }
 
-void CSyntaxCache::UpdateView() {
+void CSyntaxCache::UpdateView() const {
     SendMsg(SCI_COLOURISE, 0, -1);
 }
 
-void CSyntaxCache::InsertRuleNode(const RuleStatNode &node) {
-    if (mRuleNodeSet.empty())
-    {
-        mRuleNodeSet.push_back(node);
-    } else if (node.mStartPos <= mRuleNodeSet[0].mStartPos)
-    {
-        mRuleNodeSet.insert(mRuleNodeSet.begin(), node);
-    }
-    else if (node.mStartPos > mRuleNodeSet[mRuleNodeSet.size() - 1].mStartPos)
-    {
-        mRuleNodeSet.push_back(node);
-    } else {
-        int i = 0;
-        for (vector<RuleStatNode>::const_iterator it = mRuleNodeSet.begin() ; it != mRuleNodeSet.end() ; it++, i++)
-        {
-            if (node.mStartPos > it->mStartPos && node.mStartPos <= mRuleNodeSet[i + 1].mStartPos)
-            {
-                mRuleNodeSet.insert(++it, node);
-                break;
-            }
-        }
-    }
+void CSyntaxCache::OnViewUpdate(int startPos, int length) const {
+    mstring str = mShowData.substr(startPos, length);
 
-    if (-1 == mStartPos)
-    {
-        mStartPos = node.mStartPos;
-        mEndPos = node.mEndPos;
-    } else {
-        if ((int)node.mStartPos < mStartPos)
-        {
-            mStartPos = node.mStartPos;
-        }
-
-        if ((int)node.mEndPos > mEndPos)
-        {
-            mEndPos = node.mEndPos;
-        }
-    }
-}
-
-void CSyntaxCache::SetKeyWord(const std::mstring &keyWord, int stat) {
-    mstring low(keyWord);
-    low.makelower();
-    if (keyWord.empty() || mKeyWordSet.end() != mKeyWordSet.find(low))
+    if (mRuleStr.empty())
     {
         return;
     }
-    mKeyWordSet[low] = stat;
+
+    SendMsg(SCI_SETINDICATORCURRENT, NOTE_KEYWORD, 0);
+    SendMsg(SCI_INDICATORCLEARRANGE, 0, mShowData.size());
 
     size_t pos1 = 0;
     size_t pos2 = 0;
-    while (true) {
-        pos1 = mShowData.find_in_rangei(low, pos2);
+    while (mstring::npos != (pos1 = str.find_in_rangei(mRuleStr, pos2))) {
+        SendMsg(SCI_INDICATORFILLRANGE, pos1 + startPos, mRuleStr.size());
 
-        if (mstring::npos == pos1)
-        {
-            break;
-        }
-
-        RuleStatNode node;
-        node.mStartPos = pos1;
-        node.mEndPos = pos1 + low.size();
-        node.mStat = stat;
-        node.mRule = low;
-        InsertRuleNode(node);
-        pos2 = pos1 + low.size();
+        pos2 = pos1 + mRuleStr.size();
     }
-    UpdateView();
 }
 
-void CSyntaxCache::DelKeyWord(const std::mstring &keyWord) {
-    mstring low(keyWord);
-    low.makelower();
-
-    for (vector<RuleStatNode>::const_iterator it = mRuleNodeSet.begin() ; it != mRuleNodeSet.end() ;)
-    {
-        if (it->mRule == keyWord)
-        {
-            it = mRuleNodeSet.erase(it);
-        } else {
-            it++;
-        }
-    }
-
-    if (mRuleNodeSet.empty())
-    {
-        mStartPos = mEndPos = -1;
-    } else {
-        mStartPos = mRuleNodeSet[0].mStartPos;
-        mEndPos = mRuleNodeSet[mRuleNodeSet.size() - 1].mEndPos;
-    }
-    UpdateView();
-}
-
-void CSyntaxCache::ClearKeyWord() {
-    mRuleNodeSet.clear();
-    mStartPos = mEndPos = -1;
-    UpdateView();
+mstring CSyntaxCache::GetViewStr(int startPos, int length) const {
+    return mShowData.substr(startPos, length);
 }
 
 void CSyntaxCache::PushToCache(const std::mstring &content) {
     AutoLocker locker(this);
 
     bool flag = false;
-    if (mRule.empty() || mstring::npos != content.find_in_rangei(mRule.c_str()))
+    if (mRuleStr.empty() || mstring::npos != content.find_in_rangei(mRuleStr.c_str()))
     {
         mCache += content;
         mShowData += content;
@@ -208,9 +141,9 @@ void CSyntaxCache::PushToCache(const std::mstring &content) {
     }
 
     mContent += content;
-    if (content.size())
+    if (content.size() && flag)
     {
-        char c = mCache[content.size() - 1];
+        char c = mCache[mCache.size() - 1];
 
         if (c != '\n')
         {
@@ -236,41 +169,7 @@ void CSyntaxCache::LogParser(
 {
     CSyntaxCache *pThis = (CSyntaxCache *)param;
 
-    if (-1 == pThis->mStartPos)
-    {
-        sc->SetState(STAT_CONTENT);
-        sc->ForwardBytes(length);
-    } else {
-        unsigned int endPos = startPos + length;
-        if (pThis->mStartPos <= (int)endPos && pThis->mEndPos >= (int)startPos)
-        {
-            size_t pos0 = startPos;
-            for (vector<RuleStatNode>::const_iterator it = pThis->mRuleNodeSet.begin() ; it != pThis->mRuleNodeSet.end() ; it++)
-            {
-                size_t pos1 = max(it->mStartPos, pos0);
-                size_t pos2 = min(it->mEndPos, endPos);
-
-                if (pos1 < pos2)
-                {
-                    if (pos0 < pos1)
-                    {
-                        sc->SetState(STAT_CONTENT);
-                        sc->ForwardBytes(pos1 - pos0);
-                    }
-
-                    sc->SetState(STAT_KEYWORD);
-                    sc->ForwardBytes(pos2 - pos1);
-                    pos0 = pos2;
-                } else {
-                }
-            }
-
-            if (pos0 < endPos)
-            {
-                sc->SetState(STAT_CONTENT);
-                sc->ForwardBytes(endPos - pos0);
-            }
-        }
-    }
+    sc->SetState(STAT_CONTENT);
+    sc->ForwardBytes(length);
     return;
 }
