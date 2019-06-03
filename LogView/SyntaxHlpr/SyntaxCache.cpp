@@ -105,8 +105,21 @@ void CSyntaxCache::UpdateView() const {
     SendMsg(SCI_COLOURISE, 0, -1);
 }
 
-void CSyntaxCache::OnViewUpdate(int startPos, int length) const {
-    mstring str = mShowData.substr(startPos, length);
+void CSyntaxCache::OnViewUpdate() const {
+    int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
+    int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);
+    int lastLine = firstLine + lineCount;
+    int curLine = firstLine;
+
+    int startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
+    int lastPos = SendMsg(SCI_GETLINEENDPOSITION, lastLine, 0);
+
+    if (lastPos <= startPos)
+    {
+        return;
+    }
+
+    mstring str = mShowData.substr(startPos, lastPos - startPos);
 
     if (mRuleStr.empty())
     {

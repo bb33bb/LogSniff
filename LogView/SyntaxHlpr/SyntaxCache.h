@@ -25,7 +25,7 @@ public:
     void SetFilter(const std::mstring &rule);
 
     std::mstring GetViewStr(int startPos, int length) const;
-    void OnViewUpdate(int startPos, int length) const;
+    void OnViewUpdate() const;
     void SetSelStr(const std::mstring &str);
     void UpdateView() const;
 private:

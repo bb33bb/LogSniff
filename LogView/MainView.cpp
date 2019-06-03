@@ -273,17 +273,12 @@ static INT_PTR _OnKeyDown(HWND hdlg, WPARAM wp, LPARAM lp) {
 }
 
 static INT_PTR _OnHighLightKeyword() {
-    int firstLine = gsLogView->SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
-    int lineCount = gsLogView->SendMsg(SCI_LINESONSCREEN, 0, 0);
-    int lastLine = firstLine + lineCount;
-    int curLine = firstLine;
-
-    int startPos = gsLogView->SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
-    int lastPos = gsLogView->SendMsg(SCI_GETLINEENDPOSITION, lastLine, 0);
-
-    if (lastPos > startPos)
+    if (em_mode_logFile == gsWorkMode)
     {
-        gsLogView->OnViewUpdate(startPos, lastPos - startPos);
+        gsLogView->OnViewUpdate();
+    } else if (em_mode_debugMsg == gsWorkMode)
+    {
+        gsDbgView->OnViewUpdate();
     }
     return 0;
 }
@@ -301,7 +296,6 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                     size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
                     dp("select %d-%d", pos1, pos2);
                 }
-
                 _OnHighLightKeyword();
             }
         default:
@@ -338,7 +332,13 @@ static INT_PTR _OnSetFilter() {
     char filter[256] = {0};
 
     GetWindowTextA(gs_hFilter, filter, 256);
-    gsLogView->SetFilter(filter);
+
+    if (em_mode_logFile == gsWorkMode) {
+        gsLogView->SetFilter(filter);
+    } else if (em_mode_debugMsg == gsWorkMode)
+    {
+        gsDbgView->SetFilter(filter);
+    }
     return 0;
 }
 
