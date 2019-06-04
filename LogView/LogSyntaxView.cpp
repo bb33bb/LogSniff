@@ -1,5 +1,7 @@
+#include <WinSock2.h>
 #include "LogSyntaxView.h"
 #include <LogLib/LogUtil.h>
+#include "LogReceiver.h"
 
 using namespace std;
 
@@ -16,6 +18,7 @@ bool CLogSyntaxView::CreateLogView(HWND hParent, int x, int y, int cx, int cy) {
     }
 
     InitCache(LABEL_LOG_CONTENT, 500);
+    CLogReceiver::GetInst()->InitReceiver();
     return true;
 }
 
@@ -31,7 +34,6 @@ void CLogSyntaxView::initLogView() {
 
     SetCaretColour(RGB(255, 255, 255));
 
-    //SetFont("Lucida Console");
     SetFont("ËÎÌו");
     SetCaretSize(1);
 
@@ -41,7 +43,6 @@ void CLogSyntaxView::initLogView() {
 
     SetDefStyle(RGB(0, 0, 0), RGB(255, 255, 255));
     ShowCaretLine(true, RGB(232, 232, 255));
-    //SendMsg(SCI_SETSELALPHA, 70, 0);
 
     SetStyle(STAT_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
     SetStyle(STAT_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));

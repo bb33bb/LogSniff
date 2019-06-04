@@ -72,11 +72,6 @@ void PushLogContent(const LogInfoCache *cache) {
 }
 
 void PushDbgContent(const std::mstring &content) {
-    if (mstring::npos != content.find("guid"))
-    {
-        int dd = 1234;
-    }
-
     gsDbgView->PushToCache(content);
 }
 
@@ -234,7 +229,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //gsLogView->SetHightStr("Thread");
     //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
-    CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
+    //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
     return 0;
 }
 

@@ -89,6 +89,7 @@ void CSyntaxCache::OnFilter() {
         size_t pos3 = 0;
         size_t pos4 = 0;
 
+        int loopCount = 0;
         while (true) {
             pos1 = mContent.find_in_rangei(mKeyword, pos2);
 
@@ -105,9 +106,17 @@ void CSyntaxCache::OnFilter() {
                 pos3++;
             }
 
+            int d1 = mShowData.size();
+            int d2 = mContent.size();
             pos4 = mContent.find("\n", pos1);
             mShowData += mContent.substr(pos3, pos4 - pos3 + 1);
+            if (pos2 >= (pos4 + 1))
+            {
+                int ddd = 12345;
+            }
+
             pos2 = pos4 + 1;
+            loopCount++;
         }
         SetText(mLabel, mShowData);
     }
@@ -247,19 +256,15 @@ void CSyntaxCache::PushToCache(const std::mstring &content) {
     }
 
     mContent += content;
-    if (content.size() && flag)
+
+    if (!content.empty() && content[content.size() - 1] != '\n')
     {
-        char c = mCache[mCache.size() - 1];
+        mContent += "\n";
 
-        if (c != '\n')
+        if (flag)
         {
-            if (flag)
-            {
-                mCache += "\n";
-                mShowData += "\n";
-            }
-
-            mContent += "\n";
+            mCache += "\n";
+            mShowData += "\n";
         }
     }
 }
