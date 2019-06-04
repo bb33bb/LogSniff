@@ -10,6 +10,7 @@ map<HWND, CSyntaxCache *> CSyntaxCache::msTimerCache;
 
 CSyntaxCache::CSyntaxCache() {
     mInterval = 0;
+    mWorkMode = 0;
 }
 
 CSyntaxCache::~CSyntaxCache() {
@@ -27,13 +28,14 @@ bool CSyntaxCache::InitCache(const mstring &label, int interval) {
     msTimerCache[hwnd] = this;
     SetTimer(hwnd, TIMER_CACHE, interval, TimerCache);
 
+    //INDIC_ROUNDBOX
     SendMsg(SCI_INDICSETSTYLE, NOTE_KEYWORD, INDIC_ROUNDBOX);
     SendMsg(SCI_INDICSETALPHA, NOTE_KEYWORD, 100);
-    SendMsg(SCI_INDICSETFORE, NOTE_KEYWORD, RGB(0x63, 0xb8, 0xff));
+    SendMsg(SCI_INDICSETFORE, NOTE_KEYWORD, RGB(0, 0xff, 0));
 
     SendMsg(SCI_INDICSETSTYLE, NOTE_SELECT, INDIC_ROUNDBOX);
     SendMsg(SCI_INDICSETALPHA, NOTE_SELECT, 100);
-    SendMsg(SCI_INDICSETFORE, NOTE_SELECT, RGB(0, 0xff, 0));
+    SendMsg(SCI_INDICSETFORE, NOTE_SELECT, RGB(0, 0, 0xff));
     return true;
 }
 
@@ -49,6 +51,8 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
         }
 
         CSyntaxCache *ptr = it->second;
+
+        AutoLocker locker(ptr);
         if (ptr->mCache.empty())
         {
             return;
@@ -59,16 +63,22 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
     }
 }
 
-void CSyntaxCache::SetFilter(const mstring &rule) {
-    if (rule == mRuleStr)
+void CSyntaxCache::SwitchWorkMode(int mode) {
+    if (mWorkMode == mode)
     {
         return;
     }
 
+    mWorkMode = mode;
+    mKeyword.clear();
+    mShowData = mContent;
+    SetText(mLabel, mShowData);
+}
+
+void CSyntaxCache::OnFilter() {
     //清理缓存,防止数据重复录入
     mCache.clear();
-    mRuleStr = rule;
-    if (mRuleStr.empty())
+    if (mKeyword.empty())
     {
         mShowData = mContent;
         SetText(mLabel, mContent);
@@ -80,7 +90,7 @@ void CSyntaxCache::SetFilter(const mstring &rule) {
         size_t pos4 = 0;
 
         while (true) {
-            pos1 = mContent.find_in_rangei(mRuleStr, pos2);
+            pos1 = mContent.find_in_rangei(mKeyword, pos2);
 
             if (mstring::npos == pos1)
             {
@@ -91,14 +101,85 @@ void CSyntaxCache::SetFilter(const mstring &rule) {
             if (mstring::npos == pos3)
             {
                 pos3 = 0;
+            } else {
+                pos3++;
             }
 
             pos4 = mContent.find("\n", pos1);
-            mShowData += mContent.substr(pos3 + 1, pos4 - pos3);
+            mShowData += mContent.substr(pos3, pos4 - pos3 + 1);
             pos2 = pos4 + 1;
         }
         SetText(mLabel, mShowData);
     }
+    OnViewUpdate();
+}
+
+bool CSyntaxCache::SetKeyword(const std::mstring &keyWord) {
+    AutoLocker locker(this);
+    if (0 == mWorkMode)
+    {
+        if (keyWord == mKeyword)
+        {
+            return true;
+        }
+
+        mKeyword = keyWord;
+        OnFilter();
+        return true;
+    } else if (1 == mWorkMode)
+    {
+        mKeyword = keyWord;
+        OnViewUpdate();
+        if (JmpLastPos(mKeyword))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CSyntaxCache::JmpNextPos(const mstring &str) {
+    return false;
+}
+
+bool CSyntaxCache::JmpFrontPos(const mstring &str) {
+    return false;
+}
+
+bool CSyntaxCache::JmpFirstPos(const mstring &str) {
+    return false;
+}
+
+bool CSyntaxCache::JmpLastPos(const mstring &str) {
+    if (str.empty() || mShowData.empty())
+    {
+        return false;
+    }
+
+    size_t lastPos = 0;
+    for (size_t i = mShowData.size() - 1 ; i != 0 ; i--) {
+        if (0 == mShowData.comparei(str, i))
+        {
+            lastPos = i;
+            break;
+        }
+    }
+
+    if (lastPos)
+    {
+        size_t line = SendMsg(SCI_LINEFROMPOSITION, lastPos, 0);
+
+        if (line >= 10)
+        {
+            SendMsg(SCI_LINESCROLL, 0, line - 10);
+        } else {
+            SendMsg(SCI_LINESCROLL, 0, line);
+        }
+        SendMsg(SCI_SETSEL, lastPos, lastPos + str.size());
+        return true;
+    }
+    return false;
 }
 
 void CSyntaxCache::UpdateView() const {
@@ -121,7 +202,7 @@ void CSyntaxCache::OnViewUpdate() const {
 
     mstring str = mShowData.substr(startPos, lastPos - startPos);
 
-    if (mRuleStr.empty())
+    if (mKeyword.empty())
     {
         return;
     }
@@ -131,10 +212,10 @@ void CSyntaxCache::OnViewUpdate() const {
 
     size_t pos1 = 0;
     size_t pos2 = 0;
-    while (mstring::npos != (pos1 = str.find_in_rangei(mRuleStr, pos2))) {
-        SendMsg(SCI_INDICATORFILLRANGE, pos1 + startPos, mRuleStr.size());
+    while (mstring::npos != (pos1 = str.find_in_rangei(mKeyword, pos2))) {
+        SendMsg(SCI_INDICATORFILLRANGE, pos1 + startPos, mKeyword.size());
 
-        pos2 = pos1 + mRuleStr.size();
+        pos2 = pos1 + mKeyword.size();
     }
 }
 
@@ -146,11 +227,23 @@ void CSyntaxCache::PushToCache(const std::mstring &content) {
     AutoLocker locker(this);
 
     bool flag = false;
-    if (mRuleStr.empty() || mstring::npos != content.find_in_rangei(mRuleStr.c_str()))
+    if (0 == mWorkMode)
     {
+        if (mKeyword.empty() || mstring::npos != content.find_in_rangei(mKeyword))
+        {
+            mCache += content;
+            mShowData += content;
+            flag = true;
+        }
+    } else {
         mCache += content;
         mShowData += content;
         flag = true;
+    }
+
+    if (content.size() > 1024 * 4)
+    {
+        int dd = 1234;
     }
 
     mContent += content;

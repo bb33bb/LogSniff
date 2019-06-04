@@ -27,6 +27,7 @@ static HWND gsFindMode = NULL;
 static CLogSyntaxView *gsLogView = NULL;
 static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
+static CSyntaxCache *gsCurView = NULL;
 
 static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR  (WM_USER + 1123)
@@ -56,11 +57,13 @@ void SwitchWorkMode(LogViewMode mode) {
         ShowWindow(logView, SW_HIDE);
         ShowWindow(dbgView, SW_SHOW);
         SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 调试信息");
+        gsCurView = gsDbgView;
     } else if (em_mode_logFile == gsWorkMode)
     {
         ShowWindow(dbgView, SW_HIDE);
         ShowWindow(logView, SW_SHOW);
         SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 文件日志");
+        gsCurView = gsLogView;
     }
 }
 
@@ -125,7 +128,7 @@ static void _OnMainViewLayout() {
 
     //上下左右间距
     const int spaceWidth = 3;
-    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 180, clientHigh - statusHigh - spaceWidth * 2);
+    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 140, clientHigh - statusHigh - spaceWidth * 2);
 
     RECT rtTreeView = {0};
     GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
@@ -164,34 +167,19 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     FILE *fp = fopen(filePath, "rb");
     fseek(fp, bomLen, SEEK_CUR);
 
-    int size = 1024 * 1024 * 4;
-    char *buff = new char[size];
-    int count = fread(buff, 1, size, fp);
-    buff[count] = '\0';
+    char buffer[4096];
+    int count = 0;
+    mstring dd;
+    while ((count = fread(buffer, 1, 4096, fp)) > 0) {
+        dd.append(buffer, count);
+    }
     fclose(fp);
 
     gsLogView->SendMsg(SCI_SETIDENTIFIERS, STAT_KEYWORD, (LPARAM)"location");
-    gsLogView->PushToCache(UtoA(buff));
+    gsLogView->PushToCache(UtoA(dd));
     gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
-    /*
-    gsLogView->PushToCache("abcdefghijk");
-    gsLogView->SetKeyWord("abc", STAT_KEYWORD);
-    gsLogView->SetKeyWord("cdefghijk", STAT_KEYWORD);
-    gsLogView->SetKeyWord("ijk", STAT_KEYWORD);
-    */
+
     Sleep(1000);
-
-    /*
-    #define TEST1 51
-    gsLogView->SendMsg(SCI_INDICSETSTYLE, SCE_UNIVERSAL_FOUND_STYLE_EXT1, INDIC_ROUNDBOX);
-    gsLogView->SendMsg(SCI_INDICSETALPHA, SCE_UNIVERSAL_FOUND_STYLE_EXT1, 100);
-    gsLogView->SendMsg(SCI_INDICSETFORE, SCE_UNIVERSAL_FOUND_STYLE_EXT1, RGB(0, 255, 0));
-
-    gsLogView->SendMsg(SCI_SETINDICATORCURRENT, SCE_UNIVERSAL_FOUND_STYLE_EXT1, 0);
-    gsLogView->SendMsg(SCI_INDICATORFILLRANGE, 0, 102);
-
-    gsLogView->SendMsg(SCI_INDICATORFILLRANGE, 106, 4);
-    */
     return 0;
 }
 
@@ -246,7 +234,6 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //gsLogView->SetHightStr("Thread");
     //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
-
     CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
     return 0;
 }
@@ -257,6 +244,10 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     if (id == IDC_MAIN_SELECT)
     {
         ShowLogServView(hdlg);
+    } else if (id == IDC_COM_MODE)
+    {
+        int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
+        gsCurView->SwitchWorkMode(curSel);
     }
     return 0;
 }
@@ -269,17 +260,6 @@ static INT_PTR _OnTimer(HWND hdlg, WPARAM wp, LPARAM lp) {
 }
 
 static INT_PTR _OnKeyDown(HWND hdlg, WPARAM wp, LPARAM lp) {
-    return 0;
-}
-
-static INT_PTR _OnHighLightKeyword() {
-    if (em_mode_logFile == gsWorkMode)
-    {
-        gsLogView->OnViewUpdate();
-    } else if (em_mode_debugMsg == gsWorkMode)
-    {
-        gsDbgView->OnViewUpdate();
-    }
     return 0;
 }
 
@@ -296,8 +276,9 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                     size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
                     dp("select %d-%d", pos1, pos2);
                 }
-                _OnHighLightKeyword();
+                gsCurView->OnViewUpdate();
             }
+            break;
         default:
             break;
     }
@@ -329,16 +310,10 @@ static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
 }
 
 static INT_PTR _OnSetFilter() {
-    char filter[256] = {0};
+    char keyWord[256] = {0};
 
-    GetWindowTextA(gs_hFilter, filter, 256);
-
-    if (em_mode_logFile == gsWorkMode) {
-        gsLogView->SetFilter(filter);
-    } else if (em_mode_debugMsg == gsWorkMode)
-    {
-        gsDbgView->SetFilter(filter);
-    }
+    GetWindowTextA(gs_hFilter, keyWord, 256);
+    gsCurView->SetKeyword(keyWord);
     return 0;
 }
 

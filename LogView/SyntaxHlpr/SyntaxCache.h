@@ -8,13 +8,6 @@
 #include <map>
 #include <vector>
 
-struct RuleStatNode {
-    size_t mStartPos;
-    size_t mEndPos;
-    int mStat;
-    std::mstring mRule;
-};
-
 class CSyntaxCache : public SyntaxView, public RLocker {
 public:
     CSyntaxCache();
@@ -22,15 +15,21 @@ public:
 
     bool InitCache(const std::mstring &label, int interval);
     void PushToCache(const std::mstring &content);
-    void SetFilter(const std::mstring &rule);
+
+    void SwitchWorkMode(int mode);
+    bool SetKeyword(const std::mstring &keyWord);
+
+    bool JmpNextPos(const std::mstring &str);
+    bool JmpFrontPos(const std::mstring &str);
+    bool JmpFirstPos(const std::mstring &str);
+    bool JmpLastPos(const std::mstring &str);
 
     std::mstring GetViewStr(int startPos, int length) const;
     void OnViewUpdate() const;
-    void SetSelStr(const std::mstring &str);
     void UpdateView() const;
+
 private:
-    bool IsKeyWordInCache(const std::mstring &keyWord) const;
-    void InsertRuleNode(const RuleStatNode &node);
+    void OnFilter();
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,
         UINT_PTR id,
@@ -61,6 +60,6 @@ private:
     static std::map<HWND, CSyntaxCache *> msTimerCache;
     std::mstring mContent;
     std::mstring mShowData;
-    std::mstring mRuleStr;
-    std::mstring mSelStr;
+    std::mstring mKeyword;
+    int mWorkMode;  //工作模式 0 过滤模式 1 查找模式
 };

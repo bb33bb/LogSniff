@@ -45,6 +45,7 @@ void CLogSyntaxView::initLogView() {
 
     SetStyle(STAT_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
     SetStyle(STAT_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));
+
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
 
     SendMsg(SCI_SETMARGINCURSORN, 0, SC_CURSORARROW);
