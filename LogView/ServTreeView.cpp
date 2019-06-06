@@ -1,5 +1,6 @@
 #include <WinSock2.h>
 #include <shlobj.h>
+#include <Shlwapi.h>
 #include "ServTreeView.h"
 #include "resource.h"
 #include <CommCtrl.h>
@@ -180,7 +181,7 @@ INT_PTR CServTreeDlg::OnServAddedInternal(const LogServDesc *desc) {
         HTREEITEM t3 = InsertItem(t1, "调试信息", param2);
 
         TreeCtrlParam *param3 = new TreeCtrlParam();
-        param3->mNodeType = em_tree_dir;
+        param3->mNodeType = em_tree_dir_root;
         param3->mServDesc = desc;
         HTREEITEM t4 = InsertItem(t1, "日志文件", param3);
 
@@ -287,7 +288,9 @@ void CServTreeDlg::OnServTreeUpdate(const LogServDesc *desc) {
         TreeCtrlParam *param = new TreeCtrlParam();
         param->mNodeType = em_tree_dir;
         param->mServDesc = desc;
-        InsertItem(cache->mFileSetItem, *it, param);
+        param->mFilePath = *it;
+        InsertPathToFileTree(*it);
+        //InsertItem(cache->mFileSetItem, PathFindFileNameA(it->c_str()), param);
     }
 
     InvalidateRect(mTreeCtrl, NULL, TRUE);
@@ -333,6 +336,81 @@ void CServTreeDlg::OnNewLogFiles(const list<mstring> &fileSet) {
 INT_PTR CServTreeDlg::OnClose(WPARAM wp, LPARAM lp) {
     EndDialog(mhWnd, 0);
     return 0;
+}
+
+void CServTreeDlg::InsertPathToFileTree(const mstring &path) {
+    struct ParentNode {
+        HTREEITEM mParentItem;
+        mstring mFilePath;
+    };
+
+    const LogServDesc *desc = mTreeCache[0]->mServDesc;
+    TreeCtrlParam *param = new TreeCtrlParam();
+    param->mNodeType = em_tree_dir;
+    param->mServDesc = desc;
+    param->mFilePath = path;
+    HTREEITEM rootItem = InsertItem(mTreeCache[0]->mFileSetItem, PathFindFileNameA(path.c_str()), param);
+
+    ParentNode first;
+    first.mParentItem = rootItem;
+    first.mFilePath = path;
+
+    list<ParentNode> pathSet;
+    pathSet.push_back(first);
+    while (!pathSet.empty()) {
+        ParentNode tmp = *pathSet.begin();
+        pathSet.pop_front();
+
+        mstring findStr = (tmp.mFilePath + "\\*.*");
+        WIN32_FIND_DATAA findData;
+        HANDLE hFind = FindFirstFileA(findStr.c_str(), &findData);
+        if (INVALID_HANDLE_VALUE == hFind) {
+            continue;
+        }
+
+        BOOL bRet = TRUE;
+        do
+        {
+            if (0 == lstrcmpA(findData.cFileName, ".") || 0 == lstrcmpA(findData.cFileName, ".."))
+            {
+                continue;
+            }
+
+            char fileName[MAX_PATH];
+            lstrcpyA(fileName, tmp.mFilePath.c_str());
+            PathAppendA(fileName, findData.cFileName);
+
+            if (INVALID_FILE_ATTRIBUTES == findData.dwFileAttributes)
+            {
+                continue;
+            }
+
+            param = new TreeCtrlParam();
+            if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                param->mNodeType = em_tree_dir;
+                param->mFilePath = fileName;
+                param->mServDesc = desc;
+                HTREEITEM treeItem = InsertItem(tmp.mParentItem, findData.cFileName, param);
+
+                ParentNode child;
+                child.mFilePath = fileName;
+                child.mParentItem = treeItem;
+                pathSet.push_back(child);
+            }
+            else
+            {
+                param->mNodeType = em_tree_file;
+                param->mFilePath = fileName;
+                param->mServDesc = desc;
+                InsertItem(tmp.mParentItem, findData.cFileName, param);
+            }
+        } while (FindNextFileA(hFind, &findData));
+        FindClose(hFind);
+    }
+}
+
+void CServTreeDlg::DeletePathFromFileTree(const mstring &path) {
 }
 
 INT_PTR CServTreeDlg::ServTreeDlgProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp) {

@@ -134,6 +134,14 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
         logContent += content.substr(pos2, content.size() - pos2);
         logContent += "\n";
     }
+
+    for (size_t t = 0 ; t < logContent.size() ; t++)
+    {
+        if (logContent[t] == 0x00)
+        {
+            int dd = 1234;
+        }
+    }
     PushDbgContent(logContent);
 }
 

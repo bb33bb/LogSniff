@@ -9,6 +9,7 @@ class CServTreeDlg : public LogServEvent {
         em_tree_root_node,
         em_tree_file_log,
         em_tree_dbg_msg,
+        em_tree_dir_root,
         em_tree_dir,
         em_tree_file
     };
@@ -37,6 +38,11 @@ class CServTreeDlg : public LogServEvent {
         }
     };
 
+    //文件树缓存
+    struct FileTreeCache {
+        HTREEITEM mTreeNodeIndex;
+        mstring mFilePath;
+    };
 public:
     CServTreeDlg();
     virtual ~CServTreeDlg();
@@ -67,6 +73,10 @@ private:
 
     void DeleteChildByName(HTREEITEM parent, const std::mstring &name);
     TreeRootCache *GetCacheFromDesc(const LogServDesc *desc) const;
+
+    //文件树接口
+    void InsertPathToFileTree(const mstring &path);
+    void DeletePathFromFileTree(const mstring &path);
 private:
     virtual void OnLogServAdd(const LogServDesc *d);
     virtual void OnLogServSwitch(const LogServDesc *d1, const LogServDesc *d2);
@@ -78,4 +88,6 @@ private:
     HWND mTreeCtrl;
     std::vector<const LogServDesc *> mServDesc;
     std::vector<TreeRootCache *> mTreeCache;
+    //文件树缓存
+    list<FileTreeCache> mFileTreeCache;
 };

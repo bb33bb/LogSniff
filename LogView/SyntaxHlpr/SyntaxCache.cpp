@@ -250,6 +250,14 @@ void CSyntaxCache::PushToCache(const std::mstring &content) {
 
     bool flag = false;
     mstring str = content;
+    //±‹√‚0x00Ωÿ∂œ
+    for (size_t i = 0 ; i < str.size() ; i++)
+    {
+        if (str[i] == 0x00) {
+            str.replace(i, 1, "null");
+        }
+    }
+
     if (0 == mWorkMode)
     {
         if (mKeyword.empty())

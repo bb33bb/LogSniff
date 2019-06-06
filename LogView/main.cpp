@@ -56,8 +56,20 @@ static bool _TestFileEnumProc(bool isDir, const char *filePath, void *param) {
     return true;
 }
 
+static void _TestString(const mstring &test) {
+    int dd = 1234;
+    int size = test.size();
+
+    int ff = 222;
+}
+
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
+    char *buf = new char[10];
+    memset(buf, 'a', 10);
+    buf[0] = 0x00;
+
+    _TestString(buf);
     //CDbgCapturer::GetInst()->InitCapturer();
     //CServTreeDlg dlg;
     //dlg.CreateDlg(NULL);
