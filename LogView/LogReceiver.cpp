@@ -107,6 +107,17 @@ void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
     }
 }
 
+bool CLogReceiver::AddPathMonitor(const std::mstring &filePath) {
+    return (CLogServMgr::GetInst()->AddPath(filePath) && mCurMonitor->AddPath(filePath));
+}
+
+bool CLogReceiver::DelPathMonitor(const std::mstring &filePath) {
+    return (CLogServMgr::GetInst()->DelPath(filePath) && mCurMonitor->DelPath(filePath));
+}
+
+void CLogReceiver::OnNewLogFiles(const list<mstring> &fileSet) {
+}
+
 void CLogReceiver::OnLogReceived(const mstring &filePath, const mstring &content) {
     PushLog(filePath, content);
 }

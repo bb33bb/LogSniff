@@ -6,11 +6,14 @@
 #else
 #include <Shlwapi.h>
 #include <iphlpapi.h>
+#include <Psapi.h>
+#include <Tlhelp32.h>
 #include "mstring.h"
 #include "LogUtil.h"
 #include "StrUtil.h"
 
 #pragma comment(lib, "Iphlpapi.lib")
+#pragma comment(lib, "Psapi.lib")
 #endif
 
 #include <stdio.h>
@@ -511,5 +514,162 @@ mstring GetOSVersion()
         ver += temp;
     }
     return ver;
+}
+
+static BOOL _FileDosNameToFileName(LPCSTR dosName, LPSTR fileName, UINT bufSize)
+{
+    BOOL bRet = FALSE;
+
+    do
+    {
+        if (!dosName || !fileName)
+        {
+            break;
+        }
+        if (lstrlenA(dosName) > 250)
+        {
+            break;
+        }
+
+        if (dosName[0] != '\\')
+        {
+            break;
+        }
+
+        LPCSTR secondBackSlash = StrChrA(dosName + 1, '\\');
+        if (!secondBackSlash)
+        {
+            break;
+        }
+
+        LPCSTR thirdBackSlash = StrChrA(secondBackSlash + 1, '\\');
+        if (!thirdBackSlash)
+        {
+            break;
+        }
+
+        DWORD drives = GetLogicalDrives();
+        for (int i = 0; i < 26; ++i)
+        {
+            if (!(drives & (1 << i)))
+            {
+                continue;
+            }
+
+            char letter[4] = {'c', ':'};
+            letter[0] = 'A' + i;
+            char dosDevice[MAX_PATH];
+
+            if (QueryDosDeviceA(letter, dosDevice, MAX_PATH))
+            {
+                if (0 == StrCmpNIA(dosDevice, dosName, (int)(thirdBackSlash - dosName)))
+                {
+                    wnsprintfA(fileName, bufSize, "%s%s", letter, thirdBackSlash);
+                    bRet = TRUE;
+                    break;
+                }
+            }
+        }
+    } while (FALSE);
+
+    return bRet;
+}
+
+mstring GetProcPathFromPid(DWORD pid) {
+    HANDLE hProc;
+    DWORD dwCopied = 0;
+    DWORD dwLastError = 0;
+    char buff[256];
+    buff[0] = 0x00;
+    DWORD buffSize = 256;
+    mstring result;
+
+    do
+    {
+        hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, pid);
+        if (hProc == NULL)
+        {
+            dwLastError = GetLastError();
+            break;
+        }
+
+        dwCopied = GetModuleFileNameExA(hProc, NULL, buff, 256);
+        if (dwCopied > 0)
+        {
+            dwLastError = GetLastError();
+            result = buff;
+            break;
+        }
+        //兼容64 & 2k
+        if (dwCopied == 0)
+        {
+            char psapi[MAX_PATH];
+            GetSystemDirectoryA(psapi, MAX_PATH);
+            PathAppendA(psapi, "psapi.dll");
+            HMODULE hMod = LoadLibraryA(psapi);
+            if (hMod == NULL)
+            {
+                dwLastError = GetLastError();
+                break;
+            }
+
+            typedef DWORD (WINAPI *PGetProcessImageFileNameW)(HANDLE, LPSTR, DWORD);
+            PGetProcessImageFileNameW pFun = (PGetProcessImageFileNameW)GetProcAddress(hMod, "GetProcessImageFileNameA");
+            if (pFun == NULL)
+            {
+                dwLastError = GetLastError();
+                FreeLibrary(hMod);
+                break;
+            }
+
+            dwCopied = pFun(hProc, buff, buffSize);
+            if (dwCopied > 0)
+            {
+                dwCopied = _FileDosNameToFileName(buff, buff, buffSize);
+                dwLastError = GetLastError();
+            }
+            FreeLibrary(hMod);
+        }
+    } while (FALSE);
+
+    CloseHandle(hProc);
+    SetLastError(dwLastError);
+    return result;
+}
+
+typedef BOOL (WINAPI* pfnProcHandler)(PPROCESSENTRY32 info, void *param);
+
+void ProcIterateProc(pfnProcHandler handler, void* lpParam)
+{
+    do
+    {
+        if (!handler)
+        {
+            break;
+        }
+
+        PROCESSENTRY32 pe32 = {0};
+        pe32.dwSize = sizeof(pe32);
+
+        HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (INVALID_HANDLE_VALUE == hSnap)
+        {
+            break;
+        }
+
+        BOOL bMore = Process32First(hSnap, &pe32);
+        while (bMore)
+        {
+            if (!handler(&pe32, lpParam))
+            {
+                // 回调方要求退出
+                break;
+            }
+
+            bMore = Process32Next(hSnap, &pe32);
+        }
+
+        CloseHandle(hSnap);
+    } while (FALSE);
 }
 #endif //__linux__

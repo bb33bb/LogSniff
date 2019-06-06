@@ -21,10 +21,13 @@
 #define IDC_SERV_SELECT                 1006
 #define IDC_MAIN_SELECT                 1006
 #define IDC_LOGPATH_ADD                 1006
-#define IDC_BTN_REFUSH                  1006
+#define IDC_BTN_ADD_PATH                1006
 #define IDC_LOGPATH_SET                 1007
+#define IDC_BTN_SERV_CFG                1007
 #define IDC_CK_REG                      1008
 #define IDC_CK_REGULAR                  1008
+#define IDC_BTN_REFUSH2                 1008
+#define IDC_BTN_REFUSH                  1008
 #define IDC_BTN_CONFIG                  1009
 #define IDC_SERV_STATUS                 1010
 #define IDC_EDT_DESC                    1012

@@ -138,6 +138,10 @@ class MonitorBase {
 public:
     virtual bool Init(CMonitorEvent *listener) = 0;
     virtual bool Run(const LogServDesc *servDesc) = 0;
+
+    virtual bool AddPath(const mstring &path) = 0;
+    virtual bool DelPath(const mstring &path) = 0;
+
     virtual bool Stop() = 0;
     virtual bool IsRunning() = 0;
     virtual std::list<std::mstring> GetPathSet() const = 0;

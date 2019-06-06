@@ -18,6 +18,7 @@ public:
 
     void SwitchWorkMode(int mode);
     bool SetKeyword(const std::mstring &keyWord);
+    std::mstring GetKeyword();
 
     bool JmpNextPos(const std::mstring &str);
     bool JmpFrontPos(const std::mstring &str);
@@ -29,6 +30,7 @@ public:
     void UpdateView() const;
 
 private:
+    std::mstring GetFilterStr(const std::mstring &content, const std::mstring &key) const;
     void OnFilter();
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,

@@ -1,8 +1,14 @@
 #include <WinSock2.h>
 #include <Windows.h>
+#include <TlHelp32.h>
+#include <Shlwapi.h>
+#include <map>
 #include <LogLib/LogUtil.h>
+#include <LogLib/StrUtil.h>
 #include "DbgMsg.h"
 #include "MainView.h"
+
+using namespace std;
 
 CDbgCapturer *CDbgCapturer::GetInst() {
     static CDbgCapturer *sPtr = NULL;
@@ -46,8 +52,89 @@ CDbgCapturer::CDbgCapturer() {
 CDbgCapturer::~CDbgCapturer() {
 }
 
+struct ProcEnumInfo {
+    DWORD mPid;
+    mstring mProcName;
+};
+
+BOOL CDbgCapturer::ProcHandler(PPROCESSENTRY32 info, void *param) {
+    ProcEnumInfo *ptr = (ProcEnumInfo *)param;
+
+    if (ptr->mPid == info->th32ProcessID)
+    {
+        ptr->mProcName = WtoA(info->szExeFile);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+mstring CDbgCapturer::GetProcName(DWORD pid) {
+    static map<DWORD, mstring> sProcSet;
+
+    if (pid == 4 || pid == 0)
+    {
+        return "系统进程";
+    }
+
+    mstring result;
+    bool findProc = false;
+    map<DWORD, mstring>::const_iterator it = sProcSet.find(pid);
+    if (sProcSet.end() == it)
+    {
+        findProc = true;
+    } else {
+        HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+
+        if (hProc || (NULL == hProc && 5 == GetLastError()))
+        {
+            result = it->second;
+        } else {
+            sProcSet.erase(pid);
+            findProc = true;
+        }
+    }
+
+    if (findProc)
+    {
+        ProcEnumInfo info;
+        info.mPid = pid;
+        ProcIterateProc(ProcHandler, &info);
+
+        result = info.mProcName;
+    }
+    return result;
+}
+
 void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
-    PushDbgContent(content);
+    mstring procName = GetProcName(pid);
+
+    mstring procMsg = FormatA("%hs:%d ", procName.c_str(), pid);
+    size_t pos1 = 0;
+    size_t pos2 = 0;
+
+    mstring logContent;
+    while (true) {
+        pos1 = content.find("\n", pos2);
+        if (mstring::npos == pos1)
+        {
+            break;
+        }
+
+        if (pos1 > pos2)
+        {
+            logContent += procMsg;
+            logContent += content.substr(pos2, pos1 - pos2 + 1);
+        }
+        pos2 = pos1 + 1;
+    }
+
+    if (pos2 < content.size())
+    {
+        logContent += procMsg;
+        logContent += content.substr(pos2, content.size() - pos2);
+        logContent += "\n";
+    }
+    PushDbgContent(logContent);
 }
 
 DWORD CDbgCapturer::DbgThread(LPVOID param) {

@@ -65,10 +65,40 @@ void SwitchWorkMode(LogViewMode mode) {
         SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 文件日志");
         gsCurView = gsLogView;
     }
+    SetWindowTextA(gs_hFilter, gsCurView->GetKeyword().c_str());
 }
 
 void PushLogContent(const LogInfoCache *cache) {
-    gsLogView->PushToCache(cache->mContent);
+    mstring fileName = PathFindFileNameA(cache->mFilePath.c_str());
+    fileName += " ";
+
+    size_t pos1 = 0;
+    size_t pos2 = 0;
+
+    mstring logContent;
+    const mstring &content = cache->mContent;
+    while (true) {
+        pos1 = content.find("\n", pos2);
+        if (mstring::npos == pos1)
+        {
+            break;
+        }
+
+        if (pos1 > pos2)
+        {
+            logContent += fileName;
+            logContent += content.substr(pos2, pos1 - pos2 + 1);
+        }
+        pos2 = pos1 + 1;
+    }
+
+    if (pos2 < content.size())
+    {
+        logContent += fileName;
+        logContent += content.substr(pos2, content.size() - pos2);
+        logContent += "\n";
+    }
+    gsLogView->PushToCache(logContent);
 }
 
 void PushDbgContent(const std::mstring &content) {
@@ -123,7 +153,7 @@ static void _OnMainViewLayout() {
 
     //上下左右间距
     const int spaceWidth = 3;
-    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 140, clientHigh - statusHigh - spaceWidth * 2);
+    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 220, clientHigh - statusHigh - spaceWidth * 2);
 
     RECT rtTreeView = {0};
     GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
@@ -269,7 +299,6 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                 {
                     size_t pos1 = gsLogView->SendMsg(SCI_GETSELECTIONSTART, 0, 0);
                     size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
-                    dp("select %d-%d", pos1, pos2);
                 }
                 gsCurView->OnViewUpdate();
             }

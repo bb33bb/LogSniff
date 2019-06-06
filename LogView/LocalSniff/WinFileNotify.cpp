@@ -35,9 +35,7 @@ bool CWinFileNotify::IsPathInCache(const std::string &filePath) const {
     {
         IoInfo *ptr = *it;
         mstring str1 = filePath;
-        str1.makelower();
         mstring str2 = ptr->mDirPath;
-        str2.makelower();
 
         if (mstring::npos != str2.find(str1))
         {
@@ -270,7 +268,6 @@ void CWinFileNotify::CloseAll() {
 
 ULONG CWinFileNotify::GetFilePathCrc32(const string &filePath) const {
     mstring str = filePath;
-    str.makelower();
 
     return crc32(str.c_str(), str.size(), 0xff11);
 }

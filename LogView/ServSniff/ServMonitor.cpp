@@ -38,6 +38,18 @@ list<mstring> CServMonitor::GetPathSet() const {
     return mPathSet;
 }
 
+bool CServMonitor::AddPath(const mstring &filePath) {
+    if (!mInit)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool CServMonitor::DelPath(const mstring &filePath) {
+    return true;
+}
+
 void CServMonitor::OnSingleResult(const LpResult &result) {
     switch (result.mCommand) {
         case  em_cmd_log:

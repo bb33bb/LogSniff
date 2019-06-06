@@ -75,6 +75,44 @@ void CSyntaxCache::SwitchWorkMode(int mode) {
     SetText(mLabel, mShowData);
 }
 
+mstring CSyntaxCache::GetFilterStr(const mstring &content, const mstring &key) const {
+    size_t pos1 = 0, pos2 = 0;
+    size_t pos3 = 0, pos4 = 0;
+
+    if (key.empty())
+    {
+        return content;
+    }
+
+    mstring result;
+    while (true) {
+        pos1 = content.find_in_rangei(key, pos2);
+
+        if (mstring::npos == pos1)
+        {
+            break;
+        }
+
+        pos3 = content.rfind("\n", pos1);
+        if (mstring::npos == pos3)
+        {
+            pos3 = 0;
+        } else {
+            pos3++;
+        }
+
+        pos4 = content.find("\n", pos1);
+        if (mstring::npos == pos4)
+        {
+            pos4 = content.size() - 1;
+        }
+
+        result += content.substr(pos3, pos4 - pos3 + 1);
+        pos2 = pos4 + 1;
+    }
+    return result;
+}
+
 void CSyntaxCache::OnFilter() {
     //清理缓存,防止数据重复录入
     mCache.clear();
@@ -83,41 +121,7 @@ void CSyntaxCache::OnFilter() {
         mShowData = mContent;
         SetText(mLabel, mContent);
     } else {
-        mShowData.clear();
-        size_t pos1 = 0;
-        size_t pos2 = 0;
-        size_t pos3 = 0;
-        size_t pos4 = 0;
-
-        int loopCount = 0;
-        while (true) {
-            pos1 = mContent.find_in_rangei(mKeyword, pos2);
-
-            if (mstring::npos == pos1)
-            {
-                break;
-            }
-
-            pos3 = mContent.rfind("\n", pos1);
-            if (mstring::npos == pos3)
-            {
-                pos3 = 0;
-            } else {
-                pos3++;
-            }
-
-            int d1 = mShowData.size();
-            int d2 = mContent.size();
-            pos4 = mContent.find("\n", pos1);
-            mShowData += mContent.substr(pos3, pos4 - pos3 + 1);
-            if (pos2 >= (pos4 + 1))
-            {
-                int ddd = 12345;
-            }
-
-            pos2 = pos4 + 1;
-            loopCount++;
-        }
+        mShowData = GetFilterStr(mContent, mKeyword);
         SetText(mLabel, mShowData);
     }
     OnViewUpdate();
@@ -146,6 +150,10 @@ bool CSyntaxCache::SetKeyword(const std::mstring &keyWord) {
     }
 
     return false;
+}
+
+mstring CSyntaxCache::GetKeyword() {
+    return mKeyword;
 }
 
 bool CSyntaxCache::JmpNextPos(const mstring &str) {
@@ -235,29 +243,38 @@ mstring CSyntaxCache::GetViewStr(int startPos, int length) const {
 void CSyntaxCache::PushToCache(const std::mstring &content) {
     AutoLocker locker(this);
 
+    if (content.empty())
+    {
+        return;
+    }
+
     bool flag = false;
+    mstring str = content;
     if (0 == mWorkMode)
     {
-        if (mKeyword.empty() || mstring::npos != content.find_in_rangei(mKeyword))
+        if (mKeyword.empty())
         {
-            mCache += content;
-            mShowData += content;
             flag = true;
+        } else {
+            str = GetFilterStr(content, mKeyword);
+
+            if (!str.empty())
+            {
+                flag = true;
+            }
         }
     } else {
-        mCache += content;
-        mShowData += content;
         flag = true;
     }
 
-    if (content.size() > 1024 * 4)
+    if (flag)
     {
-        int dd = 1234;
+        mCache += str;
+        mShowData += str;
     }
 
-    mContent += content;
-
-    if (!content.empty() && content[content.size() - 1] != '\n')
+    mContent += str;
+    if (!str.empty() && str[str.size() - 1] != '\n')
     {
         mContent += "\n";
 

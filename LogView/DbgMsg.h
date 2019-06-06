@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <TlHelp32.h>
 #include <vector>
 
 class CDbgCapturer {
@@ -11,8 +12,10 @@ private:
     CDbgCapturer();
     ~CDbgCapturer();
 
+    std::mstring GetProcName(DWORD pid);
     void OnDbgMsg(DWORD pid, const std::mstring &content);
     static DWORD WINAPI DbgThread(LPVOID param);
+    static BOOL WINAPI ProcHandler(PPROCESSENTRY32 info, void *param);
 
     struct DbgBuffer {
         DWORD mPid;

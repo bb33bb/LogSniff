@@ -13,6 +13,19 @@ class CServTreeDlg : public LogServEvent {
         em_tree_file
     };
 
+    struct TreeRootCache {
+        const LogServDesc *mServDesc;
+        HTREEITEM mFileLogItem;
+        HTREEITEM mFileSetItem;
+        list<mstring> mPathList;
+
+        TreeRootCache() {
+            mServDesc = NULL;
+            mFileLogItem = NULL;
+            mFileSetItem = NULL;
+        }
+    };
+
     struct TreeCtrlParam {
         TreeNodeType mNodeType;
         const LogServDesc *mServDesc;
@@ -31,18 +44,29 @@ public:
     BOOL CreateDlg(HWND hParent);
     HWND GetWindow();
     BOOL MoveWindow(int x, int y, int cx, int cy);
+    void OnNewLogFiles(const list<mstring> &fileSet);
 
 private:
+    mstring ShowFileDlg(const mstring &initDir) const;
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnCommand(WPARAM wp, LPARAM lp);
     INT_PTR OnNotify(WPARAM wp, LPARAM lp);
     INT_PTR OnClose(WPARAM wp, LPARAM lp);
+
+    void OnServTreeUpdate(const LogServDesc *desc);
     INT_PTR OnServAddedInternal(const LogServDesc *desc);
+    INT_PTR OnServAlterInternal(const LogServDesc *desc);
     static INT_PTR CALLBACK ServTreeDlgProc(HWND hlg, UINT msg, WPARAM wp, LPARAM lp);
 
     HTREEITEM InsertItem(HTREEITEM parent, const std::mstring &name, const TreeCtrlParam *param) const;
     BOOL SetItemStat(HTREEITEM treeItem, DWORD statMask) const;
 
+    bool IsServInCache(const LogServDesc *desc) const;
+    bool InsertServToCache(const LogServDesc *desc, HTREEITEM hFileLog, HTREEITEM hFileSet);
+    bool UpdateServCache(const LogServDesc *desc);
+
+    void DeleteChildByName(HTREEITEM parent, const std::mstring &name);
+    TreeRootCache *GetCacheFromDesc(const LogServDesc *desc) const;
 private:
     virtual void OnLogServAdd(const LogServDesc *d);
     virtual void OnLogServSwitch(const LogServDesc *d1, const LogServDesc *d2);
@@ -53,4 +77,5 @@ private:
     HWND mParent;
     HWND mTreeCtrl;
     std::vector<const LogServDesc *> mServDesc;
+    std::vector<TreeRootCache *> mTreeCache;
 };

@@ -27,7 +27,8 @@ class CLocalMonitor : public RLocker, public MonitorBase {
 
 public:
     static CLocalMonitor *GetInst();
-    void SetMonitor(const char *path);
+    bool AddPath(const std::mstring &path);
+    bool DelPath(const std::mstring &path);
 
     virtual bool Init(CMonitorEvent *listener);
     virtual bool Run(const LogServDesc *desc);
@@ -39,8 +40,6 @@ private:
     CLocalMonitor();
     virtual ~CLocalMonitor();
 
-    bool AddPath(const std::mstring &path);
-    bool DelPath(const std::mstring &path);
     bool IsFileInCache(const std::mstring &filePath) const;
     LocalLogCache *GetFileCache(const std::mstring &filePath);
     void OnLogReceived(LocalLogCache *cache);

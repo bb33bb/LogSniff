@@ -1,6 +1,7 @@
 #pragma once
 #ifndef __linux__
 #include <Windows.h>
+#include <Tlhelp32.h>
 #include <vector>
 #include "mstring.h"
 #include "json/json.h"
@@ -92,4 +93,9 @@ BOOL GetAdapterSet(std::vector<AdapterMsg> &nets);
 typedef bool (* pfnFileHandler)(bool isDir, LPCSTR filePath, void *param);
 BOOL EnumFiles(const std::mstring &dir, BOOL recursion, pfnFileHandler pfn, void *param);
 std::mstring GetOSVersion();
+
+std::mstring GetProcPathFromPid(DWORD pid);
+
+typedef BOOL (WINAPI* pfnProcHandler)(PPROCESSENTRY32 info, void *param);
+void ProcIterateProc(pfnProcHandler handler, void* lpParam);
 #endif //__linux__

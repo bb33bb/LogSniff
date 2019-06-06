@@ -108,28 +108,33 @@ bool CLocalMonitor::AddPath(const mstring &path) {
         return false;
     }
 
+    DWORD attr = GetFileAttributesA(path.c_str());
+    if (INVALID_FILE_ATTRIBUTES == attr)
+    {
+        return false;
+    }
+
+    if (!(FILE_ATTRIBUTE_DIRECTORY & attr))
+    {
+        return false;
+    }
     DWORD t1 = GetTickCount();
     EnumFiles(path, true, FileEnumProc, 0);
     DWORD t2 = GetTickCount() - t1;
 
     HFileNotify h = CWinFileNotify::GetInst()->Register(path, "log;txt",-1, FileNotify);
-    mstring low = path;
-    low.makelower();
-    mPathSet[low] = h;
+    mPathSet[path] = h;
     return true;
 }
 
 bool CLocalMonitor::DelPath(const std::mstring &path) {
-    mstring low(path);
-    low.makelower();
-
-    if (!IsFileInCache(low))
+    if (!IsFileInCache(path))
     {
         return false;
     }
 
-    CWinFileNotify::GetInst()->UnRegister(mPathSet[low]);
-    mPathSet.erase(low);
+    CWinFileNotify::GetInst()->UnRegister(mPathSet[path]);
+    mPathSet.erase(path);
     return true;
 }
 
@@ -142,15 +147,12 @@ bool CLocalMonitor::IsRunning() {
 }
 
 CLocalMonitor::LocalLogCache *CLocalMonitor::GetFileCache(const mstring &filePath) {
-    mstring low = filePath;
-    low.makelower();
-
-    map<mstring, LocalLogCache *>::iterator it = mLogCache.find(low);
+    map<mstring, LocalLogCache *>::iterator it = mLogCache.find(filePath);
     if (mLogCache.end() == it)
     {
         LocalLogCache *newCache = new LocalLogCache();
         newCache->mFilePath = filePath;
-        mLogCache[low] = newCache;
+        mLogCache[filePath] = newCache;
         return newCache;
     } else {
         return it->second;
@@ -205,8 +207,6 @@ void CLocalMonitor::OnLogReceived(LocalLogCache *cache) {
 }
 
 bool CLocalMonitor::IsFileInCache(const mstring &filePath) const {
-    mstring low = filePath;
-    low.makelower();
     return (mPathSet.end() != mPathSet.find(filePath));
 }
 
@@ -220,7 +220,6 @@ bool CLocalMonitor::FileEnumProc(bool isDir, const char *filePath, void *param) 
     {
         LocalLogCache *newCache = new LocalLogCache();
         newCache->mFilePath = filePath;
-        newCache->mFilePath.makelower();
         FILE *fp = fopen(filePath, "rb");
 
         if (NULL != fp)
@@ -256,7 +255,6 @@ void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
    fseek(fp, 0, SEEK_END);
    int size = ftell(fp);
    fclose(fp);
-   dp("##################################filePath:%hs, fileSize:%d", filePath, size);
 
    if (0 == size)
    {

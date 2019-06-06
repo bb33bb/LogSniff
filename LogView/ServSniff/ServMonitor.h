@@ -15,6 +15,8 @@ public:
     virtual bool IsRunning();
     virtual bool Stop();
     virtual std::list<std::mstring> GetPathSet() const;
+    virtual bool AddPath(const std::mstring &filePath);
+    virtual bool DelPath(const std::mstring &filePath);
 
 private:
     void OnSingleResult(const LpResult &result);
