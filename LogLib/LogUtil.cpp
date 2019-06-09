@@ -14,6 +14,7 @@
 
 #pragma comment(lib, "Iphlpapi.lib")
 #pragma comment(lib, "Psapi.lib")
+#pragma comment(lib, "Version.lib")
 #endif
 
 #include <stdio.h>
@@ -671,5 +672,44 @@ void ProcIterateProc(pfnProcHandler handler, void* lpParam)
 
         CloseHandle(hSnap);
     } while (FALSE);
+}
+
+BOOL GetFileVersion(LPCSTR pFile, mstring& ver)
+{   
+    LPSTR pBuf = NULL;
+    CHAR szVersionBuffer[4096] = {0x00};
+    DWORD dwVerSize = 0;
+    DWORD dwHandle = 0;
+    DWORD dwLength = 4096;
+    BOOL bState = FALSE;
+
+    dwVerSize = GetFileVersionInfoSizeA(pFile, &dwHandle);
+    if (dwVerSize > dwLength)
+    {
+        pBuf = new CHAR[dwVerSize];
+        dwLength = dwVerSize;
+    }
+    else
+    {
+        pBuf = szVersionBuffer;
+    }
+
+    if (GetFileVersionInfoA(pFile, 0, dwLength, pBuf))   
+    {   
+        VS_FIXEDFILEINFO * pInfo = NULL;
+        unsigned int nInfoLen = 0;   
+        if (VerQueryValueA(pBuf, "\\", (void**)&pInfo, &nInfoLen))  
+        {  
+            wnsprintfA(pBuf, dwLength, "%d.%d.%d.%d", HIWORD(pInfo->dwFileVersionMS), LOWORD(pInfo->dwFileVersionMS), HIWORD(pInfo->dwFileVersionLS), LOWORD(pInfo->dwFileVersionLS));
+            ver = szVersionBuffer;
+            bState = TRUE;
+        }
+    }
+
+    if (pBuf != szVersionBuffer)
+    {
+        delete []pBuf;
+    }
+    return bState;
 }
 #endif //__linux__

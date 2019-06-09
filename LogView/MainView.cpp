@@ -83,7 +83,7 @@ static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
         SendMessageA(gsMainWnd, MSG_SET_FILTER, 0, 0);
     }
 
-    if (GetKeyState(VK_CONTROL) & (1 << 16))
+    if ((GetKeyState(VK_CONTROL) & (1 << 16)) && (lParam & (1 << 30)))
     {
         //窗口置顶
         if ('P' == wParam)
@@ -212,6 +212,11 @@ void SwitchWorkMode(LogViewMode mode) {
 }
 
 void PushLogContent(const LogInfoCache *cache) {
+    if (gsPause)
+    {
+        return;
+    }
+
     mstring fileName = PathFindFileNameA(cache->mFilePath.c_str());
     fileName += " ";
 
@@ -245,6 +250,11 @@ void PushLogContent(const LogInfoCache *cache) {
 }
 
 void PushDbgContent(const std::mstring &content) {
+    if (gsPause)
+    {
+        return;
+    }
+
     gsDbgView->PushToCache(content);
 }
 
@@ -253,7 +263,7 @@ static VOID _CreateStatusBar(HWND hdlg)
     gs_hStatBar = CreateStatusWindowW(WS_CHILD | WS_VISIBLE, NULL, hdlg, IDC_STATUS_BAR);
     int wide[5] = {0};
     int length = 0;
-    wide[0] = 280;
+    wide[0] = 160;
     wide[1] = wide[0] + 360;
     wide[2]= wide[1] + 160;
     wide[3] = wide[2] + 360;
@@ -351,6 +361,10 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     return 0;
 }
 
+static void _SetStatusText(int index, const mstring &text) {
+    SendMessageA(gs_hStatBar, SB_SETTEXTA, index, (LPARAM)text.c_str());
+}
+
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gsServTreeView = new CServTreeDlg();
@@ -405,41 +419,15 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
     gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
 
-    DWORD dw = GetCurrentThreadId();
+    char self[512];
+    GetModuleFileNameA(NULL, self, 512);
+    mstring ver;
+    GetFileVersion(self, ver);
+    mstring status0 = FormatA("LogSniff  版本:%hs", ver.c_str());
+    _SetStatusText(0, status0.c_str());
     return 0;
 }
 
-/*
-#define MENU_ID_TOPMOST         (WM_USER + 1200)
-#define MENU_NAME_TOPMOST       ("窗口置顶 Ctrl+P")
-
-#define MENU_ID_AUTO_SCROLL     (WM_USER + 1205)
-#define MENU_NAME_AUTO_SCROLL   ("自动滚屏 Ctrl+B")
-
-#define MENU_ID_PAUSE           (WM_USER + 1206)
-#define MENU_NAME_PAUSE         ("暂停嗅探 Ctrl+U")
-
-#define MENU_ID_CLEAR           (WM_USER + 1300)
-#define MENU_NAME_CLEAR         ("清空页面 Ctrl+X")
-
-#define MENU_ID_FIND            (WM_USER + 1301)
-#define MENU_NAME_FIND          ("查找数据 Ctrl+F")
-
-#define MENU_ID_SELECT_ALL      (WM_USER + 1302)
-#define MENU_NAME_SELECT_ALL    ("全部选择 Ctrl+A")
-
-#define MENU_ID_COPY            (WM_USER + 1303)
-#define MENU_NAME_COPY          ("复制数据 Ctrl+C")
-
-#define MENU_ID_EXPORT          (WM_USER + 1304)
-#define MENU_NAME_EXPORT        ("存成文件 Ctrl+E")
-
-#define MENU_ID_SET             (WM_USER + 1305)
-#define MENU_NAME_SET           ("服务设置 Ctrl+S")
-
-#define MENU_ID_ABOUT           (WM_USER + 1321)
-#define MENU_NAME_ABOUT         ("关于LogSniff")
-*/
 static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     WORD id = LOWORD(wp);
 
@@ -453,6 +441,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     } else if (id == MENU_ID_TOPMOST)
     {
         gsTopMost = !gsTopMost;
+        dp("top most:%d", gsTopMost);
 
         if (gsTopMost)
         {

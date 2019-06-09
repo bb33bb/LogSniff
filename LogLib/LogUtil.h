@@ -98,4 +98,6 @@ std::mstring GetProcPathFromPid(DWORD pid);
 
 typedef BOOL (WINAPI* pfnProcHandler)(PPROCESSENTRY32 info, void *param);
 void ProcIterateProc(pfnProcHandler handler, void* lpParam);
+
+BOOL GetFileVersion(LPCSTR pFile, std::mstring& ver);
 #endif //__linux__
