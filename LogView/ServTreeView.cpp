@@ -105,7 +105,7 @@ mstring CServTreeDlg::ShowFileDlg(const mstring &initDir) const {
     bi.hwndOwner = mhWnd;
     bi.pidlRoot = NULL;
     bi.pszDisplayName = buff;
-    bi.lpszTitle = "选择要监控的对话框";
+    bi.lpszTitle = "选择要监控的文件夹";
 
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_EDITBOX | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
     bi.lpfn = NULL;
@@ -290,7 +290,6 @@ void CServTreeDlg::OnServTreeUpdate(const LogServDesc *desc) {
         param->mServDesc = desc;
         param->mFilePath = *it;
         InsertPathToFileTree(*it);
-        //InsertItem(cache->mFileSetItem, PathFindFileNameA(it->c_str()), param);
     }
 
     InvalidateRect(mTreeCtrl, NULL, TRUE);

@@ -29,6 +29,8 @@ public:
     void OnViewUpdate() const;
     void UpdateView() const;
 
+    //Çå¿ÕËùÓĞ»º´æ
+    void ClearCache();
 private:
     std::mstring GetFilterStr(const std::mstring &content, const std::mstring &key) const;
     void OnFilter();

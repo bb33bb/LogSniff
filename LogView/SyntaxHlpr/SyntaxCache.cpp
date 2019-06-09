@@ -203,6 +203,13 @@ void CSyntaxCache::UpdateView() const {
     SendMsg(SCI_COLOURISE, 0, -1);
 }
 
+void CSyntaxCache::ClearCache() {
+    AutoLocker locker(this);
+    mCache.clear();
+    mShowData.clear();
+    mContent.clear();
+}
+
 void CSyntaxCache::OnViewUpdate() const {
     int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
     int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);

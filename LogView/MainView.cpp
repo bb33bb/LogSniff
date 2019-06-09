@@ -29,6 +29,11 @@ static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
 static CSyntaxCache *gsCurView = NULL;
 
+//配置选项
+static BOOL gsTopMost = FALSE;
+static BOOL gsAutoScroll = FALSE;
+static BOOL gsPause = FALSE;
+
 static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR  (WM_USER + 1123)
 #define TIMER_LOG_LOAD  (2010)
@@ -39,13 +44,151 @@ static PWIN_PROC gsPfnFilterProc = NULL;
 
 static HHOOK gsPfnKeyboardHook = NULL;
 static DWORD gsLastEnterCount = 0;
+static HHOOK gsPfnMouseHook = NULL;
+
+//快捷菜单
+#define MENU_ID_TOPMOST         (WM_USER + 1200)
+#define MENU_NAME_TOPMOST       ("窗口置顶 Ctrl+P")
+
+#define MENU_ID_AUTO_SCROLL     (WM_USER + 1205)
+#define MENU_NAME_AUTO_SCROLL   ("自动滚屏 Ctrl+B")
+
+#define MENU_ID_PAUSE           (WM_USER + 1206)
+#define MENU_NAME_PAUSE         ("暂停嗅探 Ctrl+U")
+
+#define MENU_ID_CLEAR           (WM_USER + 1300)
+#define MENU_NAME_CLEAR         ("清空页面 Ctrl+X")
+
+#define MENU_ID_FIND            (WM_USER + 1301)
+#define MENU_NAME_FIND          ("查找数据 Ctrl+F")
+
+#define MENU_ID_SELECT_ALL      (WM_USER + 1302)
+#define MENU_NAME_SELECT_ALL    ("全部选择 Ctrl+A")
+
+#define MENU_ID_COPY            (WM_USER + 1303)
+#define MENU_NAME_COPY          ("复制数据 Ctrl+C")
+
+#define MENU_ID_EXPORT          (WM_USER + 1304)
+#define MENU_NAME_EXPORT        ("存成文件 Ctrl+E")
+
+#define MENU_ID_SET             (WM_USER + 1305)
+#define MENU_NAME_SET           ("服务设置 Ctrl+S")
+
+#define MENU_ID_ABOUT           (WM_USER + 1321)
+#define MENU_NAME_ABOUT         ("关于LogSniff")
 
 static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     if ('\r' == wParam && gs_hFilter == GetFocus())
     {
         SendMessageA(gsMainWnd, MSG_SET_FILTER, 0, 0);
     }
+
+    if (GetKeyState(VK_CONTROL) & (1 << 16))
+    {
+        //窗口置顶
+        if ('P' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_TOPMOST, 0);
+        }
+        //自动滚屏
+        else if ('B' == wParam) {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_AUTO_SCROLL, 0);
+        }
+        //暂停嗅探
+        else if ('U' == wParam) {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_PAUSE, 0);
+        }
+        //清空页面
+        else if ('X' == wParam) {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_CLEAR, 0);
+        }
+        //查找数据
+        else if ('F' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_FIND, 0);
+        }
+        //全选
+        else if ('A' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SELECT_ALL, 0);
+        }
+        //复制
+        else if ('C' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_COPY, 0);
+        }
+        //导出
+        else if ('E' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_EXPORT, 0);
+        }
+        //服务设置
+        else if ('S' == wParam)
+        {
+            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SET, 0);
+        }
+    }
     return CallNextHookEx(gsPfnKeyboardHook, code, wParam, lParam);
+}
+
+static void _OnPopupMenu() {
+    POINT pt = {0};
+    GetCursorPos(&pt);
+
+    HMENU menu = CreatePopupMenu();
+    if (gsTopMost)
+    {
+        AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
+    } else {
+        AppendMenuA(menu, MF_ENABLED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
+    }
+
+    if (gsAutoScroll)
+    {
+        AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
+    } else {
+        AppendMenuA(menu, MF_ENABLED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
+    }
+
+    if (gsPause)
+    {
+        AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_PAUSE, MENU_NAME_PAUSE);
+    } else {
+        AppendMenuA(menu, MF_ENABLED, MENU_ID_PAUSE, MENU_NAME_PAUSE);
+    }
+
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_CLEAR, MENU_NAME_CLEAR);
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_FIND, MENU_NAME_FIND);
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_SELECT_ALL, MENU_NAME_SELECT_ALL);
+
+    AppendMenuA(menu, MF_MENUBARBREAK, 0, 0);
+
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_COPY, MENU_NAME_COPY);
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_EXPORT, MENU_NAME_EXPORT);
+
+    AppendMenuA(menu, MF_MENUBARBREAK, 0, 0);
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_SET, MENU_NAME_SET);
+
+    AppendMenuA(menu, MF_MENUBARBREAK, 0, 0);
+    AppendMenuA(menu, MF_ENABLED, MENU_ID_ABOUT, MENU_NAME_ABOUT);
+    TrackPopupMenu(menu, TPM_CENTERALIGN, pt.x, pt.y, 0, gsMainWnd, 0);
+    DestroyMenu(menu);
+}
+
+static LRESULT CALLBACK _MouseProc(int code, WPARAM wp, LPARAM lp) {
+    MOUSEHOOKSTRUCT *ptr = (MOUSEHOOKSTRUCT *)lp;
+
+    if (NULL != ptr)
+    {
+        if (ptr->hwnd == gsLogView->GetWindow() || ptr->hwnd == gsDbgView->GetWindow())
+        {
+            if (WM_RBUTTONUP == wp)
+            {
+                _OnPopupMenu();
+            }
+        }
+    }
+    return CallNextHookEx(gsPfnMouseHook, code, wp, lp);
 }
 
 void SwitchWorkMode(LogViewMode mode) {
@@ -260,9 +403,43 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
     //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
+    gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
+
+    DWORD dw = GetCurrentThreadId();
     return 0;
 }
 
+/*
+#define MENU_ID_TOPMOST         (WM_USER + 1200)
+#define MENU_NAME_TOPMOST       ("窗口置顶 Ctrl+P")
+
+#define MENU_ID_AUTO_SCROLL     (WM_USER + 1205)
+#define MENU_NAME_AUTO_SCROLL   ("自动滚屏 Ctrl+B")
+
+#define MENU_ID_PAUSE           (WM_USER + 1206)
+#define MENU_NAME_PAUSE         ("暂停嗅探 Ctrl+U")
+
+#define MENU_ID_CLEAR           (WM_USER + 1300)
+#define MENU_NAME_CLEAR         ("清空页面 Ctrl+X")
+
+#define MENU_ID_FIND            (WM_USER + 1301)
+#define MENU_NAME_FIND          ("查找数据 Ctrl+F")
+
+#define MENU_ID_SELECT_ALL      (WM_USER + 1302)
+#define MENU_NAME_SELECT_ALL    ("全部选择 Ctrl+A")
+
+#define MENU_ID_COPY            (WM_USER + 1303)
+#define MENU_NAME_COPY          ("复制数据 Ctrl+C")
+
+#define MENU_ID_EXPORT          (WM_USER + 1304)
+#define MENU_NAME_EXPORT        ("存成文件 Ctrl+E")
+
+#define MENU_ID_SET             (WM_USER + 1305)
+#define MENU_NAME_SET           ("服务设置 Ctrl+S")
+
+#define MENU_ID_ABOUT           (WM_USER + 1321)
+#define MENU_NAME_ABOUT         ("关于LogSniff")
+*/
 static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     WORD id = LOWORD(wp);
 
@@ -273,6 +450,38 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     {
         int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
         gsCurView->SwitchWorkMode(curSel);
+    } else if (id == MENU_ID_TOPMOST)
+    {
+        gsTopMost = !gsTopMost;
+
+        if (gsTopMost)
+        {
+            SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+        } else {
+            SetWindowPos(gsMainWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+        }
+    } else if (id == MENU_ID_AUTO_SCROLL)
+    {
+        gsAutoScroll = !gsAutoScroll;
+    } else if (id == MENU_ID_PAUSE)
+    {
+        gsPause = !gsPause;
+    } else if (id == MENU_ID_CLEAR)
+    {
+        gsCurView->ClearCache();
+        gsCurView->ClearView();
+    } else if (id == MENU_ID_FIND)
+    {
+    } else if (id == MENU_ID_SELECT_ALL)
+    {
+    } else if (id == MENU_ID_COPY)
+    {
+    } else if (id == MENU_ID_EXPORT)
+    {
+    } else if (id == MENU_ID_SET)
+    {
+    } else if (id == MENU_ID_ABOUT)
+    {
     }
     return 0;
 }

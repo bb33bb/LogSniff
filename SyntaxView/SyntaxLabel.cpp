@@ -55,6 +55,11 @@ void CSyntaxLabel::ClearLabel() {
 const LabelCache *CSyntaxLabel::GetLabelNode(int pos) const {
     //从上次分析的位置继续进行词法分析
     {
+        if (mNodeSet.size() == 0)
+        {
+            return NULL;
+        }
+
         if (mNodeSet.size() == 1)
         {
             return mNodeSet[0];

@@ -65,11 +65,9 @@ static void _TestString(const mstring &test) {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    char *buf = new char[10];
-    memset(buf, 'a', 10);
-    buf[0] = 0x00;
+    char buff[64] = {0};
 
-    _TestString(buf);
+    _TestString(buff);
     //CDbgCapturer::GetInst()->InitCapturer();
     //CServTreeDlg dlg;
     //dlg.CreateDlg(NULL);

@@ -21,10 +21,13 @@ bool CDbgView::CreateDbgView(HWND hParent, int x, int y, int cx, int cy) {
 void CDbgView::initDbgView() {
     ShowMargin(true);
     SetLineNum(true);
-    SetCaretColour(RGB(255, 255, 255));
+
+    SendMsg(SCI_SETREADONLY, 1, 0);
+
+    SetCaretColour(RGB(0, 0, 0));
+    SetCaretSize(1);
 
     SetFont("ËÎÌו");
-    SetCaretSize(1);
 
     SendMsg(SCI_STYLESETSIZE, STYLE_DEFAULT, 10);
     ShowVsScrollBar(true);
@@ -34,4 +37,7 @@ void CDbgView::initDbgView() {
     ShowCaretLine(true, RGB(232, 232, 255));
 
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
+    SetStyle(STYLE_LINENUMBER, RGB(128, 128, 128), RGB(228, 228, 228));
+
+    SendMsg(SCI_USEPOPUP, 0, 0);
 }
