@@ -41,11 +41,19 @@ bool CDbgCapturer::InitCapturer() {
     mDbgCache.push_back(cache);
 
     mInit = true;
+    CloseHandle(CreateThread(NULL, 0, CacheThread, this, 0, NULL));
+    WaitForSingleObject(mCacheInitSucc, INFINITE);
     mDbgThread = CreateThread(NULL, 0, DbgThread, this, 0, NULL);
     return true;
 }
 
 CDbgCapturer::CDbgCapturer() {
+    mCacheInitSucc = CreateEventA(NULL, TRUE, FALSE, NULL);
+    mBuffNotify = CreateEventA(NULL, FALSE, FALSE, NULL);
+
+    mBuffer = NULL;
+    mBuffSize = 0;
+    mCurPos = 0;
     mInit = false;
 }
 
@@ -106,6 +114,14 @@ mstring CDbgCapturer::GetProcName(DWORD pid) {
 }
 
 void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
+    for (size_t t = 0 ; t < content.size() ; t++)
+    {
+        if (content[t] == 0x00)
+        {
+            int dd = 1234;
+        }
+    }
+
     mstring procName = GetProcName(pid);
 
     mstring procMsg = FormatA("%hs:%d ", procName.c_str(), pid);
@@ -145,6 +161,100 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
     PushDbgContent(logContent);
 }
 
+size_t CDbgCapturer::GetStrSetFromCache(list<DbgMsgNode> &set1) {
+    list<BuffNodeDesc> desc;
+    mstring content;
+
+    {
+        AutoLocker locker(&mBuffLocker);
+        desc = mBuffDesc;
+        content.append(mBuffer, mCurPos);
+        mCurPos = 0;
+        mBuffDesc.clear();
+    }
+
+    for (list<BuffNodeDesc>::const_iterator it = desc.begin() ; it != desc.end() ; it++)
+    {
+        DbgMsgNode node;
+        node.mPid = it->mPid;
+        node.mContent = content.substr(it->mStartPos, it->mLength);
+        set1.push_back(node);
+    }
+    return set1.size();
+}
+
+bool CDbgCapturer::PushStrToCache(DWORD pid, const char *ptr, size_t maxSize) {
+    AutoLocker locker(&mBuffLocker);
+    size_t startPos = mCurPos;
+    bool result = false;
+    size_t i = 0;
+    for (i = 0 ; i < maxSize ; i++)
+    {
+        if (ptr[i] == 0x00)
+        {
+            if (i != 0)
+            {
+                result = true;
+            }
+
+            break;
+        }
+
+        mBuffer[mCurPos++] = ptr[i];
+        if (mCurPos == mBuffSize)
+        {
+            mCurPos = startPos;
+            result = false;
+            break;
+        }
+    }
+
+    if (i == maxSize)
+    {
+        result = true;
+    }
+
+    if (result)
+    {
+        BuffNodeDesc desc;
+        desc.mPid = pid;
+        desc.mStartPos = startPos;
+        desc.mLength = i;
+        mBuffDesc.push_back(desc);
+        SetEvent(mBuffNotify);
+    }
+    return result;
+}
+
+DWORD CDbgCapturer::CacheThread(LPVOID param) {
+   CDbgCapturer *pThis = (CDbgCapturer *)param;
+
+   pThis->mBuffSize = (1024 * 1024);
+   pThis->mBuffer = (char *)malloc(pThis->mBuffSize);
+   list<DbgMsgNode> result;
+   SetEvent(pThis->mCacheInitSucc);
+
+   while (true) {
+       WaitForSingleObject(pThis->mBuffNotify, INFINITE);
+
+       if (0 != pThis->GetStrSetFromCache(result))
+       {
+           for (list<DbgMsgNode>::const_iterator it = result.begin() ; it != result.end() ; it++)
+           {
+               pThis->OnDbgMsg(it->mPid, it->mContent);
+           }
+       }
+       result.clear();
+   }
+
+   if (pThis->mBuffer)
+   {
+       free(pThis->mBuffer);
+       pThis->mBuffSize = 0;
+   }
+   return 0;
+}
+
 DWORD CDbgCapturer::DbgThread(LPVOID param) {
     CDbgCapturer *pThis = (CDbgCapturer *)param;
     HANDLE *arry = new HANDLE[pThis->mDbgCache.size() + 16];
@@ -180,7 +290,7 @@ DWORD CDbgCapturer::DbgThread(LPVOID param) {
             for (list<DbgMsgCache>::iterator it = set1.begin() ; it != set1.end() ; it++)
             {
                 DbgBuffer *ptr = (DbgBuffer *)it->mMappingView;
-                pThis->OnDbgMsg(ptr->mPid, ptr->mBuffer);
+                pThis->PushStrToCache(ptr->mPid, ptr->mBuffer, 4096 - sizeof(DWORD));
             }
         }
     }
