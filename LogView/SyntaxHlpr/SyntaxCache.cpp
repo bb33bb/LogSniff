@@ -76,7 +76,10 @@ void CSyntaxCache::SwitchWorkMode(int mode) {
     }
 
     mWorkMode = mode;
+
+    AutoLocker locker(this);
     mKeyword.clear();
+    mCache.clear();
     mShowData = mContent;
     SetText(mLabel, mShowData);
 }
@@ -149,7 +152,7 @@ bool CSyntaxCache::SetKeyword(const std::mstring &keyWord) {
     {
         mKeyword = keyWord;
         OnViewUpdate();
-        if (JmpLastPos(mKeyword))
+        if (JmpNextPos(mKeyword))
         {
             return true;
         }
@@ -167,8 +170,36 @@ bool CSyntaxCache::SetAutoScroll(bool flag) {
     return true;
 }
 
+//从当前选中的位置开始向后查找.如果没有,从当前可见页开始查找
 bool CSyntaxCache::JmpNextPos(const mstring &str) {
-    return false;
+    int pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
+    int pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
+
+    size_t startPos = 0;
+    if (pos2 > pos1)
+    {
+        startPos = pos2;
+    } else {
+        int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
+        startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
+    }
+
+    size_t pos3 = mShowData.find_in_rangei(str, startPos);
+    if (mstring::npos == pos3)
+    {
+        return false;
+    }
+
+    size_t line = SendMsg(SCI_LINEFROMPOSITION, pos3, 0);
+
+    if (line >= 10)
+    {
+        SendMsg(SCI_LINESCROLL, 0, 10);
+    } else {
+        SendMsg(SCI_LINESCROLL, 0, 10);
+    }
+    SendMsg(SCI_SETSEL, pos3, pos3 + str.size());
+    return true;
 }
 
 bool CSyntaxCache::JmpFrontPos(const mstring &str) {
@@ -176,7 +207,7 @@ bool CSyntaxCache::JmpFrontPos(const mstring &str) {
 }
 
 bool CSyntaxCache::JmpFirstPos(const mstring &str) {
-    return false;
+    return JmpNextPos(str);
 }
 
 bool CSyntaxCache::JmpLastPos(const mstring &str) {
@@ -222,6 +253,14 @@ void CSyntaxCache::ClearCache() {
 }
 
 void CSyntaxCache::OnViewUpdate() const {
+    SendMsg(SCI_SETINDICATORCURRENT, NOTE_KEYWORD, 0);
+    SendMsg(SCI_INDICATORCLEARRANGE, 0, mShowData.size());
+
+    if (mKeyword.empty())
+    {
+        return;
+    }
+
     int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
     int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);
     int lastLine = firstLine + lineCount;
@@ -236,14 +275,6 @@ void CSyntaxCache::OnViewUpdate() const {
     }
 
     mstring str = mShowData.substr(startPos, lastPos - startPos);
-
-    if (mKeyword.empty())
-    {
-        return;
-    }
-
-    SendMsg(SCI_SETINDICATORCURRENT, NOTE_KEYWORD, 0);
-    SendMsg(SCI_INDICATORCLEARRANGE, 0, mShowData.size());
 
     size_t pos1 = 0;
     size_t pos2 = 0;

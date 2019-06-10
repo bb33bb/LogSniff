@@ -78,7 +78,7 @@ static HHOOK gsPfnMouseHook = NULL;
 #define MENU_NAME_ABOUT         ("¹ØÓÚLogSniff")
 
 static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
-    if ('\r' == wParam && gs_hFilter == GetFocus())
+    if ('\r' == wParam && gs_hFilter == GetFocus() && (lParam & (1 << 30)))
     {
         SendMessageA(gsMainWnd, MSG_SET_FILTER, 0, 0);
     }
@@ -436,8 +436,16 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         ShowLogServView(hdlg);
     } else if (id == IDC_COM_MODE)
     {
-        int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
-        gsCurView->SwitchWorkMode(curSel);
+        WORD param = HIWORD(wp);
+
+        if (param == CBN_SELCHANGE)
+        {
+            int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
+            dp("work mode:%d", curSel);
+            gsDbgView->SwitchWorkMode(curSel);
+            gsLogView->SwitchWorkMode(curSel);
+            SetWindowTextA(gs_hFilter, "");
+        }
     } else if (id == MENU_ID_TOPMOST)
     {
         gsTopMost = !gsTopMost;
