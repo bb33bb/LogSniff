@@ -88,8 +88,10 @@ void SyntaxView::ShowCaretLine(bool show, unsigned int colour) {
     {
         SendMsg(SCI_SETCARETLINEVISIBLE, TRUE, 0);
         SendMsg(SCI_SETCARETLINEBACK , colour,0);
+        SendMsg(SCI_SETCARETLINEVISIBLEALWAYS, 1, 1);
     } else {
         SendMsg(SCI_SETCARETLINEVISIBLE, FALSE, 0);
+        SendMsg(SCI_SETCARETLINEVISIBLEALWAYS, 0, 0);
     }
 }
 

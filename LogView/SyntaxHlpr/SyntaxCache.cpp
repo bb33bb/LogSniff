@@ -152,12 +152,12 @@ bool CSyntaxCache::SetKeyword(const std::mstring &keyWord) {
     {
         mKeyword = keyWord;
         OnViewUpdate();
+
         if (JmpNextPos(mKeyword))
         {
             return true;
         }
     }
-
     return false;
 }
 
@@ -191,14 +191,15 @@ bool CSyntaxCache::JmpNextPos(const mstring &str) {
     }
 
     size_t line = SendMsg(SCI_LINEFROMPOSITION, pos3, 0);
-
-    if (line >= 10)
-    {
-        SendMsg(SCI_LINESCROLL, 0, 10);
-    } else {
-        SendMsg(SCI_LINESCROLL, 0, 10);
-    }
     SendMsg(SCI_SETSEL, pos3, pos3 + str.size());
+
+    //将当前选中内容置于屏幕正中央
+    int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
+    int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);
+    int curLine = SendMsg(SCI_LINEFROMPOSITION, pos3, 0);
+
+    int mid = firstLine + (lineCount / 2);
+    SendMsg(SCI_LINESCROLL, 0, curLine - mid);
     return true;
 }
 
