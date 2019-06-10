@@ -11,6 +11,7 @@ map<HWND, CSyntaxCache *> CSyntaxCache::msTimerCache;
 CSyntaxCache::CSyntaxCache() {
     mInterval = 0;
     mWorkMode = 0;
+    mAutoScroll = false;
 }
 
 CSyntaxCache::~CSyntaxCache() {
@@ -59,6 +60,11 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
         }
 
         ptr->AppendText(ptr->mLabel, ptr->mCache);
+
+        if (ptr->mAutoScroll)
+        {
+            ptr->SetScrollEndLine();
+        }
         ptr->mCache.clear();
     }
 }
@@ -154,6 +160,11 @@ bool CSyntaxCache::SetKeyword(const std::mstring &keyWord) {
 
 mstring CSyntaxCache::GetKeyword() {
     return mKeyword;
+}
+
+bool CSyntaxCache::SetAutoScroll(bool flag) {
+    mAutoScroll = flag;
+    return true;
 }
 
 bool CSyntaxCache::JmpNextPos(const mstring &str) {

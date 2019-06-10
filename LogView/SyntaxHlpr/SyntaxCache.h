@@ -20,6 +20,7 @@ public:
     bool SetKeyword(const std::mstring &keyWord);
     std::mstring GetKeyword();
 
+    bool SetAutoScroll(bool flag);
     bool JmpNextPos(const std::mstring &str);
     bool JmpFrontPos(const std::mstring &str);
     bool JmpFirstPos(const std::mstring &str);
@@ -66,4 +67,5 @@ private:
     std::mstring mShowData;
     std::mstring mKeyword;
     int mWorkMode;  //工作模式 0 过滤模式 1 查找模式
+    bool mAutoScroll;
 };

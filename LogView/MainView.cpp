@@ -452,6 +452,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     } else if (id == MENU_ID_AUTO_SCROLL)
     {
         gsAutoScroll = !gsAutoScroll;
+        gsCurView->SetAutoScroll(gsAutoScroll);
     } else if (id == MENU_ID_PAUSE)
     {
         gsPause = !gsPause;
