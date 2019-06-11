@@ -239,6 +239,8 @@ void UpdateStatusBar() {
     gsCurView->GetLineCount(a, b);
     content3 = FormatA("全部数据:%d, 展示数据:%d", a, b);
     _SetStatusText(2, content3.c_str());
+
+    _SetStatusText(3, "联系作者  QQ: 412776488 邮箱: lougdhr@126.com");
 }
 
 void SwitchWorkMode(LogViewMode mode) {
@@ -316,7 +318,7 @@ static VOID _CreateStatusBar(HWND hdlg)
     int length = 0;
     wide[0] = 160;
     wide[1] = wide[0] + 360;
-    wide[2]= wide[1] + 480;
+    wide[2]= wide[1] + 220;
     wide[3] = wide[2] + 480;
     wide[4] = wide[3] + 256;
     SendMessage(gs_hStatBar, SB_SETPARTS, sizeof(wide) / sizeof(int), (LPARAM)(LPINT)wide); 
@@ -514,7 +516,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     } else if (id == MENU_ID_AUTO_SCROLL)
     {
         gsAutoScroll = !gsAutoScroll;
-        gsCurView->SetAutoScroll(gsAutoScroll);
+        gsCurView->SetAutoScroll(!!gsAutoScroll);
     } else if (id == MENU_ID_PAUSE)
     {
         gsPause = !gsPause;
