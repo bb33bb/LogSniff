@@ -164,6 +164,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="$(SolutionDir)\tools\upx.exe $(OutDir)\$(ProjectName).exe&#x0D;&#x0A;$(SolutionDir)\tools\upx.exe $(OutDir)\SyntaxView.dll"
 			/>
 		</Configuration>
 	</Configurations>

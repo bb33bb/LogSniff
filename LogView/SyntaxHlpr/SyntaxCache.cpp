@@ -1,7 +1,9 @@
+#include <WinSock2.h>
 #include "SyntaxCache.h"
 #include <assert.h>
 #include <LogLib/LogUtil.h>
 #include <Shlwapi.h>
+#include "../MainView.h"
 
 using namespace std;
 
@@ -12,6 +14,7 @@ CSyntaxCache::CSyntaxCache() {
     mInterval = 0;
     mWorkMode = 0;
     mAutoScroll = false;
+    mLineCount = 0;
 }
 
 CSyntaxCache::~CSyntaxCache() {
@@ -60,6 +63,7 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
         }
 
         ptr->AppendText(ptr->mLabel, ptr->mCache);
+        UpdateStatusBar();
 
         if (ptr->mAutoScroll)
         {
@@ -251,6 +255,17 @@ void CSyntaxCache::ClearCache() {
     mCache.clear();
     mShowData.clear();
     mContent.clear();
+    mLineCount = 0;
+}
+
+void CSyntaxCache::GetLineCount(int &all, int &show) const {
+    all = mLineCount;
+    show = SendMsg(SCI_GETLINECOUNT, 0, 0);
+
+    if (show > 0)
+    {
+        show--;
+    }
 }
 
 void CSyntaxCache::OnViewUpdate() const {
@@ -290,14 +305,37 @@ mstring CSyntaxCache::GetViewStr(int startPos, int length) const {
     return mShowData.substr(startPos, length);
 }
 
+int CSyntaxCache::GetStrLineCount(const mstring &content) const {
+    size_t pos1 = 0, pos2 = 0;
+
+    int count = 0;
+    while (true) {
+        pos1 = content.find("\n", pos2);
+
+        if (mstring::npos == pos1)
+        {
+            break;
+        }
+        count++;
+        pos2 = pos1 + 1;
+    }
+
+    if (pos2 < content.size())
+    {
+        count++;
+    }
+    return count;
+}
+
 void CSyntaxCache::PushToCache(const std::mstring &content) {
     AutoLocker locker(this);
-
     if (content.empty())
     {
         return;
     }
 
+    int lineCount = GetStrLineCount(content);
+    mLineCount += lineCount;
     bool flag = false;
     mstring str = content;
     //±ÜÃâ0x00½Ø¶Ï
@@ -325,22 +363,21 @@ void CSyntaxCache::PushToCache(const std::mstring &content) {
         flag = true;
     }
 
-    if (flag)
-    {
-        mCache += str;
-        mShowData += str;
-    }
-
-    mContent += str;
-    if (!str.empty() && str[str.size() - 1] != '\n')
+    mContent += content;
+    if (content[content.size() - 1] != '\n')
     {
         mContent += "\n";
+    }
 
-        if (flag)
+    if (flag)
+    {
+        if (!str.empty() && str[str.size() - 1] != '\n')
         {
-            mCache += "\n";
-            mShowData += "\n";
+            str += "\n";
         }
+
+        mCache += str;
+        mShowData += str;
     }
 }
 

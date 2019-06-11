@@ -32,7 +32,9 @@ public:
 
     //清空所有缓存
     void ClearCache();
+    void GetLineCount(int &all, int &show) const;
 private:
+    int GetStrLineCount(const std::mstring &content) const;
     std::mstring GetFilterStr(const std::mstring &content, const std::mstring &key) const;
     void OnFilter();
     static void CALLBACK TimerCache(HWND hwnd,
@@ -68,4 +70,5 @@ private:
     std::mstring mKeyword;
     int mWorkMode;  //工作模式 0 过滤模式 1 查找模式
     bool mAutoScroll;
+    int mLineCount;
 };

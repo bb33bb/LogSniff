@@ -191,6 +191,52 @@ static LRESULT CALLBACK _MouseProc(int code, WPARAM wp, LPARAM lp) {
     return CallNextHookEx(gsPfnMouseHook, code, wp, lp);
 }
 
+static void _SetStatusText(int index, const mstring &text) {
+    SendMessageA(gs_hStatBar, SB_SETTEXTA, index, (LPARAM)text.c_str());
+}
+
+void UpdateStatusBar() {
+    char self[512];
+    GetModuleFileNameA(NULL, self, 512);
+    mstring ver;
+    GetFileVersion(self, ver);
+    mstring content0 = FormatA("LogSniff  版本:%hs", ver.c_str());
+    _SetStatusText(0, content0.c_str());
+
+    mstring content1;
+    const LogServDesc *desc = CLogServMgr::GetInst()->GetCurServ();
+    content1 = "服务类型:";
+    if (desc->mLogServType == em_log_serv_local)
+    {
+        content1 += "  本地服务";
+    } else {
+        content1 += "  远端服务";
+    }
+
+    if (gsCurView == gsDbgView)
+    {
+        content1 += "  <调试信息>";
+    } else {
+        content1 += "  <文件日志>";
+    }
+
+    content1 += "    工作模式:";
+    int cur = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
+    if (0 == cur)
+    {
+        content1 += "  过滤模式";
+    } else {
+        content1 += "  查找模式";
+    }
+    _SetStatusText(1, content1.c_str());
+
+    mstring content3;
+    int a = 0, b = 0;
+    gsCurView->GetLineCount(a, b);
+    content3 = FormatA("全部数据:%d, 展示数据:%d", a, b);
+    _SetStatusText(2, content3.c_str());
+}
+
 void SwitchWorkMode(LogViewMode mode) {
     gsWorkMode = mode;
     HWND logView = gsLogView->GetWindow();
@@ -209,6 +255,7 @@ void SwitchWorkMode(LogViewMode mode) {
         gsCurView = gsLogView;
     }
     SetWindowTextA(gs_hFilter, gsCurView->GetKeyword().c_str());
+    UpdateStatusBar();
 }
 
 void PushLogContent(const LogInfoCache *cache) {
@@ -265,8 +312,8 @@ static VOID _CreateStatusBar(HWND hdlg)
     int length = 0;
     wide[0] = 160;
     wide[1] = wide[0] + 360;
-    wide[2]= wide[1] + 160;
-    wide[3] = wide[2] + 360;
+    wide[2]= wide[1] + 480;
+    wide[3] = wide[2] + 480;
     wide[4] = wide[3] + 256;
     SendMessage(gs_hStatBar, SB_SETPARTS, sizeof(wide) / sizeof(int), (LPARAM)(LPINT)wide); 
 }
@@ -361,10 +408,6 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     return 0;
 }
 
-static void _SetStatusText(int index, const mstring &text) {
-    SendMessageA(gs_hStatBar, SB_SETTEXTA, index, (LPARAM)text.c_str());
-}
-
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
     gsServTreeView = new CServTreeDlg();
@@ -418,13 +461,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
     //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
     gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
-
-    char self[512];
-    GetModuleFileNameA(NULL, self, 512);
-    mstring ver;
-    GetFileVersion(self, ver);
-    mstring status0 = FormatA("LogSniff  版本:%hs", ver.c_str());
-    _SetStatusText(0, status0.c_str());
+    UpdateStatusBar();
     return 0;
 }
 
@@ -445,6 +482,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
             gsDbgView->SwitchWorkMode(curSel);
             gsLogView->SwitchWorkMode(curSel);
             SetWindowTextA(gs_hFilter, "");
+            UpdateStatusBar();
         }
     } else if (id == MENU_ID_TOPMOST)
     {
@@ -468,6 +506,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     {
         gsCurView->ClearCache();
         gsCurView->ClearView();
+        UpdateStatusBar();
     } else if (id == MENU_ID_FIND)
     {
     } else if (id == MENU_ID_SELECT_ALL)
@@ -545,6 +584,7 @@ static INT_PTR _OnSetFilter() {
 
     GetWindowTextA(gs_hFilter, keyWord, 256);
     gsCurView->SetKeyword(keyWord);
+    UpdateStatusBar();
     return 0;
 }
 
@@ -583,7 +623,7 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
             _OnSetFilter();
         }
         break;
-    case WM_NOTIFY:
+    case WM_NOTIFY: 
         {
             _OnNotify(hdlg, wp, lp);
         }
