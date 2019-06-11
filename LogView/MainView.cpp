@@ -35,9 +35,13 @@ static BOOL gsAutoScroll = FALSE;
 static BOOL gsPause = FALSE;
 
 static LogViewMode gsWorkMode = em_mode_debugMsg;
-#define IDC_STATUS_BAR  (WM_USER + 1123)
-#define TIMER_LOG_LOAD  (2010)
-#define MSG_SET_FILTER  (WM_USER + 1160)
+#define IDC_STATUS_BAR      (WM_USER + 1123)
+#define TIMER_LOG_LOAD      (2010)
+#define MSG_SET_FILTER      (WM_USER + 1160)
+#define MSG_ACTIVATE_VIEW   (WM_USER + 1163)
+
+#define EVENT_SNIFFER_MUTEX     ("Global\\b036b8da-d9b7-4a66-9ba0-abcf24238")
+HANDLE gsNotifyEvent = NULL;
 
 typedef LRESULT (CALLBACK *PWIN_PROC)(HWND, UINT, WPARAM, LPARAM);
 static PWIN_PROC gsPfnFilterProc = NULL;
@@ -408,8 +412,20 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     return 0;
 }
 
+static DWORD WINAPI _NoitfyThread(LPVOID param) {
+    while (true) {
+        WaitForSingleObject(gsNotifyEvent, INFINITE);
+
+        SendMessage(gsMainWnd, MSG_ACTIVATE_VIEW, 0, 0);
+    }
+    return 0;
+}
+
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
+    gsNotifyEvent = CreateEventA(NULL, FALSE, FALSE, EVENT_SNIFFER_MUTEX);
+    CloseHandle(CreateThread(NULL, 0, _NoitfyThread, NULL, 0, NULL));
+
     gsServTreeView = new CServTreeDlg();
     gsServTreeView->CreateDlg(hdlg);
     gs_hFilter = GetDlgItem(hdlg, IDC_EDT_FILTER);
@@ -593,6 +609,52 @@ static INT_PTR _OnClose(HWND hdlg) {
     return 0;
 }
 
+static void _ActiveWindow() {
+    if(IsIconic(gsMainWnd))
+    {
+        SendMessageA(gsMainWnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+    }
+
+    if (!IsZoomed(gsMainWnd))
+    {
+        CentreWindow(gsMainWnd, NULL);
+        RECT rect;
+        GetWindowRect(gsMainWnd, &rect);
+        if (rect.left < 0 || rect.top < 0)
+        {
+            SetWindowPos(gsMainWnd, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        }
+    }
+
+    if (!gsTopMost)
+    {
+        SetForegroundWindow(gsMainWnd);
+        SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        SetWindowPos(gsMainWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+}
+
+bool IsLogSniffRunning() {
+    HANDLE h = OpenEventA(EVENT_MODIFY_STATE, FALSE, EVENT_SNIFFER_MUTEX);
+
+    if (h)
+    {
+        CloseHandle(h);
+        return true;
+    }
+    return false;
+}
+
+void NotifyLogSniff() {
+    HANDLE h = OpenEventA(EVENT_MODIFY_STATE, FALSE, EVENT_SNIFFER_MUTEX);
+
+    if (h)
+    {
+        SetEvent(h);
+        CloseHandle(h);
+    }
+}
+
 static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
 {
     int ret = 0;
@@ -621,6 +683,11 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case MSG_SET_FILTER:
         {
             _OnSetFilter();
+        }
+        break;
+    case MSG_ACTIVATE_VIEW:
+        {
+            _ActiveWindow();
         }
         break;
     case WM_NOTIFY: 

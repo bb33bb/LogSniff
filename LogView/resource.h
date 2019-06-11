@@ -9,6 +9,8 @@
 #define IDR_MENU_MAIN                   105
 #define IDD_MON_PATH                    106
 #define IDD_SERV_TREE                   107
+#define IDR_DLL1                        108
+#define IDR_SYNTAX_DLL                  108
 #define IDC_BUTTON2                     1003
 #define IDC_SERV_REFUSH                 1003
 #define IDC_LOGPATH_DELETE              1003
@@ -62,7 +64,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        108
+#define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40020
 #define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           101

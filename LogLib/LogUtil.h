@@ -100,4 +100,5 @@ typedef BOOL (WINAPI* pfnProcHandler)(PPROCESSENTRY32 info, void *param);
 void ProcIterateProc(pfnProcHandler handler, void* lpParam);
 
 BOOL GetFileVersion(LPCSTR pFile, std::mstring& ver);
+BOOL ReleaseRes(const char *path, DWORD id, const char *type);
 #endif //__linux__

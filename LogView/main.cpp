@@ -13,6 +13,7 @@
 #include "LogServMgr.h"
 #include "DbgMsg.h"
 #include "ServTreeView.h"
+#include "resource.h"
 
 using namespace std;
 
@@ -29,59 +30,48 @@ using namespace std;
 HINSTANCE g_hInstance = NULL;
 mstring gStartTime;
 mstring gCfgPath;
+mstring gInstallDir;
 
-static void _TestFileNotify(const char *filePath, unsigned int mask) {
-    int dd = 1234;
-}
+static void _InitSniffer() {
+    mstring dllPath;
+    char installDir[256];
+#ifdef _DEBUG
+    GetModuleFileNameA(NULL, installDir, 256);
+    dllPath = installDir;
+    PathAppendA(dllPath, "..");
+    gInstallDir = dllPath;
+    dllPath.path_append("SyntaxView.dll");
+#else
+    GetWindowsDirectoryA(installDir, 256);
 
-static void _GetFileTime(const mstring &filePath) {
-    HANDLE h = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    PathAppendA(installDir, "LogSniff");
 
-    FILETIME t1 = {0}, t2 = {0}, t3 = {0};
-    GetFileTime(h, &t1, &t2, &t3);
-    CloseHandle(h);
-}
-
-static bool _TestFileEnumProc(bool isDir, const char *filePath, void *param) {
-    if (isDir)
+    dllPath = installDir;
+    SHCreateDirectoryExA(NULL, dllPath.c_str(), NULL);
+    gInstallDir = installDir;
+    dllPath.path_append("SyntaxView.dll");
+#endif
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesA(dllPath.c_str()))
     {
-        return true;
+        ReleaseRes(dllPath.c_str(), IDR_SYNTAX_DLL, "DLL");
     }
-
-    if (MonitorBase::IsLogFile(filePath))
-    {
-        list<mstring> *ptr = (list<mstring> *)param;
-        ptr->push_back(filePath);
-    }
-    return true;
-}
-
-static void _TestString(const mstring &test) {
-    int dd = 1234;
-    int size = test.size();
-
-    int ff = 222;
+    LoadLibraryA(dllPath.c_str());
 }
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    char buff[64] = {0};
+    if (IsLogSniffRunning())
+    {
+        NotifyLogSniff();
+        return 0;
+    }
 
-    _TestString(buff);
-    //CDbgCapturer::GetInst()->InitCapturer();
-    //CServTreeDlg dlg;
-    //dlg.CreateDlg(NULL);
-    //MessageBoxA(0, 0, 0, 0);
-    //return 0;
     g_hInstance = m;
-    LoadLibraryA("SyntaxView.dll");
-
+    _InitSniffer();
     WORD wVersionRequested = MAKEWORD(2, 2);
     WSADATA wsadata;
     WSAStartup(wVersionRequested, &wsadata);
 
-    //CLogReceiver::GetInst()->ConnectServ("10.10.16.191");
-    //MessageBoxA(0, 0, 0, 0);
     SYSTEMTIME time = {0};
     GetLocalTime(&time);
     char timeStr[64];
@@ -98,22 +88,14 @@ int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
         );
 
     char cfgPath[256];
-    GetModuleFileNameA(NULL, cfgPath, 256);
-    PathAppendA(cfgPath, "..\\DataBase");
+    lstrcpyA(cfgPath, gInstallDir.c_str());
+    PathAppendA(cfgPath, "DataBase");
     SHCreateDirectoryExA(NULL, cfgPath, NULL);
     gCfgPath = cfgPath;
 
     gStartTime = timeStr;
     CLogServMgr::GetInst()->InitMgr();
     ShowMainView();
-    //CWinFileNotify::GetInst()->InitNotify();
-    //CWinFileNotify::GetInst()->Register("D:\\git\\LogSniff\\Debug\\test", -1, _TestFileNotify, true);
-
-    //MonitorCfg cfg;
-    //cfg.mType = em_monitor_local;
-    //CLogReceiver::GetInst()->Start(cfg);
-    //CLogReceiver::GetInst()->AddPath("D:\\git\\LogSniff\\Debug\\test");
-    //MessageBoxA(0, 0, 0, 0);
     WSACleanup();
     return 0;
 }

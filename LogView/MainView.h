@@ -13,3 +13,6 @@ void PushDbgContent(const std::mstring &content);
 void ShowMainView();
 void SwitchWorkMode(LogViewMode mode);
 void UpdateStatusBar();
+
+bool IsLogSniffRunning();
+void NotifyLogSniff();

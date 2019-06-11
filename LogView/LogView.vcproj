@@ -100,6 +100,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy $(OutDir)\SyntaxView.dll $(SolutionDir)\LogView\res\SyntaxView.dll"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -164,7 +165,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(SolutionDir)\tools\upx.exe $(OutDir)\$(ProjectName).exe&#x0D;&#x0A;$(SolutionDir)\tools\upx.exe $(OutDir)\SyntaxView.dll"
+				CommandLine="$(SolutionDir)\tools\upx.exe $(OutDir)\$(ProjectName).exe&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -369,6 +370,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\res\SyntaxView.dll"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
