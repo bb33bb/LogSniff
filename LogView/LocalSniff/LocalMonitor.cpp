@@ -246,6 +246,11 @@ void CLocalMonitor::FileNotify(const char *filePath, unsigned int mask) {
        return;
    }
 
+   if (!IsLogFile(filePath))
+   {
+       return;
+   }
+
    LocalLogCache *cache = GetInst()->GetFileCache(filePath);
    FILE *fp = fopen(filePath, "rb");
    if (!fp)
