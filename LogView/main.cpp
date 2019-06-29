@@ -33,29 +33,29 @@ mstring gCfgPath;
 mstring gInstallDir;
 
 static void _InitSniffer() {
-    mstring dllPath;
+    char dllPath[256];
     char installDir[256];
 #ifdef _DEBUG
     GetModuleFileNameA(NULL, installDir, 256);
-    dllPath = installDir;
+    lstrcpyA(dllPath, installDir);
     PathAppendA(dllPath, "..");
     gInstallDir = dllPath;
-    dllPath.path_append("SyntaxView.dll");
+    PathAppendA(dllPath, "SyntaxView.dll");
 #else
     GetWindowsDirectoryA(installDir, 256);
 
     PathAppendA(installDir, "LogSniff");
 
-    dllPath = installDir;
-    SHCreateDirectoryExA(NULL, dllPath.c_str(), NULL);
+    lstrcpyA(dllPath, installDir);
+    SHCreateDirectoryExA(NULL, dllPath, NULL);
     gInstallDir = installDir;
-    dllPath.path_append("SyntaxView.dll");
+    PathAppendA(dllPath, "SyntaxView.dll");
 #endif
-    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesA(dllPath.c_str()))
+    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesA(dllPath))
     {
-        ReleaseRes(dllPath.c_str(), IDR_SYNTAX_DLL, "DLL");
+        ReleaseRes(dllPath, IDR_SYNTAX_DLL, "DLL");
     }
-    LoadLibraryA(dllPath.c_str());
+    LoadLibraryA(dllPath);
 }
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)

@@ -92,6 +92,10 @@ DWORD CWinFileNotify::LogCreateNotifyThread(LPVOID param) {
     CloseHandle(pThis->mIocp);
 }
 
+/*
+该线程效率较低，原因是每次轮询都会尝试探测所有收集到的日志文件
+比较好的方式是根据文件属性确定访问优先级，区分处理
+*/
 DWORD CWinFileNotify::LogChangeNotifyThread(LPVOID param) {
     CWinFileNotify *pThis = (CWinFileNotify *)param;
 

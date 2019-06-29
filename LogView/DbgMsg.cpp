@@ -114,12 +114,9 @@ mstring CDbgCapturer::GetProcName(DWORD pid) {
 }
 
 void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
-    for (size_t t = 0 ; t < content.size() ; t++)
+    if (GetCurrentProcessId() == pid)
     {
-        if (content[t] == 0x00)
-        {
-            int dd = 1234;
-        }
+        return;
     }
 
     mstring procName = GetProcName(pid);
