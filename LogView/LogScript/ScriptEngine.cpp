@@ -16,6 +16,13 @@ CScriptEngine *CScriptEngine::GetInst() {
 }
 
 CScriptEngine::CScriptEngine() {
+    mColourSet.push_back(RGB(0, 0xff, 0));
+    mColourSet.push_back(RGB(0xd0, 0xd0, 0xff));
+    mColourSet.push_back(RGB(0xd0, 0xff, 0xd0));
+    mColourSet.push_back(RGB(0xcd, 0xcd, 0x00));
+    mColourSet.push_back(RGB(0xca, 0xff, 0x70));
+    mColourSet.push_back(RGB(0xb0, 0xe2, 0xff));
+    mColourSet.push_back(RGB(0xff, 0xd7, 0x00));
 }
 
 CScriptEngine::~CScriptEngine() {
@@ -41,7 +48,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
     vector<mstring> strSet;
     size_t lastPos = 0;
     size_t i = 0;
-    for (size_t i = 0 ; i < script.size() ;) {
+    for (i = 0 ; i < script.size() ;) {
         if (i < script.size() - 1)
         {
             if (0 == StrCmpNA(script.c_str() + i, "&&", 2) || 0 == StrCmpNA(script.c_str() + i, "||", 2))
@@ -69,7 +76,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
     for (i = 0 ; i < strSet.size() ; i++) {
         if (i % 2 != 0)
         {
-            if (strSet[i] != "&&" && strSet[i] == "||")
+            if (strSet[i] != "&&" && strSet[i] != "||")
             {
                 throw (ScriptException("语法错误"));
                 return vector<FilterRule>();
@@ -174,6 +181,38 @@ vector<CScriptEngine::FilterRule> CScriptEngine::CalOrResult(const vector<CScrip
     return result;
 }
 
+void CScriptEngine::SetRuleColour() {
+    mRuleRgb.clear();
+
+    int index = 0;
+    size_t i = 0, j = 0, k = 0;
+    for (i = 0 ; i < mRuleSet.size() ; i++)
+    {
+        const vector<mstring> &tmp = mRuleSet[i].mKeywordSet;
+        for (j = 0 ; j < tmp.size() ; j++)
+        {
+            const mstring &keyWord = tmp[j];
+
+            if (mRuleRgb.end() == mRuleRgb.find(keyWord))
+            {
+                if (k < mColourSet.size())
+                {
+                    mRuleRgb[keyWord] = mColourSet[k];
+                } else {
+                    static DWORD sMagic = 0x12f;
+                    srand(GetTickCount() + sMagic++);
+                    BYTE r = rand() % 128 + 128;
+                    BYTE g = rand() % 128 + 128;
+                    BYTE b = rand() % 128 + 128;
+
+                    mRuleRgb[keyWord] = RGB(r, g, b);
+                }
+                k++;
+            }
+        }
+    }
+}
+
 bool CScriptEngine::Compile(const mstring &str) {
     mstring script = str;
     ScriptCleanUp(script);
@@ -221,6 +260,9 @@ bool CScriptEngine::Compile(const mstring &str) {
         return false;
     }
     mRuleSet = SimpleCompile(script);
+
+    //语法着色
+    SetRuleColour();
     return true;
 }
 

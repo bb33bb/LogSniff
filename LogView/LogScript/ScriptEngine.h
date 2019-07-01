@@ -38,7 +38,7 @@ struct LogFilterResult {
 class CScriptEngine {
     struct FilterRule {
         //KeyWord, and logic
-        std::list<std::mstring> mKeywordSet;
+        std::vector<std::mstring> mKeywordSet;
     };
 
 public:
@@ -53,8 +53,11 @@ private:
     std::vector<FilterRule> CalAndResult(const std::vector<FilterRule> &a, const std::vector<FilterRule> &b) const;
     std::vector<FilterRule> CalOrResult(const std::vector<FilterRule> &a, const std::vector<FilterRule> &b) const;
     void ScriptCleanUp(std::mstring &script) const;
+    void SetRuleColour();
 
 private:
     std::vector<FilterRule> mRuleSet;
+    std::map<std::mstring, DWORD> mRuleRgb;
+    std::vector<DWORD> mColourSet;
     std::map<std::mstring, std::vector<FilterRule>> mVarSet;
 };

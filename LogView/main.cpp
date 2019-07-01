@@ -14,6 +14,7 @@
 #include "DbgMsg.h"
 #include "ServTreeView.h"
 #include "resource.h"
+#include "LogScript/ScriptEngine.h"
 
 using namespace std;
 
@@ -60,6 +61,9 @@ static void _InitSniffer() {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
+    CScriptEngine::GetInst()->Compile("(aaaa || bbbb) && (cccc || dddd");
+    return 0;
+
     if (IsLogSniffRunning())
     {
         NotifyLogSniff();
