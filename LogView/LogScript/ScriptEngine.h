@@ -69,6 +69,7 @@ private:
     std::vector<FilterRule> mRuleSet;
     std::map<std::mstring, DWORD> mRuleRgb;
     std::vector<DWORD> mColourSet;
+    std::vector<std::mstring> mSplitStrSet;
     std::map<std::mstring, std::vector<FilterRule>> mVarSet;
     std::map<char, std::set<std::mstring>> mSearchIndex;
 };

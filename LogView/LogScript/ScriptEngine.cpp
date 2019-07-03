@@ -13,22 +13,53 @@ CScriptEngine::CScriptEngine() {
     mColourSet.push_back(RGB(0xca, 0xff, 0x70));
     mColourSet.push_back(RGB(0xb0, 0xe2, 0xff));
     mColourSet.push_back(RGB(0xff, 0xd7, 0x00));
+
+    mSplitStrSet.push_back("&&");
+    mSplitStrSet.push_back("||");
+    mSplitStrSet.push_back("(");
+    mSplitStrSet.push_back(")");
 }
 
 CScriptEngine::~CScriptEngine() {
 }
 
 void CScriptEngine::ScriptCleanUp(mstring &script) const {
-    script.repsub(" &&", "&&");
-    script.repsub("&& ", "&&");
+    mstring tmp;
+    size_t lastPos = 0;
+    bool spaceFlag = false;
 
-    script.repsub(" ||", "||");
-    script.repsub("|| ", "||");
+    for (size_t i = 0 ; i < script.size() ;)
+    {
+        size_t j = 0;
+        for (j = 0 ; j < mSplitStrSet.size() ; j++)
+        {
+            if (0 == script.comparei(mSplitStrSet[j], i))
+            {
+                break;
+            }
+        }
 
-    script.repsub(" (", "(");
-    script.repsub("( ", "(");
-    script.repsub(" )", ")");
-    script.repsub(") ", ")");
+        if (j == mSplitStrSet.size())
+        {
+            tmp += script[i];
+            i++;
+        } else {
+            tmp.trimright();
+            tmp += mSplitStrSet[j];
+            i += mSplitStrSet[j].size();
+
+            while (i < script.size()) {
+                char c = script[i];
+                if (c == ' ' || c == '\t')
+                {
+                    i++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    script = tmp;
 }
 
 //Compile Rule Without Bracket
@@ -57,7 +88,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
         i++;
     }
 
-    if (lastPos < (script.size() - 1))
+    if (lastPos <= (script.size() - 1))
     {
         strSet.push_back(script.substr(lastPos, script.size() - lastPos));
     }

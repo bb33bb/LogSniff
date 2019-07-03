@@ -371,8 +371,9 @@ void SyntaxTextView::SetLineNum(bool lineNum) {
         SendMsg(SCI_SETMARGINTYPEN, 0, SC_MARGIN_NUMBER);
 
         mstring test = "_";
-        while (lineCount-- >= 0) {
+        while (lineCount != 0) {
             test += "0";
+            lineCount /= 10;
         }
 
         int w = SendMsg(SCI_TEXTWIDTH, STYLE_LINENUMBER, (LPARAM)test.c_str());
