@@ -5,16 +5,6 @@
 
 using namespace std;
 
-CScriptEngine *CScriptEngine::GetInst() {
-    static CScriptEngine *sPtr = NULL;
-
-    if (NULL == sPtr)
-    {
-        sPtr = new CScriptEngine();
-    }
-    return sPtr;
-}
-
 CScriptEngine::CScriptEngine() {
     mColourSet.push_back(RGB(0, 0xff, 0));
     mColourSet.push_back(RGB(0xd0, 0xd0, 0xff));
@@ -119,7 +109,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                     {
                         result = varContent;
                     } else {
-                        tmp.mKeywordSet.push_back(cur);
+                        tmp.mInclude.insert(cur);
                         result.push_back(tmp);
                     }
                 } else {
@@ -127,7 +117,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                     {
                         result = CalAndResult(result, varContent);
                     } else {
-                        result[result.size() - 1].mKeywordSet.push_back(cur);
+                        result[result.size() - 1].mInclude.insert(cur);
                     }
                 }
             } else if (1 == mode)
@@ -137,8 +127,8 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                 {
                     result = CalOrResult(result, varContent);
                 } else {
-                    tmp.mKeywordSet.clear();
-                    tmp.mKeywordSet.push_back(cur);
+                    tmp.mInclude.clear();
+                    tmp.mInclude.insert(cur);
                     result.push_back(tmp);
                 }
             }
@@ -167,7 +157,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::CalAndResult(const vector<CScri
         {
             const FilterRule &t2 = b[j];
             FilterRule tmp = t1;
-            tmp.mKeywordSet.insert(tmp.mKeywordSet.end(), t2.mKeywordSet.begin(), t2.mKeywordSet.end());
+            tmp.mInclude.insert(t2.mInclude.begin(), t2.mInclude.end());
             result.push_back(tmp);
         }
     }
@@ -188,10 +178,10 @@ void CScriptEngine::SetRuleColour() {
     size_t i = 0, j = 0, k = 0;
     for (i = 0 ; i < mRuleSet.size() ; i++)
     {
-        const vector<mstring> &tmp = mRuleSet[i].mKeywordSet;
-        for (j = 0 ; j < tmp.size() ; j++)
+        const set<mstring> &tmp = mRuleSet[i].mInclude;
+        for (set<mstring>::const_iterator j = tmp.begin() ; j != tmp.end() ; j++)
         {
-            const mstring &keyWord = tmp[j];
+            const mstring &keyWord = *j;
 
             if (mRuleRgb.end() == mRuleRgb.find(keyWord))
             {
@@ -205,7 +195,7 @@ void CScriptEngine::SetRuleColour() {
                     BYTE g = rand() % 128 + 128;
                     BYTE b = rand() % 128 + 128;
 
-                    mRuleRgb[keyWord] = RGB(r, g, b);
+                    mRuleRgb[mstring(keyWord).makelower()] = RGB(r, g, b);
                 }
                 k++;
             }
@@ -216,6 +206,12 @@ void CScriptEngine::SetRuleColour() {
 bool CScriptEngine::Compile(const mstring &str) {
     mstring script = str;
     ScriptCleanUp(script);
+
+    if (str.empty())
+    {
+        ClearCache();
+        return true;
+    }
 
     //Check Syntax For Bracket
     mVarSet.clear();
@@ -263,11 +259,144 @@ bool CScriptEngine::Compile(const mstring &str) {
 
     //Óï·¨×ÅÉ«
     SetRuleColour();
+    //Create Search Index
+    for (map<mstring, DWORD>::const_iterator it = mRuleRgb.begin() ; it != mRuleRgb.end() ; it++)
+    {
+        char c = it->first.c_str()[0];
+        if (c >= 'A' && c <= 'Z')
+        {
+            c |= 32;
+        }
+
+        mSearchIndex[c].insert(mstring(it->first).makelower());
+
+    }
     return true;
 }
 
-LogFilterResult InputLog(const mstring &content) {
-    LogFilterResult result;
+bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
+    for (size_t j = 0 ; j < mRuleSet.size() ; j++)
+    {
+        const FilterRule &rule = mRuleSet[j];
+        set<mstring>::const_iterator k;
+        for (k = rule.mInclude.begin() ; k != rule.mInclude.end() ; k++)
+        {
+            if (mstring::npos == lineStr.find(*k))
+            {
+                break;
+            }
+        }
 
-    return result;
+        if (k == rule.mInclude.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CScriptEngine::OnStrColour(const mstring &filterStr, LogFilterResult &result) const {
+    mstring low = filterStr;
+    low.makelower();
+    size_t initPos = result.mContent.size();
+
+    for (size_t i = 0 ; i < low.size() ;)
+    {
+        bool match = false;
+        for (map<mstring, DWORD>::const_iterator it = mRuleRgb.begin() ; it != mRuleRgb.end() ; it++)
+        {
+            if (0 == low.comparei(it->first, i))
+            {
+                LogKeyword node;
+                node.mKeyword = filterStr.substr(i, it->first.size());
+                node.mColour = it->second;
+                node.mKeywordStart = initPos + i;
+                node.mKeywordEnd = node.mKeywordStart + it->first.size();
+                result.mKeywordSet.push_back(node);
+                i += node.mKeyword.size();
+                match = true;
+                break;
+            }
+        }
+
+        if (!match)
+        {
+            i++;
+        }
+    }
+}
+
+void CScriptEngine::ClearCache() {
+    mRuleSet.clear();
+    mRuleRgb.clear();
+    mVarSet.clear();
+    mSearchIndex.clear();
+}
+
+bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterResult &result) {
+    mstring filterStr;
+
+    if (mRuleSet.empty()) {
+        filterStr = content.substr(initPos, content.size() - initPos);
+    } else {
+        for (size_t i = initPos ; i < content.size() ;)
+        {
+            char c = content[i];
+            if (c >= 'A' && c <= 'Z')
+            {
+                c |= 32;
+            }
+
+            bool passLine = false;
+            map<char, set<mstring>>::const_iterator it;
+            if (mSearchIndex.end() != (it = mSearchIndex.find(c)))
+            {
+                for (set<mstring>::const_iterator ij = it->second.begin() ; ij != it->second.end() ; ij++)
+                {
+                    if (0 == content.comparei(*ij, i))
+                    {
+                        //Rule Filter
+                        size_t startPos = content.rfind('\n', i);
+                        if (mstring::npos == startPos)
+                        {
+                            startPos = 0;
+                        } else {
+                            startPos += 1;
+                        }
+
+                        size_t endPos = content.find('\n', i + 1);
+                        if (mstring::npos == endPos)
+                        {
+                            endPos = content.size();
+                        }
+
+                        mstring lineStr = content.substr(startPos, endPos - startPos);
+                        if (OnRuleFilter(lineStr))
+                        {
+                            filterStr += lineStr;
+
+                            if (lineStr.c_str()[lineStr.size() - 1] != '\n')
+                            {
+                                filterStr += '\n';
+                            }
+                        }
+
+                        passLine = true;
+                        i = endPos + 1;
+                        break;
+                    }
+                }
+
+                if (passLine)
+                {
+                    continue;
+                }
+            }
+            i++;
+        }
+
+        OnStrColour(filterStr, result);
+    }
+    result.mContent += filterStr;
+    return !filterStr.empty();
 }

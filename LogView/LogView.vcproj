@@ -243,23 +243,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SyntaxHlpr\SyntaxCfg.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SyntaxHlpr\SyntaxCfg.h"
-				>
-			</File>
-			<File
 				RelativePath=".\SyntaxHlpr\SyntaxDef.h"
 				>
 			</File>
 			<File
-				RelativePath=".\SyntaxHlpr\SyntaxView.cpp"
+				RelativePath=".\SyntaxHlpr\SyntaxEditView.h"
 				>
 			</File>
 			<File
-				RelativePath=".\SyntaxHlpr\SyntaxView.h"
+				RelativePath=".\SyntaxHlpr\SyntaxTextView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SyntaxHlpr\SyntaxTextView.h"
 				>
 			</File>
 		</Filter>
@@ -344,6 +340,14 @@
 			</File>
 			<File
 				RelativePath=".\LogSyntaxView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LogViewBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LogViewBase.h"
 				>
 			</File>
 			<File

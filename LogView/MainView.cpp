@@ -5,7 +5,7 @@
 #include <LogLib/winsize.h>
 #include <LogLib/locker.h>
 #include <LogLib/StrUtil.h>
-#include "SyntaxHlpr/SyntaxView.h"
+#include "SyntaxHlpr/SyntaxTextView.h"
 #include <CommCtrl.h>
 #include <Shlwapi.h>
 #include "LogServView.h"
@@ -27,7 +27,7 @@ static HWND gsFindMode = NULL;
 static CLogSyntaxView *gsLogView = NULL;
 static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
-static CSyntaxCache *gsCurView = NULL;
+static CLogViewBase *gsCurView = NULL;
 
 //配置选项
 static BOOL gsTopMost = FALSE;
@@ -260,7 +260,7 @@ void SwitchWorkMode(LogViewMode mode) {
         SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 文件日志");
         gsCurView = gsLogView;
     }
-    SetWindowTextA(gs_hFilter, gsCurView->GetKeyword().c_str());
+    SetWindowTextA(gs_hFilter, gsCurView->GetRuleStr().c_str());
     UpdateStatusBar();
 }
 
@@ -299,7 +299,7 @@ void PushLogContent(const LogInfoCache *cache) {
         logContent += content.substr(pos2, content.size() - pos2);
         logContent += "\n";
     }
-    gsLogView->PushToCache(logContent);
+    gsLogView->PushLog(logContent);
 }
 
 void PushDbgContent(const std::mstring &content) {
@@ -308,7 +308,7 @@ void PushDbgContent(const std::mstring &content) {
         return;
     }
 
-    gsDbgView->PushToCache(content);
+    gsDbgView->PushLog(content);
 }
 
 static VOID _CreateStatusBar(HWND hdlg)
@@ -406,8 +406,8 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     }
     fclose(fp);
 
-    gsLogView->SendMsg(SCI_SETIDENTIFIERS, STAT_KEYWORD, (LPARAM)"location");
-    gsLogView->PushToCache(UtoA(dd));
+    gsLogView->SendMsg(SCI_SETIDENTIFIERS, STYLE_KEYWORD, (LPARAM)"location");
+    gsLogView->PushLog(UtoA(dd));
     gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
 
     Sleep(1000);
@@ -446,6 +446,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gs_hCkRegular = GetDlgItem(gsMainWnd, IDC_CK_REGULAR);
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
+
     _OnMainViewLayout();
     SwitchWorkMode(em_mode_logFile);
 
@@ -476,8 +477,11 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //_TestFile();
     //gsLogView->SetHightStr("Thread");
     //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
+
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
+
     //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
+
     gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
     UpdateStatusBar();
     return 0;
@@ -497,8 +501,8 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         {
             int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
             dp("work mode:%d", curSel);
-            gsDbgView->SwitchWorkMode(curSel);
-            gsLogView->SwitchWorkMode(curSel);
+            //gsDbgView->SwitchWorkMode(curSel);
+            //gsLogView->SwitchWorkMode(curSel);
             SetWindowTextA(gs_hFilter, "");
             UpdateStatusBar();
         }
@@ -565,7 +569,6 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                     size_t pos1 = gsLogView->SendMsg(SCI_GETSELECTIONSTART, 0, 0);
                     size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
                 }
-                gsCurView->OnViewUpdate();
             }
             break;
         default:
@@ -599,10 +602,10 @@ static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
 }
 
 static INT_PTR _OnSetFilter() {
-    char keyWord[256] = {0};
+    char filterStr[256] = {0};
 
-    GetWindowTextA(gs_hFilter, keyWord, 256);
-    gsCurView->SetKeyword(keyWord);
+    GetWindowTextA(gs_hFilter, filterStr, 256);
+    gsCurView->SetFilter(filterStr);
     UpdateStatusBar();
     return 0;
 }

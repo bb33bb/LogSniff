@@ -1,6 +1,6 @@
-#include "SyntaxHlpr/SyntaxCache.h"
+#include "LogViewBase.h"
 
-class CDbgView : public CSyntaxCache {
+class CDbgView : public CLogViewBase {
 public:
     CDbgView();
     virtual ~CDbgView();

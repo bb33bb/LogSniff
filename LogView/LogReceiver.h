@@ -44,10 +44,6 @@ private:
 
 private:
     bool mInit;
-    std::vector<LogInfoCache *> mLogSet;
-    std::vector<LogInfoCache *> mShowSet;
-
-    std::string mFltStr;
     std::string mLogCache;
     const LogServDesc *mCfg;
     MonitorBase *mCurMonitor;

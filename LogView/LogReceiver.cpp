@@ -98,13 +98,7 @@ void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
         time.wMilliseconds
         );
     cache->mFilePath = filePath;
-
-    mLogSet.push_back(cache);
-    if (mFltStr.empty() || string::npos != cache->mContent.find(mFltStr))
-    {
-        mShowSet.push_back(cache);
-        PushLogContent(cache);
-    }
+    PushLogContent(cache);
 }
 
 bool CLogReceiver::AddPathMonitor(const std::mstring &filePath) {

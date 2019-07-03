@@ -61,9 +61,10 @@ static void _InitSniffer() {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    CScriptEngine::GetInst()->Compile("(aaaa || bbbb) && (cccc || dddd");
-    return 0;
-
+    //CScriptEngine::GetInst()->Compile("aaaa || dddd");
+    //LogFilterResult result = CScriptEngine::GetInst()->InputLog("fdjgdfgjkdlfkdfaaaaafjdgj4353dddd1144");
+    //int ff = 1234;
+    //return 0;
     if (IsLogSniffRunning())
     {
         NotifyLogSniff();

@@ -17,7 +17,7 @@ bool CLogSyntaxView::CreateLogView(HWND hParent, int x, int y, int cx, int cy) {
         initLogView();
     }
 
-    InitCache(LABEL_LOG_CONTENT, 500);
+    InitCache(500);
     CLogReceiver::GetInst()->InitReceiver();
     return true;
 }
@@ -46,8 +46,8 @@ void CLogSyntaxView::initLogView() {
     SetDefStyle(RGB(0, 0, 0), RGB(255, 255, 255));
     ShowCaretLine(true, RGB(232, 232, 255));
 
-    SetStyle(STAT_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
-    SetStyle(STAT_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));
+    SetStyle(STYLE_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
+    SetStyle(STYLE_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));
 
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
 
@@ -88,7 +88,7 @@ void CLogSyntaxView::LogParser(
             {
                 if (str.size() > lastPos)
                 {
-                    sc->SetState(STAT_CONTENT);
+                    sc->SetState(STYLE_CONTENT);
                     sc->ForwardBytes(str.size() - lastPos);
                 }
                 break;
@@ -96,16 +96,16 @@ void CLogSyntaxView::LogParser(
 
             if (curPos > lastPos)
             {
-                sc->SetState(STAT_CONTENT);
+                sc->SetState(STYLE_CONTENT);
 
                 sc->ForwardBytes(curPos - lastPos);
             }
-            sc->SetState(STAT_KEYWORD);
+            sc->SetState(STYLE_KEYWORD);
             sc->ForwardBytes(keyWord.size());
             lastPos = (curPos + keyWord.size());
         }
     } else {
-        sc->SetState(STAT_CONTENT);
+        sc->SetState(STYLE_CONTENT);
         sc->ForwardBytes(length);
     }
     return;
