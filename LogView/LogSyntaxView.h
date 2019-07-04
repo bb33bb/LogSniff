@@ -10,16 +10,6 @@ public:
     bool SetHightStr(const std::string &str);
 private:
     void initLogView();
-
-    static void __stdcall LogParser(
-        int initStyle,
-        unsigned int startPos,
-        const char *ptr,
-        int length,
-        StyleContextBase *sc,
-        void *param
-        );
-
 private:
     std::string mKeywordStr;
 }; 

@@ -15,6 +15,15 @@ public:
     std::mstring GetRuleStr();
     void ClearLogView();
 private:
+    void OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const;
+    static void __stdcall LogContentParser(
+        int initStyle,
+        unsigned int startPos,
+        const char *ptr,
+        int length,
+        StyleContextBase *s,
+        void *param
+        );
     virtual void OnViewUpdate() const;
 
 private:
@@ -24,4 +33,6 @@ private:
     CScriptEngine *mScriptEngine;
     std::mstring mRuleStr;
     size_t mTotalCount;
+
+    std::vector<DWORD> mColourSet;
 };

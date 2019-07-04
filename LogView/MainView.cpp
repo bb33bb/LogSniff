@@ -406,7 +406,6 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     }
     fclose(fp);
 
-    gsLogView->SendMsg(SCI_SETIDENTIFIERS, STYLE_KEYWORD, (LPARAM)"location");
     gsLogView->PushLog(UtoA(dd));
     gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
 

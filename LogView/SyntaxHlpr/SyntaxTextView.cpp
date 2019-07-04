@@ -234,11 +234,12 @@ void SyntaxTextView::ShowMargin(bool bShow) {
     }
 }
 
-void SyntaxTextView::ShowCaretLine(bool show, unsigned int colour) {
+void SyntaxTextView::ShowCaretLine(bool show, unsigned int colour, unsigned char alpha) {
     if (show)
     {
         SendMsg(SCI_SETCARETLINEVISIBLE, TRUE, 0);
-        SendMsg(SCI_SETCARETLINEBACK , colour,0);
+        SendMsg(SCI_SETCARETLINEBACK , colour, 0);
+        SendMsg(SCI_SETCARETLINEBACKALPHA, alpha, 0);
         SendMsg(SCI_SETCARETLINEVISIBLEALWAYS, 1, 1);
     } else {
         SendMsg(SCI_SETCARETLINEVISIBLE, FALSE, 0);

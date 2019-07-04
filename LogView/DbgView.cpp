@@ -10,6 +10,7 @@ CDbgView::~CDbgView() {}
 bool CDbgView::CreateDbgView(HWND hParent, int x, int y, int cx, int cy) {
     if (CreateView(hParent, x, y, cx, cy))
     {
+        InitLogBase();
         initDbgView();
     }
 
@@ -34,7 +35,7 @@ void CDbgView::initDbgView() {
     ShowHsScrollBar(true);
 
     SetDefStyle(RGB(0, 0, 0), RGB(255, 255, 255));
-    ShowCaretLine(true, RGB(232, 232, 255));
+    ShowCaretLine(true, RGB(0, 0, 0), 30);
 
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
     SetStyle(STYLE_LINENUMBER, RGB(128, 128, 128), RGB(228, 228, 228));

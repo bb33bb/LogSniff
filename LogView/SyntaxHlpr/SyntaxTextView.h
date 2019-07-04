@@ -95,7 +95,7 @@ public:
     bool ClearHighLight();
 
     void SetStyle(int type, unsigned int textColour, unsigned int backColour);
-    void ShowCaretLine(bool show, unsigned int colour);
+    void ShowCaretLine(bool show, unsigned int colour, unsigned char alpha);
     void ShowMargin(bool bShow);
     void SetDefStyle(unsigned int textColour, unsigned int backColour);
     void ShowVsScrollBar(bool show);

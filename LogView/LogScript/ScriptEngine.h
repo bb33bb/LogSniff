@@ -23,12 +23,19 @@ struct LogKeyword {
     std::mstring mKeyword;
     size_t mKeywordStart;
     size_t mKeywordEnd;
+    int mStyle;
     DWORD mColour;
+
+    LogKeyword() {
+        mKeywordStart = 0;
+        mKeywordEnd = 0;
+        mStyle = 0, mColour = 0;
+    }
 };
 
 struct LogFilterResult {
     std::mstring mContent;
-    std::list<LogKeyword> mKeywordSet;
+    std::vector<LogKeyword> mKeywordSet;
     bool mValid;
 
     LogFilterResult() {
@@ -60,15 +67,14 @@ private:
     std::vector<FilterRule> CalAndResult(const std::vector<FilterRule> &a, const std::vector<FilterRule> &b) const;
     std::vector<FilterRule> CalOrResult(const std::vector<FilterRule> &a, const std::vector<FilterRule> &b) const;
     void ScriptCleanUp(std::mstring &script) const;
-    void SetRuleColour();
+    void SetRuleStyle();
     bool OnRuleFilter(const std::mstring &lineStr) const;
     void OnStrColour(const std::mstring &filterStr, LogFilterResult &result) const;
     void ClearCache();
 
 private:
     std::vector<FilterRule> mRuleSet;
-    std::map<std::mstring, DWORD> mRuleRgb;
-    std::vector<DWORD> mColourSet;
+    std::map<std::mstring, int> mRuleStyle;
     std::vector<std::mstring> mSplitStrSet;
     std::map<std::mstring, std::vector<FilterRule>> mVarSet;
     std::map<char, std::set<std::mstring>> mSearchIndex;

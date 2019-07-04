@@ -14,6 +14,7 @@ CLogSyntaxView::~CLogSyntaxView() {
 bool CLogSyntaxView::CreateLogView(HWND hParent, int x, int y, int cx, int cy) {
     if (CreateView(hParent, x, y, cx, cy))
     {
+        InitLogBase();
         initLogView();
     }
 
@@ -44,10 +45,9 @@ void CLogSyntaxView::initLogView() {
     ShowHsScrollBar(true);
 
     SetDefStyle(RGB(0, 0, 0), RGB(255, 255, 255));
-    ShowCaretLine(true, RGB(232, 232, 255));
+    ShowCaretLine(true, RGB(0, 0, 0), 30);
 
     SetStyle(STYLE_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
-    SetStyle(STYLE_KEYWORD, RGB(255, 0, 0), RGB(0, 0, 255));
 
     SendMsg(SCI_SETSCROLLWIDTHTRACKING, 1, 1);
 
@@ -58,55 +58,10 @@ void CLogSyntaxView::initLogView() {
     SendMsg(SCI_SETFOLDMARGINHICOLOUR, 1, RGB(255, 0, 0));
     SetStyle(STYLE_LINENUMBER, RGB(128, 128, 128), RGB(228, 228, 228));
 
+    //选择区域背景色和透明度
+    SendMsg(SCI_SETSELBACK, true, RGB(0, 0, 0));
+    SendMsg(SCI_SETSELALPHA, 50, 0);
+
     //Disable popup menu
     SendMsg(SCI_USEPOPUP, 0, 0);
-}
-
-void CLogSyntaxView::LogParser(
-    int initStyle,
-    unsigned int startPos,
-    const char *ptr,
-    int length,
-    StyleContextBase *sc,
-    void *param
-    )
-{
-    CLogSyntaxView *pThis = (CLogSyntaxView *)param;
-    //dp("start:%d, length:%d, str:%hs", startPos, length, ptr);
-
-    if (!pThis->mKeywordStr.empty())
-    {
-        string str(ptr, length);
-        string keyWord = pThis->mKeywordStr;
-        size_t curPos = 0;
-        size_t lastPos = 0;
-
-        while (true) {
-            curPos = str.find(keyWord, lastPos);
-
-            if (string::npos == curPos)
-            {
-                if (str.size() > lastPos)
-                {
-                    sc->SetState(STYLE_CONTENT);
-                    sc->ForwardBytes(str.size() - lastPos);
-                }
-                break;
-            }
-
-            if (curPos > lastPos)
-            {
-                sc->SetState(STYLE_CONTENT);
-
-                sc->ForwardBytes(curPos - lastPos);
-            }
-            sc->SetState(STYLE_KEYWORD);
-            sc->ForwardBytes(keyWord.size());
-            lastPos = (curPos + keyWord.size());
-        }
-    } else {
-        sc->SetState(STYLE_CONTENT);
-        sc->ForwardBytes(length);
-    }
-    return;
 }

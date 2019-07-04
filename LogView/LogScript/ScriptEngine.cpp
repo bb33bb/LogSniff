@@ -2,18 +2,11 @@
 #include <vector>
 #include <Shlwapi.h>
 #include <LogLib/StrUtil.h>
+#include "../SyntaxHlpr/SyntaxDef.h"
 
 using namespace std;
 
 CScriptEngine::CScriptEngine() {
-    mColourSet.push_back(RGB(0, 0xff, 0));
-    mColourSet.push_back(RGB(0xd0, 0xd0, 0xff));
-    mColourSet.push_back(RGB(0xd0, 0xff, 0xd0));
-    mColourSet.push_back(RGB(0xcd, 0xcd, 0x00));
-    mColourSet.push_back(RGB(0xca, 0xff, 0x70));
-    mColourSet.push_back(RGB(0xb0, 0xe2, 0xff));
-    mColourSet.push_back(RGB(0xff, 0xd7, 0x00));
-
     mSplitStrSet.push_back("&&");
     mSplitStrSet.push_back("||");
     mSplitStrSet.push_back("(");
@@ -74,7 +67,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
         {
             if (0 == StrCmpNA(script.c_str() + i, "&&", 2) || 0 == StrCmpNA(script.c_str() + i, "||", 2))
             {
-                if (i > (lastPos + 1))
+                if (i > lastPos)
                 {
                     mstring sub = script.substr(lastPos, i - lastPos);
                     strSet.push_back(sub);
@@ -202,11 +195,12 @@ vector<CScriptEngine::FilterRule> CScriptEngine::CalOrResult(const vector<CScrip
     return result;
 }
 
-void CScriptEngine::SetRuleColour() {
-    mRuleRgb.clear();
+void CScriptEngine::SetRuleStyle() {
+    mRuleStyle.clear();
 
     int index = 0;
     size_t i = 0, j = 0, k = 0;
+    int styleIndex = STYLE_LOG_KEYWORD_BASE;
     for (i = 0 ; i < mRuleSet.size() ; i++)
     {
         const set<mstring> &tmp = mRuleSet[i].mInclude;
@@ -214,21 +208,9 @@ void CScriptEngine::SetRuleColour() {
         {
             const mstring &keyWord = *j;
 
-            if (mRuleRgb.end() == mRuleRgb.find(keyWord))
+            if (mRuleStyle.end() == mRuleStyle.find(keyWord))
             {
-                if (k < mColourSet.size())
-                {
-                    mRuleRgb[keyWord] = mColourSet[k];
-                } else {
-                    static DWORD sMagic = 0x12f;
-                    srand(GetTickCount() + sMagic++);
-                    BYTE r = rand() % 128 + 128;
-                    BYTE g = rand() % 128 + 128;
-                    BYTE b = rand() % 128 + 128;
-
-                    mRuleRgb[mstring(keyWord).makelower()] = RGB(r, g, b);
-                }
-                k++;
+                mRuleStyle[keyWord] = styleIndex++;
             }
         }
     }
@@ -289,9 +271,9 @@ bool CScriptEngine::Compile(const mstring &str) {
     mRuleSet = SimpleCompile(script);
 
     //Óï·¨×ÅÉ«
-    SetRuleColour();
+    SetRuleStyle();
     //Create Search Index
-    for (map<mstring, DWORD>::const_iterator it = mRuleRgb.begin() ; it != mRuleRgb.end() ; it++)
+    for (map<mstring, int>::const_iterator it = mRuleStyle.begin() ; it != mRuleStyle.end() ; it++)
     {
         char c = it->first.c_str()[0];
         if (c >= 'A' && c <= 'Z')
@@ -300,7 +282,6 @@ bool CScriptEngine::Compile(const mstring &str) {
         }
 
         mSearchIndex[c].insert(mstring(it->first).makelower());
-
     }
     return true;
 }
@@ -334,13 +315,13 @@ void CScriptEngine::OnStrColour(const mstring &filterStr, LogFilterResult &resul
     for (size_t i = 0 ; i < low.size() ;)
     {
         bool match = false;
-        for (map<mstring, DWORD>::const_iterator it = mRuleRgb.begin() ; it != mRuleRgb.end() ; it++)
+        for (map<mstring, int>::const_iterator it = mRuleStyle.begin() ; it != mRuleStyle.end() ; it++)
         {
             if (0 == low.comparei(it->first, i))
             {
                 LogKeyword node;
                 node.mKeyword = filterStr.substr(i, it->first.size());
-                node.mColour = it->second;
+                node.mStyle = it->second;
                 node.mKeywordStart = initPos + i;
                 node.mKeywordEnd = node.mKeywordStart + it->first.size();
                 result.mKeywordSet.push_back(node);
@@ -359,7 +340,7 @@ void CScriptEngine::OnStrColour(const mstring &filterStr, LogFilterResult &resul
 
 void CScriptEngine::ClearCache() {
     mRuleSet.clear();
-    mRuleRgb.clear();
+    mRuleStyle.clear();
     mVarSet.clear();
     mSearchIndex.clear();
 }
@@ -425,7 +406,6 @@ bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterRe
             }
             i++;
         }
-
         OnStrColour(filterStr, result);
     }
     result.mContent += filterStr;

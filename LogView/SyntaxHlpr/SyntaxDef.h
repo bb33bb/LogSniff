@@ -14,13 +14,13 @@ STYLE 用于设置字体的颜色等属性，需要注意,最大的STYLE值是256,
 超过这个值会导致设置的颜色属性无效，STYLE_DEFAULT = 32
 我们的范围从101开始设置
 */
-#define STYLE_CONTENT    101
-#define STYLE_FILTER     102
-#define STYLE_KEYWORD    121
-#define STYLE_SELECT     124
-#define STYLE_ERROR      131
-#define STYLE_TCP_PIPE1  132    //tcp流样式1
-#define STYLE_TCP_PIPE2  133    //tcp流样式2
+#define STYLE_CONTENT           101
+#define STYLE_FILTER            102
+#define STYLE_SELECT            103
+#define STYLE_ERROR             104
+#define STYLE_TCP_PIPE1         105    //tcp流样式1
+#define STYLE_TCP_PIPE2         106    //tcp流样式2
+#define STYLE_LOG_KEYWORD_BASE  160    //日志关键字
 
 #define NOTE_KEYWORD    SCE_UNIVERSAL_FOUND_STYLE_EXT1      //关键字高亮
 #define NOTE_SELECT     SCE_UNIVERSAL_FOUND_STYLE_EXT2      //选择高亮
