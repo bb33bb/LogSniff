@@ -184,6 +184,7 @@ void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int len
         }
 
         const LogKeyword &t4 = keyWordSet[i];
+        //此处越界导致死循环
         if (curPos < t4.mKeywordStart)
         {
             sc->SetState(STYLE_CONTENT);
