@@ -150,14 +150,14 @@ void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int len
                 startIndex = pos1;
             } else if (startPos >= t2.mKeywordEnd && startPos < t3.mKeywordEnd)
             {
-                startPos = pos2;
+                startIndex = pos2;
             } else {
-                startPos = pos2 + 1;
+                startIndex = pos2 + 1;
             }
             break;
         }
 
-        size_t mid = (pos2 - pos1) / 2;
+        size_t mid = (pos2 + pos1) / 2;
         const LogKeyword &midValue = keyWordSet[mid];
 
         if (startPos >= midValue.mKeywordStart && startPos < midValue.mKeywordEnd)
@@ -184,12 +184,14 @@ void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int len
         }
 
         const LogKeyword &t4 = keyWordSet[i];
+        size_t offset = 0;
         //此处越界导致死循环
         if (curPos < t4.mKeywordStart)
         {
+            offset = (t4.mKeywordStart > endPos ? (endPos - curPos) : (t4.mKeywordStart - curPos));
             sc->SetState(STYLE_CONTENT);
-            sc->ForwardBytes(t4.mKeywordStart - curPos);
-            curPos += (t4.mKeywordStart - curPos);
+            sc->ForwardBytes(offset);
+            curPos += offset;
         } else if (curPos >= t4.mKeywordStart)
         {
             sc->SetState(t4.mStyle);
