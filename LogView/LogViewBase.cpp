@@ -5,11 +5,13 @@ using namespace std;
 
 CLogViewBase::CLogViewBase() {
     mLastPos = 0, mTotalCount = 0;
+    mShowCount = 0;
     mScriptEngine = new CScriptEngine();
 }
 
 void CLogViewBase::InitLogBase() {
     mLastPos = 0, mTotalCount = 0;
+    mShowCount = 0;
     RegisterParser(LABEL_LOG_CONTENT, LogContentParser, this);
 
     SetStyle(STYLE_LOG_KEYWORD_BASE + 0, RGB(0, 0, 0), RGB(0, 0xff, 0));
@@ -42,7 +44,7 @@ void CLogViewBase::PushLog(const std::mstring &content) {
     }
 
     size_t pos1 = 0, pos2 = 0;
-    while ((pos1 = content.find("/n", pos2)) != mstring::npos) {
+    while ((pos1 = content.find("\n", pos2)) != mstring::npos) {
         pos2 = pos1 + 1;
         mTotalCount++;
     }
@@ -51,12 +53,17 @@ void CLogViewBase::PushLog(const std::mstring &content) {
     const mstring &showStr = mFilterResult.mContent;
     size_t lastShow = showStr.size();
     mScriptEngine->InputLog(mContent, mLastPos, mFilterResult);
-    mLastPos = mContent.size();
 
+    pos1 = 0, pos2 = lastShow;
+    while ((pos1 = mFilterResult.mContent.find("\n", pos2)) != mstring::npos) {
+        pos2 = pos1 + 1;
+        mShowCount++;
+    }
+
+    mLastPos = mContent.size();
     if (showStr.size() > lastShow)
     {
         mstring test1 = showStr.substr(lastShow, showStr.size() - lastShow);
-        dp("show:%hs", test1.c_str());
         PushToCache(LABEL_LOG_CONTENT, showStr.substr(lastShow, showStr.size() - lastShow));
     }
 }
@@ -93,12 +100,20 @@ void CLogViewBase::SetFilter(const std::mstring &newFilter) {
         ClearView();
         SetText(LABEL_LOG_CONTENT, mFilterResult.mContent);
         mLastPos = mContent.size();
+
+        //重新计算展示数量
+        mShowCount = 0;
+        size_t pos1 = 0, pos2 = 0;
+        while ((pos1 = mFilterResult.mContent.find("\n", pos2)) != mstring::npos) {
+            pos2 = pos1 + 1;
+            mShowCount++;
+        }
     }
     return;
 }
 
-void CLogViewBase::GetLineCount(int &show, int &total) {
-    show = SendMsg(SCI_GETLINECOUNT, 0, 0);
+void CLogViewBase::GetLineCount(int &total, int &show) {
+    show = mShowCount;
     total = mTotalCount;
 }
 
@@ -111,6 +126,7 @@ void CLogViewBase::ClearLogView() {
     mFilterResult.Clear();
     mLastPos = 0;
     mTotalCount = 0;
+    mShowCount = 0;
 
     ClearView();
 }

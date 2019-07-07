@@ -11,7 +11,7 @@ public:
     void PushLog(const std::mstring &content);
     void SetFilter(const std::mstring &newFilter);
 
-    void GetLineCount(int &show, int &total);
+    void GetLineCount(int &total, int &show);
     std::mstring GetRuleStr();
     void ClearLogView();
 private:
@@ -33,6 +33,7 @@ private:
     CScriptEngine *mScriptEngine;
     std::mstring mRuleStr;
     size_t mTotalCount;
+    size_t mShowCount;
 
     std::vector<DWORD> mColourSet;
 };

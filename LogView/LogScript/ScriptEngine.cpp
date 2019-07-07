@@ -293,7 +293,7 @@ bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
         set<mstring>::const_iterator k;
         for (k = rule.mInclude.begin() ; k != rule.mInclude.end() ; k++)
         {
-            if (mstring::npos == lineStr.find(*k))
+            if (mstring::npos == lineStr.find_in_rangei(*k))
             {
                 break;
             }

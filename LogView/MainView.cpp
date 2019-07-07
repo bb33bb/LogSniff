@@ -34,9 +34,14 @@ static BOOL gsTopMost = FALSE;
 static BOOL gsAutoScroll = FALSE;
 static BOOL gsPause = FALSE;
 
+//定时器更新状态，防止刷新过于频繁
+static DWORD gsStatusCur = 0;
+static DWORD gsStatusLast = 0;
+
 static LogViewMode gsWorkMode = em_mode_debugMsg;
-#define IDC_STATUS_BAR      (WM_USER + 1123)
-#define TIMER_LOG_LOAD      (2010)
+#define IDC_STATUS_BAR          (WM_USER + 1123)
+#define TIMER_LOG_LOAD          (2010)
+#define TIMER_UPDATE_STATBAR    (2011)
 #define MSG_SET_FILTER      (WM_USER + 1160)
 #define MSG_ACTIVATE_VIEW   (WM_USER + 1163)
 
@@ -200,6 +205,10 @@ static void _SetStatusText(int index, const mstring &text) {
 }
 
 void UpdateStatusBar() {
+    gsStatusCur++;
+}
+
+static void _UpdateStatusBarReally() {
     char self[512];
     GetModuleFileNameA(NULL, self, 512);
     mstring ver;
@@ -299,6 +308,7 @@ void PushLogContent(const LogInfoCache *cache) {
         logContent += content.substr(pos2, content.size() - pos2);
         logContent += "\n";
     }
+
     gsLogView->PushLog(logContent);
 }
 
@@ -482,6 +492,18 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
 
     gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
+
+    class CUpdateStatus {
+    public:
+        static VOID CALLBACK TimerProc(HWND hwnd, UINT msg, UINT_PTR id, DWORD time) {
+            if (gsStatusLast != gsStatusCur)
+            {
+                gsStatusLast = gsStatusCur;
+            }
+            _UpdateStatusBarReally();
+        }
+    };
+    SetTimer(gsMainWnd, TIMER_UPDATE_STATBAR, 100, CUpdateStatus::TimerProc);
     UpdateStatusBar();
     return 0;
 }

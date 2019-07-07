@@ -82,12 +82,12 @@ void CLogReceiver::Stop() {
 }
 
 void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
-    LogInfoCache *cache = new LogInfoCache();
-    cache->mContent = content;
+    LogInfoCache cache;
+    cache.mContent = content;
 
     SYSTEMTIME time = {0};
     GetLocalTime(&time);
-    cache->mTime = FormatA(
+    cache.mTime = FormatA(
         "%04d-%02d-%02d %02d:%02d:%02d %03d",
         time.wYear,
         time.wMonth,
@@ -97,8 +97,8 @@ void CLogReceiver::PushLog(const mstring &filePath, const mstring &content) {
         time.wSecond,
         time.wMilliseconds
         );
-    cache->mFilePath = filePath;
-    PushLogContent(cache);
+    cache.mFilePath = filePath;
+    PushLogContent(&cache);
 }
 
 bool CLogReceiver::AddPathMonitor(const std::mstring &filePath) {
