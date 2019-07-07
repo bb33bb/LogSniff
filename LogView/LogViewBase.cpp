@@ -1,5 +1,6 @@
 #include "LogViewBase.h"
 #include <LogLib/LogUtil.h>
+#include <Shlwapi.h>
 
 using namespace std;
 
@@ -132,99 +133,47 @@ void CLogViewBase::ClearLogView() {
 }
 
 void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const {
-    /*
-    通过二分查找法定位语法位置
-    */
-    const vector<LogKeyword> &keyWordSet = mFilterResult.mKeywordSet;
-    if (keyWordSet.empty())
+    map<mstring, int> style = mScriptEngine->GetStyleSet();
+    if (style.empty())
     {
         sc->SetState(STYLE_CONTENT);
         sc->ForwardBytes(length);
         return;
     }
 
-    size_t pos1 = 0, pos2 = keyWordSet.size() - 1;
-    size_t startIndex = 0;
-    while (true) {
-        if (pos2 == pos1)
+    int lastPos = 0;
+    for (int i = 0 ; i < length ;)
+    {
+        bool match = false;
+        for (map<mstring, int>::const_iterator it = style.begin() ; it != style.end() ; it++)
         {
-            const LogKeyword &t1 = keyWordSet[pos1];
-            if (startPos < t1.mKeywordEnd)
+            if (0 == StrCmpNIA(it->first.c_str(), ptr + i, it->first.size()))
             {
-                startIndex = pos1;
-            } else {
-                startIndex = pos1 + 1;
-            }
-            break;
-        } else if ((pos2 - pos1) == 1)
-        {
-            const LogKeyword &t2 = keyWordSet[pos1];
-            const LogKeyword &t3 = keyWordSet[pos2];
+                if (i > lastPos)
+                {
+                    sc->SetState(STYLE_CONTENT);
+                    sc->ForwardBytes(i - lastPos);
+                }
 
-            if (startPos < t2.mKeywordEnd)
-            {
-                startIndex = pos1;
-            } else if (startPos >= t2.mKeywordEnd && startPos < t3.mKeywordEnd)
-            {
-                startIndex = pos2;
-            } else {
-                startIndex = pos2 + 1;
+                sc->SetState(it->second);
+                sc->ForwardBytes(it->first.size());
+                i += it->first.size();
+                lastPos = i;
+                match = true;
+                break;
             }
-            break;
         }
 
-        size_t mid = (pos2 + pos1) / 2;
-        const LogKeyword &midValue = keyWordSet[mid];
-
-        if (startPos >= midValue.mKeywordStart && startPos < midValue.mKeywordEnd)
+        if (!match)
         {
-            startIndex = mid;
-            break;
-        } else if (startPos < midValue.mKeywordStart)
-        {
-            pos2 = mid;
-        } else {
-            pos1 = mid;
+            i++;
         }
     }
 
-    size_t i = startIndex;
-    size_t endPos = startPos + length;
-    size_t curPos = startPos;
-    while (true) {
-        if (i >= keyWordSet.size())
-        {
-            sc->SetState(STYLE_CONTENT);
-            sc->ForwardBytes(endPos - curPos);
-            break;
-        }
-
-        const LogKeyword &t4 = keyWordSet[i];
-        size_t offset = 0;
-        //此处越界导致死循环
-        if (curPos < t4.mKeywordStart)
-        {
-            offset = (t4.mKeywordStart > endPos ? (endPos - curPos) : (t4.mKeywordStart - curPos));
-            sc->SetState(STYLE_CONTENT);
-            sc->ForwardBytes(offset);
-            curPos += offset;
-        } else if (curPos >= t4.mKeywordStart)
-        {
-            offset = (t4.mKeywordEnd > endPos ? (endPos - curPos) : (t4.mKeywordEnd - curPos));
-            sc->SetState(t4.mStyle);
-            sc->Forward(offset);
-            curPos += offset;
-
-            if (t4.mKeywordEnd <= endPos)
-            {
-                i++;
-            }
-        }
-
-        if (curPos >= endPos)
-        {
-            break;
-        }
+    if (lastPos < length)
+    {
+        sc->SetState(STYLE_CONTENT);
+        sc->ForwardBytes(length - lastPos);
     }
 }
 

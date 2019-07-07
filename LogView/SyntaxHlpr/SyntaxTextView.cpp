@@ -34,39 +34,6 @@ bool SyntaxTextView::ClearHighLight() {
 }
 
 void SyntaxTextView::OnViewUpdate() const {
-    size_t length = SendMsg(SCI_GETTEXTLENGTH, 0, 0);
-    SendMsg(SCI_SETINDICATORCURRENT, NOTE_KEYWORD, 0);
-    SendMsg(SCI_INDICATORCLEARRANGE, 0, length);
-
-    if (mHighLight.empty())
-    {
-        return;
-    }
-
-    int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
-    int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);
-    int lastLine = firstLine + lineCount;
-    int curLine = firstLine;
-
-    int startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
-    int lastPos = SendMsg(SCI_GETLINEENDPOSITION, lastLine, 0);
-
-    if (lastPos <= startPos)
-    {
-        return;
-    }
-
-    mstring str = mStrInView.substr(startPos, lastPos - startPos);
-    for (map<mstring, DWORD>::const_iterator it = mHighLight.begin() ; it != mHighLight.end() ; it++)
-    {
-        size_t pos1 = 0;
-        size_t pos2 = 0;
-        while (mstring::npos != (pos1 = str.find_in_rangei(it->first, pos2))) {
-            SendMsg(SCI_INDICATORFILLRANGE, pos1 + startPos, it->first.size());
-
-            pos2 = pos1 + it->first.size();
-        }
-    }
 }
 
 INT_PTR SyntaxTextView::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {

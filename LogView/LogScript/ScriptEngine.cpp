@@ -3,6 +3,7 @@
 #include <Shlwapi.h>
 #include <LogLib/StrUtil.h>
 #include "../SyntaxHlpr/SyntaxDef.h"
+#include <LogLib/LogUtil.h>
 
 using namespace std;
 
@@ -286,6 +287,10 @@ bool CScriptEngine::Compile(const mstring &str) {
     return true;
 }
 
+map<mstring, int> CScriptEngine::GetStyleSet() const {
+    return mRuleStyle;
+}
+
 bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
     for (size_t j = 0 ; j < mRuleSet.size() ; j++)
     {
@@ -351,6 +356,9 @@ bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterRe
     if (mRuleSet.empty()) {
         filterStr = content.substr(initPos, content.size() - initPos);
     } else {
+        //Debug
+        DWORD testCount1 = GetTickCount();
+
         for (size_t i = initPos ; i < content.size() ;)
         {
             char c = content[i];
@@ -406,7 +414,11 @@ bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterRe
             }
             i++;
         }
-        OnStrColour(filterStr, result);
+
+        dp("time1:%d", GetTickCount() - testCount1);
+        //testCount1 = GetTickCount();
+        //OnStrColour(filterStr, result);
+        dp("time2:%d", GetTickCount() - testCount1);
     }
     result.mContent += filterStr;
     return !filterStr.empty();
