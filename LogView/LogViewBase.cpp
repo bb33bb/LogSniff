@@ -194,10 +194,15 @@ void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int len
             curPos += offset;
         } else if (curPos >= t4.mKeywordStart)
         {
+            offset = (t4.mKeywordEnd > endPos ? (endPos - curPos) : (t4.mKeywordEnd - curPos));
             sc->SetState(t4.mStyle);
-            sc->Forward(t4.mKeyword.size());
-            curPos += t4.mKeyword.size();
-            i++;
+            sc->Forward(offset);
+            curPos += offset;
+
+            if (t4.mKeywordEnd <= endPos)
+            {
+                i++;
+            }
         }
 
         if (curPos >= endPos)
