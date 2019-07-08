@@ -550,6 +550,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     {
         gsCurView->ClearCache();
         gsCurView->ClearView();
+        gsCurView->ClearLogView();
         UpdateStatusBar();
     } else if (id == MENU_ID_FIND)
     {

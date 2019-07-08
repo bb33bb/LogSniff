@@ -59,7 +59,6 @@ CAPTION "LogView"
 FONT 10, "微软雅黑", 400, 0, 0x86
 BEGIN
     EDITTEXT        IDC_EDT_FILTER,150,6,169,12,ES_AUTOHSCROLL | ES_WANTRETURN,WS_EX_DLGMODALFRAME
-    COMBOBOX        IDC_COM_MODE,325,6,48,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_LOGSERV DIALOGEX 0, 0, 491, 221
@@ -202,8 +201,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,5
- PRODUCTVERSION 1,0,0,5
+ FILEVERSION 1,0,0,7
+ PRODUCTVERSION 1,0,0,7
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -219,12 +218,12 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "FileDescription", "LogSniff 日志数据探测分析工具，方便的探测分析日志数据"
-            VALUE "FileVersion", "1, 0, 0, 5"
+            VALUE "FileVersion", "1, 0, 0, 7"
             VALUE "InternalName", "LogView"
             VALUE "LegalCopyright", "Copyright (C) 2019"
             VALUE "OriginalFilename", "LogView.exe"
             VALUE "ProductName", "LogView 应用程序"
-            VALUE "ProductVersion", "1, 0, 0, 5"
+            VALUE "ProductVersion", "1, 0, 0, 7"
         END
     END
     BLOCK "VarFileInfo"
