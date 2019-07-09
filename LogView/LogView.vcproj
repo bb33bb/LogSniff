@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="copy $(OutDir)\SyntaxView.dll $(SolutionDir)\LogView\res\SyntaxView.dll"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

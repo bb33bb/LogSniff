@@ -299,7 +299,11 @@ bool CScriptEngine::Compile(const mstring &str) {
     return true;
 }
 
-map<mstring, int> CScriptEngine::GetStyleSet() const {
+map<mstring, int> CScriptEngine::GetStyleSet() {
+    mRuleStyle["¾¯¸æ"] = STYLE_LOG_WARN;
+    mRuleStyle["warn"] = STYLE_LOG_WARN;
+    mRuleStyle["´íÎó"] = STYLE_LOG_ERROR;
+    mRuleStyle["error"] = STYLE_LOG_ERROR;
     return mRuleStyle;
 }
 

@@ -89,7 +89,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(TargetDir)\$(TargetFileName) $(SolutionDir)\LogView\res"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration

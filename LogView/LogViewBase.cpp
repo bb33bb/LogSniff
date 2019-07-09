@@ -33,6 +33,8 @@ void CLogViewBase::InitLogBase() {
         BYTE b = rand() % 128 + 128;
         SetStyle(i, RGB(0, 0, 0), RGB(r, g, b));
     }
+    SetStyle(STYLE_LOG_WARN, RGB(0, 0, 0), RGB(0xee, 0xb4, 0x22));
+    SetStyle(STYLE_LOG_ERROR, RGB(0, 0, 0), RGB(0xf0, 0x80, 0x80));
 }
 
 CLogViewBase::~CLogViewBase() {

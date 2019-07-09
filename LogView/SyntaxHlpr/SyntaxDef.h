@@ -21,6 +21,8 @@ STYLE 用于设置字体的颜色等属性，需要注意,最大的STYLE值是256,
 #define STYLE_TCP_PIPE1         105    //tcp流样式1
 #define STYLE_TCP_PIPE2         106    //tcp流样式2
 #define STYLE_LOG_KEYWORD_BASE  160    //日志关键字
+#define STYLE_LOG_WARN          251    //日志警告
+#define STYLE_LOG_ERROR         252    //日志错误
 
 #define NOTE_KEYWORD    SCE_UNIVERSAL_FOUND_STYLE_EXT1      //关键字高亮
 #define NOTE_SELECT     SCE_UNIVERSAL_FOUND_STYLE_EXT2      //选择高亮
