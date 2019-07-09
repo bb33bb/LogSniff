@@ -296,17 +296,6 @@ bool CScriptEngine::Compile(const mstring &str) {
 
     //Óï·¨×ÅÉ«
     SetRuleStyle();
-    //Create Search Index
-    for (map<mstring, int>::const_iterator it = mRuleStyle.begin() ; it != mRuleStyle.end() ; it++)
-    {
-        char c = it->first.c_str()[0];
-        if (c >= 'A' && c <= 'Z')
-        {
-            c |= 32;
-        }
-
-        mSearchIndex[c].insert(mstring(it->first).makelower());
-    }
     return true;
 }
 
@@ -314,7 +303,8 @@ map<mstring, int> CScriptEngine::GetStyleSet() const {
     return mRuleStyle;
 }
 
-bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
+bool CScriptEngine::OnRuleFilter(const char *content, size_t length) const {
+    mstring lineStr(content, length);
     for (size_t j = 0 ; j < mRuleSet.size() ; j++)
     {
         const FilterRule &rule = mRuleSet[j];
@@ -339,6 +329,11 @@ bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
             stat1 = true;
         }
 
+        if (!stat1)
+        {
+            continue;
+        }
+
         bool stat2 = false;
         if (rule.mExclude.empty())
         {
@@ -346,7 +341,7 @@ bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
         } else {
             for (k = rule.mExclude.begin() ; k != rule.mExclude.end() ; k++)
             {
-                if (mstring::npos != lineStr.find(*k))
+                if (mstring::npos != lineStr.find_in_rangei(*k))
                 {
                     stat2 = false;
                     break;
@@ -402,7 +397,6 @@ void CScriptEngine::ClearCache() {
     mRuleSet.clear();
     mRuleStyle.clear();
     mVarSet.clear();
-    mSearchIndex.clear();
 }
 
 bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterResult &result) {
@@ -411,69 +405,22 @@ bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterRe
     if (mRuleSet.empty()) {
         filterStr = content.substr(initPos, content.size() - initPos);
     } else {
-        //Debug
-        DWORD testCount1 = GetTickCount();
-
-        for (size_t i = initPos ; i < content.size() ;)
+        size_t lastPos = initPos;
+        for (size_t i = initPos ; i < content.size() ; i++)
         {
             char c = content[i];
-            if (c >= 'A' && c <= 'Z')
+            if (c == '\n')
             {
-                c |= 32;
-            }
-
-            bool passLine = false;
-            map<char, set<mstring>>::const_iterator it;
-            if (mSearchIndex.end() != (it = mSearchIndex.find(c)))
-            {
-                for (set<mstring>::const_iterator ij = it->second.begin() ; ij != it->second.end() ; ij++)
+                if (i > lastPos)
                 {
-                    if (0 == content.comparei(*ij, i))
+                    if (OnRuleFilter(content.c_str() + lastPos, i - lastPos))
                     {
-                        //Rule Filter
-                        size_t startPos = content.rfind('\n', i);
-                        if (mstring::npos == startPos)
-                        {
-                            startPos = 0;
-                        } else {
-                            startPos += 1;
-                        }
-
-                        size_t endPos = content.find('\n', i + 1);
-                        if (mstring::npos == endPos)
-                        {
-                            endPos = content.size();
-                        }
-
-                        mstring lineStr = content.substr(startPos, endPos - startPos);
-                        if (OnRuleFilter(lineStr))
-                        {
-                            filterStr += lineStr;
-
-                            if (lineStr.c_str()[lineStr.size() - 1] != '\n')
-                            {
-                                filterStr += '\n';
-                            }
-                        }
-
-                        passLine = true;
-                        i = endPos + 1;
-                        break;
+                        filterStr.append(content.c_str() + lastPos, i - lastPos + 1);
                     }
                 }
-
-                if (passLine)
-                {
-                    continue;
-                }
+                lastPos = i + 1;
             }
-            i++;
         }
-
-        dp("time1:%d", GetTickCount() - testCount1);
-        //testCount1 = GetTickCount();
-        //OnStrColour(filterStr, result);
-        dp("time2:%d", GetTickCount() - testCount1);
     }
     result.mContent += filterStr;
     return !filterStr.empty();

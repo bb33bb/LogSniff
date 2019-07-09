@@ -74,7 +74,7 @@ private:
     std::vector<FilterRule> CalOrResult(const std::vector<FilterRule> &a, const std::vector<FilterRule> &b) const;
     void ScriptCleanUp(std::mstring &script) const;
     void SetRuleStyle();
-    bool OnRuleFilter(const std::mstring &lineStr) const;
+    bool OnRuleFilter(const char *content, size_t length) const;
     void OnStrColour(const std::mstring &filterStr, LogFilterResult &result) const;
     void ClearCache();
 
@@ -83,5 +83,4 @@ private:
     std::map<std::mstring, int> mRuleStyle;
     std::vector<std::mstring> mSplitStrSet;
     std::map<std::mstring, std::vector<FilterRule>> mVarSet;
-    std::map<char, std::set<std::mstring>> mSearchIndex;
 };
