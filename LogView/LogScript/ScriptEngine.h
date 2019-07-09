@@ -54,6 +54,11 @@ class CScriptEngine {
         //KeyWord, and logic
         std::set<std::mstring> mInclude;
         std::set<std::mstring> mExclude;
+
+        void Clear() {
+            mInclude.clear();
+            mExclude.clear();
+        }
     };
 
 public:

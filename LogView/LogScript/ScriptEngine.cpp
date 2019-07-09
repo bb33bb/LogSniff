@@ -112,10 +112,11 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
     int mode = 0;   //0:&&, 1:||
     FilterRule tmp;
     for(i = 0 ; i < strSet.size() ; i++) {
-        const string &cur = strSet[i];
+        string cur = strSet[i];
         if (i % 2 == 0)
         {
             bool varFlag = false;
+            bool exclude = false;
             vector<FilterRule> varContent;
 
             map<mstring, vector<FilterRule>>::const_iterator it;
@@ -123,6 +124,12 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
             {
                 varFlag = true;
                 varContent = it->second;
+            } else {
+                if (cur[0] == '!')
+                {
+                    exclude = true;
+                    cur.erase(0, 1);
+                }
             }
 
             if (0 == mode)
@@ -134,7 +141,12 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                     {
                         result = varContent;
                     } else {
-                        tmp.mInclude.insert(cur);
+                        if (exclude)
+                        {
+                            tmp.mExclude.insert(cur);
+                        } else {
+                            tmp.mInclude.insert(cur);
+                        }
                         result.push_back(tmp);
                     }
                 } else {
@@ -142,7 +154,12 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                     {
                         result = CalAndResult(result, varContent);
                     } else {
-                        result[result.size() - 1].mInclude.insert(cur);
+                        if (exclude)
+                        {
+                            result[result.size() - 1].mExclude.insert(cur);
+                        } else {
+                            result[result.size() - 1].mInclude.insert(cur);
+                        }
                     }
                 }
             } else if (1 == mode)
@@ -152,8 +169,13 @@ vector<CScriptEngine::FilterRule> CScriptEngine::SimpleCompile(const mstring &sc
                 {
                     result = CalOrResult(result, varContent);
                 } else {
-                    tmp.mInclude.clear();
-                    tmp.mInclude.insert(cur);
+                    tmp.Clear();
+                    if (exclude)
+                    {
+                        tmp.mExclude.insert(cur);
+                    } else {
+                        tmp.mInclude.insert(cur);
+                    }
                     result.push_back(tmp);
                 }
             }
@@ -183,6 +205,7 @@ vector<CScriptEngine::FilterRule> CScriptEngine::CalAndResult(const vector<CScri
             const FilterRule &t2 = b[j];
             FilterRule tmp = t1;
             tmp.mInclude.insert(t2.mInclude.begin(), t2.mInclude.end());
+            tmp.mExclude.insert(t2.mExclude.begin(), t2.mExclude.end());
             result.push_back(tmp);
         }
     }
@@ -296,15 +319,47 @@ bool CScriptEngine::OnRuleFilter(const mstring &lineStr) const {
     {
         const FilterRule &rule = mRuleSet[j];
         set<mstring>::const_iterator k;
-        for (k = rule.mInclude.begin() ; k != rule.mInclude.end() ; k++)
+
+        bool stat1 = false;
+        if (!rule.mInclude.empty())
         {
-            if (mstring::npos == lineStr.find_in_rangei(*k))
+            for (k = rule.mInclude.begin() ; k != rule.mInclude.end() ; k++)
             {
-                break;
+                if (mstring::npos == lineStr.find_in_rangei(*k))
+                {
+                    break;
+                }
+            }
+
+            if (k == rule.mInclude.end())
+            {
+                stat1 = true;
+            }
+        } else {
+            stat1 = true;
+        }
+
+        bool stat2 = false;
+        if (rule.mExclude.empty())
+        {
+            stat2 = true;
+        } else {
+            for (k = rule.mExclude.begin() ; k != rule.mExclude.end() ; k++)
+            {
+                if (mstring::npos != lineStr.find(*k))
+                {
+                    stat2 = false;
+                    break;
+                }
+            }
+
+            if (k == rule.mExclude.end())
+            {
+                stat2 = true;
             }
         }
 
-        if (k == rule.mInclude.end())
+        if (stat1 && stat2)
         {
             return true;
         }
