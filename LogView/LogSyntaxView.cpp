@@ -45,7 +45,7 @@ void CLogSyntaxView::initLogView() {
     ShowHsScrollBar(true);
 
     SetDefStyle(RGB(0, 0, 0), RGB(255, 255, 255));
-    ShowCaretLine(true, RGB(0, 0, 0), 30);
+    ShowCaretLine(true, RGB(0x00, 0x00, 0xcd), 30);
 
     SetStyle(STYLE_CONTENT, RGB(0, 0, 0), RGB(255, 255, 255));
 

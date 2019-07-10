@@ -92,6 +92,104 @@ DWORD CWinFileNotify::LogCreateNotifyThread(LPVOID param) {
     CloseHandle(pThis->mIocp);
 }
 
+void CWinFileNotify::SetActive(const mstring &unique) {
+    AutoLocker locker(this);
+
+    map<mstring, FileCacheData *>::const_iterator it;
+    if (mPassiveFileSet.end() != (it = mPassiveFileSet.find(unique)))
+    {
+        FileCacheData *ptr = it->second;
+        mPassiveFileSet.erase(unique);
+        mActiveFileSet[unique] = ptr;
+    }
+}
+
+void CWinFileNotify::SetPassive(const mstring &unique) {
+    AutoLocker locker(this);
+
+    map<mstring, FileCacheData *>::const_iterator it;
+    if (mActiveFileSet.end() != (it = mActiveFileSet.find(unique)))
+    {
+        FileCacheData *ptr = it->second;
+        mActiveFileSet.erase(unique);
+        mPassiveFileSet[unique] = ptr;
+    }
+}
+
+void CWinFileNotify::CheckFileChanged(map<mstring, FileCacheData *> &set1, bool activeMode) {
+    list<FileCacheData *> activeSet;
+    list<FileCacheData *> passiveSet;
+    //不能在枚举时操作集合，会出现C++异常
+    for (map<mstring, FileCacheData *>::iterator it = set1.begin() ; it != set1.end() ; it++)
+    {
+        FileCacheData *ptr = it->second;
+
+        FILETIME t1 = {0}, t2 = {0};
+        HANDLE h = CreateFileA(ptr->mFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+        if (h)
+        {
+            GetFileTime(h, &t1, NULL, &t2);
+
+            DWORD s1 = 0;
+            DWORD s2 = GetFileSize(h, &s1);
+            ULONGLONG fileSize = (((ULONGLONG)s1 << 32) | (ULONGLONG)s2);
+            CloseHandle(h);
+
+            bool notify = false;
+            if (true == ptr->mNewFile)
+            {
+                notify = true;
+                ptr->mNewFile = false;
+            } else if (0 != memcmp(&t2, &ptr->mLastWriteTime, sizeof(FILETIME))) {
+                memcpy(&ptr->mLastWriteTime, &t2, sizeof(FILETIME));
+                notify = true;
+            } else if (fileSize > ptr->mLastSize)
+            {
+                ptr->mLastSize = fileSize;
+                notify = true;
+            }
+
+            if (notify)
+            {
+                if (!activeMode)
+                {
+                    activeSet.push_back(ptr);
+                }
+
+                for (list<IoInfo *>::const_iterator it = mIoSet.begin() ; it != mIoSet.end() ; it++)
+                {
+                    IoInfo *pInfo = *it;
+                    if (ptr->mFilePath.startwith(pInfo->mDirPath.c_str()))
+                    {
+                        pInfo->pfnFileNotify(ptr->mFilePath.c_str(), -1);
+                    }
+                }
+            } else {
+                if (activeMode)
+                {
+                    //文件降级
+                    if (!IsFileActive(ptr))
+                    {
+                        passiveSet.push_back(ptr);
+                    }
+                }
+            }
+        }
+    }
+
+    list<FileCacheData *>::const_iterator ij;
+    for (ij = activeSet.begin() ; ij != activeSet.end() ; ij++)
+    {
+        SetActive((*ij)->mFileUnique);
+    }
+
+    for (ij = passiveSet.begin() ; ij != passiveSet.end() ; ij++)
+    {
+        SetPassive((*ij)->mFileUnique);
+    }
+}
+
 /*
 该线程效率较低，原因是每次轮询都会尝试探测所有收集到的日志文件
 比较好的方式是根据文件属性确定访问优先级，区分处理
@@ -99,51 +197,28 @@ DWORD CWinFileNotify::LogCreateNotifyThread(LPVOID param) {
 DWORD CWinFileNotify::LogChangeNotifyThread(LPVOID param) {
     CWinFileNotify *pThis = (CWinFileNotify *)param;
 
+    const DWORD activeInterval = 1000;
+    DWORD activeLastCount = GetTickCount();
+    const DWORD passiveInterval = 1000 * 30;
+    DWORD passiveLastCount = GetTickCount();
+
     while (true) {
         {
             AutoLocker locker(pThis);
-            for (map<ULONG, FileCacheData *>::iterator it = pThis->mFileCache.begin() ; it != pThis->mFileCache.end() ; it++)
+            DWORD curCount = GetTickCount();
+
+            map<mstring, FileCacheData *> &set1 = pThis->mActiveFileSet;
+            map<mstring, FileCacheData *> &set2 = pThis->mPassiveFileSet;
+            if ((curCount - activeLastCount) > activeInterval)
             {
-                FileCacheData *ptr = it->second;
+                activeLastCount = curCount;
+                pThis->CheckFileChanged(set1, true);
+            }
 
-                FILETIME t1 = {0}, t2 = {0};
-                HANDLE h = CreateFileA(ptr->mFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-
-                if (h)
-                {
-                    GetFileTime(h, &t1, NULL, &t2);
-
-                    DWORD s1 = 0;
-                    DWORD s2 = GetFileSize(h, &s1);
-                    ULONGLONG fileSize = (((ULONGLONG)s1 << 32) | (ULONGLONG)s2);
-                    CloseHandle(h);
-
-                    bool notify = false;
-                    if (true == ptr->mNewFile)
-                    {
-                        notify = true;
-                        ptr->mNewFile = false;
-                    } else if (0 != memcmp(&t2, &ptr->mLastWriteTime, sizeof(FILETIME))) {
-                        memcpy(&ptr->mLastWriteTime, &t2, sizeof(FILETIME));
-                        notify = true;
-                    } else if (fileSize > ptr->mLastSize)
-                    {
-                        ptr->mLastSize = fileSize;
-                        notify = true;
-                    }
-
-                    if (notify)
-                    {
-                        for (list<IoInfo *>::const_iterator it = pThis->mIoSet.begin() ; it != pThis->mIoSet.end() ; it++)
-                        {
-                            IoInfo *pInfo = *it;
-                            if (ptr->mFilePath.startwith(pInfo->mDirPath.c_str()))
-                            {
-                                pInfo->pfnFileNotify(ptr->mFilePath.c_str(), -1);
-                            }
-                        }
-                    }
-                }
+            if ((curCount - passiveLastCount) > passiveInterval)
+            {
+                passiveLastCount = curCount;
+                pThis->CheckFileChanged(set2, false);
             }
         }
 
@@ -270,21 +345,22 @@ void CWinFileNotify::CloseAll() {
     mIoSet.clear();
 }
 
-ULONG CWinFileNotify::GetFilePathCrc32(const string &filePath) const {
+mstring CWinFileNotify::GetFilePathUnique(const string &filePath) const {
     mstring str = filePath;
 
-    return crc32(str.c_str(), str.size(), 0xff11);
+    unsigned long magic = crc32(str.c_str(), str.size(), 0xff11);
+    return FormatA("%08x_%hs", magic, filePath.c_str());
 }
 
 CWinFileNotify::FileCacheData *CWinFileNotify::GetFileCacheData(const string &filePath) const {
     FileCacheData *cache = new FileCacheData();
-    cache->mCRC32 = GetFilePathCrc32(filePath);
+    cache->mFileUnique = GetFilePathUnique(filePath);
     cache->mFilePath = filePath;
 
     HANDLE h = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
     if (!h)
     {
-        return cache;
+        return NULL;
     }
 
     DWORD high = 0;
@@ -295,15 +371,57 @@ CWinFileNotify::FileCacheData *CWinFileNotify::GetFileCacheData(const string &fi
     return cache;
 }
 
-void CWinFileNotify::OnFileNotify(const std::string &filePath, bool newFile) {
-    ULONG dd = GetFilePathCrc32(filePath);
+bool CWinFileNotify::IsUniqueInCache(const mstring &unique) {
     AutoLocker locker(this);
+    return (
+        mActiveFileSet.end() != mActiveFileSet.find(unique) ||
+        mPassiveFileSet.end() != mPassiveFileSet.find(unique)
+        );
+}
 
-    if (mFileCache.end() == mFileCache.find(dd))
+bool CWinFileNotify::IsFileActive(const FileCacheData *cache) const {
+    SYSTEMTIME localTime = {0};
+    GetSystemTime(&localTime);
+    FILETIME fileTime = {0};
+    SystemTimeToFileTime(&localTime, &fileTime);
+
+    ULONGLONG u1 = (((ULONGLONG)cache->mLastWriteTime.dwHighDateTime << 32) | ((ULONGLONG)cache->mLastWriteTime.dwLowDateTime));
+    ULONGLONG u2 = (((ULONGLONG)fileTime.dwHighDateTime << 32) | ((ULONGLONG)fileTime.dwLowDateTime));
+
+    ULONGLONG ms = ((u2 - u1) / 1000);
+    if (u2 > u1 && ms > msActiveTimeCount)
     {
-        FileCacheData *cache = GetFileCacheData(filePath);
-        cache->mNewFile = newFile;
-        mFileCache[cache->mCRC32] = cache;
+        return false;
+    } else {
+        return true;
+    }
+}
+
+void CWinFileNotify::OnFileNotify(const std::string &filePath, bool newFile) {
+    if (!MonitorBase::IsLogFile(filePath))
+    {
+        return;
+    }
+
+    mstring unique = GetFilePathUnique(filePath);
+
+    AutoLocker locker(this);
+    if (IsUniqueInCache(unique))
+    {
+        return;
+    }
+
+    FileCacheData *cache = GetFileCacheData(filePath);
+    if (!cache)
+    {
+        return;
+    }
+
+    cache->mNewFile = newFile;
+    if (IsFileActive(cache)) {
+        mActiveFileSet[unique] = cache;
+    } else {
+        mPassiveFileSet[unique] = cache;
     }
 }
 

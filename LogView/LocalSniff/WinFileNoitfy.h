@@ -59,7 +59,7 @@ class CWinFileNotify : public RLocker {
     };
 
     struct FileCacheData {
-        ULONG mCRC32;
+        std::mstring mFileUnique;
         std::mstring mFilePath;
         FILETIME mCreateTime;
         FILETIME mLastWriteTime;
@@ -67,7 +67,7 @@ class CWinFileNotify : public RLocker {
         bool mNewFile;
 
         FileCacheData() {
-            mCRC32 = 0, mLastSize = 0;
+            mLastSize = 0;
             memset(&mCreateTime, 0x00, sizeof(FILETIME));
             memset(&mLastWriteTime, 0x00, sizeof(FILETIME));
             mNewFile = false;
@@ -88,9 +88,14 @@ private:
     bool IsPathInCache(const std::string &filePath) const;
     void Close(const IoInfo *info) const;
     void CloseAll();
-    ULONG GetFilePathCrc32(const std::string &filePath) const;
+    std::mstring GetFilePathUnique(const std::string &filePath) const;
     void OnFileNotify(const std::string &filePath, bool newFile = false);
     FileCacheData *GetFileCacheData(const std::string &filePath) const;
+    bool IsUniqueInCache(const std::mstring &unique);
+    void SetActive(const std::mstring &unique);
+    void SetPassive(const std::mstring &unique);
+    void CheckFileChanged(std::map<std::mstring, FileCacheData *> &set1, bool activeMode);
+    bool IsFileActive(const FileCacheData *cache) const;
 
     void LoadLogFiles(const std::string &dir);
     static bool LogEnumHandler(bool isDir, LPCSTR filePath, void *param);
@@ -100,5 +105,9 @@ private:
     std::list<IoInfo *> mIoSet;
     HANDLE mIocp;
     bool mInit;
-    std::map<ULONG, FileCacheData *> mFileCache;
+    static const DWORD msActiveTimeCount = (1000 * 60 * 60);
+    //活跃文件缓存
+    std::map<std::mstring, FileCacheData *> mActiveFileSet;
+    //非活跃文件缓存
+    std::map<std::mstring, FileCacheData *> mPassiveFileSet;
 };
