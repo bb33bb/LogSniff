@@ -109,6 +109,7 @@ mstring CDbgCapturer::GetProcName(DWORD pid) {
         ProcIterateProc(ProcHandler, &info);
 
         result = info.mProcName;
+        sProcSet[pid] = result;
     }
     return result;
 }
