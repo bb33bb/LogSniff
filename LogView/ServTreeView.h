@@ -6,11 +6,12 @@
 
 class CServTreeDlg : public LogServEvent {
     enum TreeNodeType {
-        em_tree_root_node,
+        em_tree_root_node,      //树型控件根节点
         em_tree_file_log,
         em_tree_dbg_msg,
+        em_tree_dir_list,
         em_tree_dir_root,
-        em_tree_dir,
+        em_tree_dir_child,
         em_tree_file
     };
 

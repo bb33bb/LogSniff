@@ -139,16 +139,18 @@ INT_PTR CServTreeDlg::OnCommand(WPARAM wp, LPARAM lp) {
 INT_PTR CServTreeDlg::OnNotify(WPARAM wp, LPARAM lp) {
     NMHDR *headr = (NMHDR *)lp;
 
+    HTREEITEM sel = 0;
+    TVITEM itm = {0};
+    const TreeCtrlParam *desc = NULL;
     if (headr->code == NM_DBLCLK)
     {
-        HTREEITEM sel = TreeView_GetSelection(mTreeCtrl);
+        sel = TreeView_GetSelection(mTreeCtrl);
 
-        TVITEM itm = {0};
         itm.mask = TVIF_PARAM;
         itm.hItem = sel;
         TreeView_GetItem(mTreeCtrl, &itm);
 
-        const TreeCtrlParam *desc = (const TreeCtrlParam *)itm.lParam;
+        desc = (const TreeCtrlParam *)itm.lParam;
         int d = 123;
 
         if (desc->mNodeType == em_tree_file_log)
@@ -157,6 +159,18 @@ INT_PTR CServTreeDlg::OnNotify(WPARAM wp, LPARAM lp) {
         } else if (desc->mNodeType == em_tree_dbg_msg)
         {
             SwitchWorkMode(em_mode_debugMsg);
+        }
+    } else if (headr->code == NM_RCLICK) {
+        sel = TreeView_GetSelection(mTreeCtrl);
+
+        itm.mask = TVIF_PARAM;
+        itm.hItem = sel;
+        TreeView_GetItem(mTreeCtrl, &itm);
+
+        desc = (const TreeCtrlParam *)itm.lParam;
+        if (desc && desc->mNodeType == em_tree_dir_root)
+        {
+            int dd = 12345;
         }
     }
     return 0;
@@ -181,9 +195,9 @@ INT_PTR CServTreeDlg::OnServAddedInternal(const LogServDesc *desc) {
         HTREEITEM t3 = InsertItem(t1, "调试信息", param2);
 
         TreeCtrlParam *param3 = new TreeCtrlParam();
-        param3->mNodeType = em_tree_dir_root;
+        param3->mNodeType = em_tree_dir_list;
         param3->mServDesc = desc;
-        HTREEITEM t4 = InsertItem(t1, "日志文件", param3);
+        HTREEITEM t4 = InsertItem(t1, "监视目录", param3);
 
         if (InsertServToCache(desc, t2, t4)) {
             OnServTreeUpdate(desc);
@@ -286,7 +300,7 @@ void CServTreeDlg::OnServTreeUpdate(const LogServDesc *desc) {
     for (it = added.begin() ; it != added.end() ; it++)
     {
         TreeCtrlParam *param = new TreeCtrlParam();
-        param->mNodeType = em_tree_dir;
+        param->mNodeType = em_tree_dir_root;
         param->mServDesc = desc;
         param->mFilePath = *it;
         InsertPathToFileTree(*it);
@@ -346,7 +360,7 @@ void CServTreeDlg::InsertPathToFileTree(const mstring &path) {
 
     const LogServDesc *desc = mTreeCache[0]->mServDesc;
     TreeCtrlParam *param = new TreeCtrlParam();
-    param->mNodeType = em_tree_dir;
+    param->mNodeType = em_tree_dir_root;
     param->mServDesc = desc;
     param->mFilePath = path;
     HTREEITEM rootItem = InsertItem(mTreeCache[0]->mFileSetItem, PathFindFileNameA(path.c_str()), param);
@@ -388,7 +402,7 @@ void CServTreeDlg::InsertPathToFileTree(const mstring &path) {
             param = new TreeCtrlParam();
             if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             {
-                param->mNodeType = em_tree_dir;
+                param->mNodeType = em_tree_dir_child;
                 param->mFilePath = fileName;
                 param->mServDesc = desc;
                 HTREEITEM treeItem = InsertItem(tmp.mParentItem, findData.cFileName, param);
