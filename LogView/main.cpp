@@ -4,6 +4,7 @@
 #include <shlobj.h>
 #include <string>
 #include <LogLib/mstring.h>
+#include <LogLib/StrUtil.h>
 #include "MainView.h"
 #include "GroupSender.h"
 #include "LogServView.h"
@@ -61,10 +62,6 @@ static void _InitSniffer() {
 
 int WINAPI WinMain(HINSTANCE m, HINSTANCE p, LPSTR cmd, int show)
 {
-    //CScriptEngine::GetInst()->Compile("aaaa || dddd");
-    //LogFilterResult result = CScriptEngine::GetInst()->InputLog("fdjgdfgjkdlfkdfaaaaafjdgj4353dddd1144");
-    //int ff = 1234;
-    //return 0;
     if (IsLogSniffRunning())
     {
         NotifyLogSniff();

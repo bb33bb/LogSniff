@@ -31,6 +31,23 @@ int GetIntFromJson(const Value &json, const std::mstring &name);
 std::ustring GetWindowStrW(HWND hwnd);
 void CentreWindow(HWND hSrcWnd, HWND hDstWnd);
 
+class HandleAutoClose {
+public:
+    inline HandleAutoClose(HANDLE h) {
+        mHandle = h;
+    }
+
+    inline virtual ~HandleAutoClose() {
+        if (mHandle&& INVALID_HANDLE_VALUE != mHandle)
+        {
+            CloseHandle(mHandle);
+        }
+    }
+
+private:
+    HANDLE mHandle;
+};
+
 template <class T>
 class MemoryAlloc {
 public:

@@ -77,41 +77,38 @@ BOOL CDbgCapturer::ProcHandler(PPROCESSENTRY32 info, void *param) {
 }
 
 mstring CDbgCapturer::GetProcName(DWORD pid) {
-    static map<DWORD, mstring> sProcSet;
-
     if (pid == 4 || pid == 0)
     {
         return "系统进程";
     }
 
-    mstring result;
-    bool findProc = false;
-    map<DWORD, mstring>::const_iterator it = sProcSet.find(pid);
-    if (sProcSet.end() == it)
+    //直接获取进程名
+    static OSVERSIONINFOEXW sOsVerison = {0};
+
+    if (sOsVerison.dwMajorVersion == 0)
     {
-        findProc = true;
+        sOsVerison.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+        GetVersionExW((OSVERSIONINFOW*)&sOsVerison);
+    }
+
+    //xp直接获取进程名,system权限进程也能获取
+    if (sOsVerison.dwMajorVersion < 6)
+    {
+        return PathFindFileNameA(GetProcPathFromPid(pid).c_str());
     } else {
-        HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+        typedef BOOL (WINAPI *pfnQueryFullProcessImageNameA)(HANDLE, DWORD, LPSTR ,PDWORD);
 
-        if (hProc || (NULL == hProc && 5 == GetLastError()))
-        {
-            result = it->second;
-        } else {
-            sProcSet.erase(pid);
-            findProc = true;
-        }
+        HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+        HandleAutoClose abc(process);
+
+        char procPath[512];
+        procPath[0] = 0x00;
+        DWORD bufSize = sizeof(procPath);
+        pfnQueryFullProcessImageNameA pfn = (pfnQueryFullProcessImageNameA)GetProcAddress(GetModuleHandleA("kernel32.dll"), "QueryFullProcessImageNameA");
+        pfn(process, 0, procPath, &bufSize);
+        return PathFindFileNameA(procPath);
     }
-
-    if (findProc)
-    {
-        ProcEnumInfo info;
-        info.mPid = pid;
-        ProcIterateProc(ProcHandler, &info);
-
-        result = info.mProcName;
-        sProcSet[pid] = result;
-    }
-    return result;
+    return "";
 }
 
 void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
@@ -120,7 +117,9 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
         return;
     }
 
+    DWORD tt1 = GetTickCount();
     mstring procName = GetProcName(pid);
+    dp("tt1: %d ms", GetTickCount() - tt1);
 
     mstring procMsg = FormatA("%hs:%d ", procName.c_str(), pid);
     size_t pos1 = 0;
