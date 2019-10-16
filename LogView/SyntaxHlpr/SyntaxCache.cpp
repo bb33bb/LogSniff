@@ -1,8 +1,6 @@
-#include <WinSock2.h>
 #include "SyntaxCache.h"
 #include <assert.h>
 #include <Shlwapi.h>
-#include <LogLib/locker.h>
 
 using namespace std;
 
@@ -11,9 +9,18 @@ map<HWND, CSyntaxCache *> CSyntaxCache::msTimerCache;
 
 CSyntaxCache::CSyntaxCache() {
     mInterval = 0;
+
+    InitializeCriticalSection(&mCacheLocker);
 }
 
 CSyntaxCache::~CSyntaxCache() {
+}
+
+void CSyntaxCache::Lock() {
+    EnterCriticalSection(&mCacheLocker);
+}
+void CSyntaxCache::UnLock() {
+    LeaveCriticalSection(&mCacheLocker);
 }
 
 bool CSyntaxCache::InitCache(int interval) {
@@ -39,9 +46,10 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
         }
 
         CSyntaxCache *ptr = it->second;
-        AutoLocker locker(&ptr->mCacheLocker);
+        ptr->Lock();
         if (ptr->mCacheContent.empty())
         {
+            ptr->UnLock();
             return;
         }
 
@@ -52,22 +60,24 @@ void CSyntaxCache::TimerCache(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
         }
         ptr->mCacheDesc.clear();
         ptr->mCacheContent.clear();
+        ptr->UnLock();
     }
 }
 
 void CSyntaxCache::ClearCache() {
-    AutoLocker locker(&mCacheLocker);
+    Lock();
     mCacheDesc.clear();
     mCacheContent.clear();
+    UnLock();
 }
 
-void CSyntaxCache::PushToCache(const std::mstring &label, const std::mstring &content) {
+void CSyntaxCache::PushToCache(const std::string &label, const std::string &content) {
     if (content.empty())
     {
         return;
     }
 
-    AutoLocker locker(&mCacheLocker);
+    Lock();
     bool newItem = false;
     size_t lastPos = 0;
     if (!mCacheDesc.empty())
@@ -95,4 +105,5 @@ void CSyntaxCache::PushToCache(const std::mstring &label, const std::mstring &co
         mCacheDesc.push_back(desc);
     }
     mCacheContent += content;
+    UnLock();
 }

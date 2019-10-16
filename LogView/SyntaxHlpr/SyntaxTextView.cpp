@@ -1,10 +1,8 @@
-#include <WinSock2.h>
 #include <Windows.h>
 #include <fstream>
-#include <SyntaxView/include/Scintilla.h>
-#include <SyntaxView/include/SciLexer.h>
+#include "include/Scintilla.h"
+#include "include/SciLexer.h"
 #include "SyntaxTextView.h"
-#include <LogLib/LogUtil.h>
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -13,7 +11,7 @@ using namespace std;
 typedef int (* SCINTILLA_FUNC) (void*, int, int, int);
 typedef void * SCINTILLA_PTR;
 map<HWND, SyntaxTextView::ProcHookParam> SyntaxTextView::msWinProcCache;
-RLocker *SyntaxTextView::msLocker = NULL;
+CRITICAL_SECTION *SyntaxTextView::msLocker = NULL;
 
 SyntaxTextView::SyntaxTextView() {
     mLineNum = false;
@@ -22,7 +20,8 @@ SyntaxTextView::SyntaxTextView() {
 
     if (NULL == msLocker)
     {
-        msLocker = new RLocker();
+        msLocker = new CRITICAL_SECTION();
+        InitializeCriticalSection(msLocker);
     }
 }
 
@@ -60,12 +59,13 @@ INT_PTR SyntaxTextView::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
 LRESULT SyntaxTextView::WndSubProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     ProcHookParam param;
     {
-        AutoLocker locker(msLocker);
+        Lock();
         map<HWND, ProcHookParam>::iterator it = msWinProcCache.find(hwnd);
         if (it != msWinProcCache.end())
         {
             param = it->second;
         }
+        UnLock();
     }
 
     if (NULL == param.mOldWndProc)
@@ -94,9 +94,10 @@ LRESULT SyntaxTextView::WndSubProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             break;
         case WM_DESTROY:
             {
-                AutoLocker locker(msLocker);
+                Lock();
                 SetWindowLongPtrA(hwnd, DWLP_DLGPROC, (LONG_PTR)pfnOldProc);
                 msWinProcCache.erase(hwnd);
+                UnLock();
             }
             break;
         default:
@@ -140,7 +141,7 @@ bool SyntaxTextView::CreateView(HWND parent, int x, int y, int cx, int cy) {
 
         if (IsWindow(m_parent))
         {
-            AutoLocker locker(msLocker);
+            Lock();
             map<HWND, ProcHookParam>::iterator it;
             if (msWinProcCache.end() == (it = msWinProcCache.find(m_parent)))
             {
@@ -151,12 +152,13 @@ bool SyntaxTextView::CreateView(HWND parent, int x, int y, int cx, int cy) {
             } else {
                 it->second.mSyntaxSet.insert(this);
             }
+            UnLock();
         }
     }
     return (TRUE == IsWindow(m_hwnd));
 }
 
-bool SyntaxTextView::RegisterParser(const mstring &label, pfnLabelParser parser, void *param) {
+bool SyntaxTextView::RegisterParser(const string &label, pfnLabelParser parser, void *param) {
     if (!IsWindow(m_hwnd))
     {
         return false;
@@ -181,7 +183,7 @@ void SyntaxTextView::ClearView() {
     SetText(LABEL_DEFAULT, "");
 }
 
-bool SyntaxTextView::AddHighLight(const std::mstring &keyWord, DWORD colour) {
+bool SyntaxTextView::AddHighLight(const std::string &keyWord, DWORD colour) {
     mHighLight[keyWord] = colour;
     OnViewUpdate();
     return true;
@@ -278,7 +280,7 @@ void SyntaxTextView::CheckLineNum() {
 
     if (t1 > t2)
     {
-        mstring str = "_";
+        string str = "_";
         while (t1 >= 0) {
             t1--;
             str += "0";
@@ -304,7 +306,15 @@ void SyntaxTextView::ResetLineNum() {
     CheckLineNum();
 }
 
-void SyntaxTextView::AppendText(const std::mstring &label, const std::mstring &text) {
+void SyntaxTextView::Lock() {
+    EnterCriticalSection(msLocker);
+}
+
+void SyntaxTextView::UnLock() {
+    LeaveCriticalSection(msLocker);
+}
+
+void SyntaxTextView::AppendText(const std::string &label, const std::string &text) {
     LabelNode param;
     param.m_label = label.c_str();
     param.m_content = text.c_str();
@@ -338,7 +348,7 @@ void SyntaxTextView::SetLineNum(bool lineNum) {
         int lineCount = SendMsg(SCI_GETLINECOUNT, 0, 0);
         SendMsg(SCI_SETMARGINTYPEN, 0, SC_MARGIN_NUMBER);
 
-        mstring test = "_";
+        string test = "_";
         while (lineCount != 0) {
             test += "0";
             lineCount /= 10;
@@ -353,7 +363,7 @@ void SyntaxTextView::SetLineNum(bool lineNum) {
     }
 }
 
-void SyntaxTextView::SetText(const std::mstring &label, const std::mstring &text) {
+void SyntaxTextView::SetText(const std::string &label, const std::string &text) {
     LabelNode param;
     param.m_label = label.c_str();
     param.m_content = text.c_str();
@@ -376,18 +386,21 @@ void SyntaxTextView::SetText(const std::mstring &label, const std::mstring &text
     }
 }
 
-mstring SyntaxTextView::GetText() const {
+string SyntaxTextView::GetText() const {
     int length = SendMsg(SCI_GETLENGTH, 0, 0);
 
-    MemoryAlloc<char> alloc;
-    char *ptr = alloc.GetMemory(length + 1);
+    char *ptr = new char[length + 1];
     ptr[length] = 0;
+
     SendMsg(SCI_GETTEXT, length + 1, (LPARAM)ptr);
-    return ptr;
+    string result = ptr;
+
+    delete []ptr;
+    return result;
 }
 
 //从当前选中的位置开始向后查找.如果没有,从当前可见页开始查找
-bool SyntaxTextView::JmpNextPos(const mstring &str) {
+bool SyntaxTextView::JmpNextPos(const string &str) {
     int pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
     int pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
 
@@ -400,8 +413,8 @@ bool SyntaxTextView::JmpNextPos(const mstring &str) {
         startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
     }
 
-    size_t pos3 = mStrInView.find_in_rangei(str, startPos);
-    if (mstring::npos == pos3)
+    size_t pos3 = mStrInView.find(str, startPos);
+    if (string::npos == pos3)
     {
         return false;
     }
@@ -419,15 +432,15 @@ bool SyntaxTextView::JmpNextPos(const mstring &str) {
     return true;
 }
 
-bool SyntaxTextView::JmpFrontPos(const mstring &str) {
+bool SyntaxTextView::JmpFrontPos(const string &str) {
     return false;
 }
 
-bool SyntaxTextView::JmpFirstPos(const mstring &str) {
+bool SyntaxTextView::JmpFirstPos(const string &str) {
     return JmpNextPos(str);
 }
 
-bool SyntaxTextView::JmpLastPos(const mstring &str) {
+bool SyntaxTextView::JmpLastPos(const string &str) {
     if (str.empty() || mStrInView.empty())
     {
         return false;
@@ -435,7 +448,7 @@ bool SyntaxTextView::JmpLastPos(const mstring &str) {
 
     size_t lastPos = 0;
     for (size_t i = mStrInView.size() - 1 ; i != 0 ; i--) {
-        if (0 == mStrInView.comparei(str, i))
+        if (0 == _strnicmp(str.c_str(), mStrInView.c_str() + i, str.size()))
         {
             lastPos = i;
             break;

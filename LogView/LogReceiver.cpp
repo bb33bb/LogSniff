@@ -5,7 +5,7 @@
 #include <LogLib/LogUtil.h>
 #include "LocalSniff/LocalMonitor.h"
 #include "ServSniff/ServMonitor.h"
-#include "MainView.h"
+#include "view/MainView.h"
 #include "LogServMgr.h"
 
 using namespace std;

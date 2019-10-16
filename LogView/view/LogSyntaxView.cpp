@@ -1,7 +1,7 @@
 #include <WinSock2.h>
 #include "LogSyntaxView.h"
 #include <LogLib/LogUtil.h>
-#include "LogReceiver.h"
+#include "../LogReceiver.h"
 
 using namespace std;
 

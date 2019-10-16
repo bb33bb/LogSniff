@@ -1,7 +1,7 @@
 #pragma once
 #include <LogLib/mstring.h>
-#include "SyntaxHlpr/SyntaxCache.h"
-#include "LogScript/ScriptEngine.h"
+#include "../SyntaxHlpr/SyntaxCache.h"
+#include "../LogScript/ScriptEngine.h"
 
 class CLogViewBase : public CSyntaxCache {
 public:

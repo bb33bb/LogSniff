@@ -1,5 +1,5 @@
 #include "DbgView.h"
-#include "DbgMsg.h"
+#include "../DbgMsg.h"
 
 using namespace std;
 

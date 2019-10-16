@@ -2,11 +2,11 @@
 #include <shlobj.h>
 #include <Shlwapi.h>
 #include "ServTreeView.h"
-#include "resource.h"
+#include "../resource.h"
 #include <CommCtrl.h>
 #include <LogLib/winsize.h>
 #include "MainView.h"
-#include "LogServMgr.h"
+#include "../LogServMgr.h"
 
 using namespace std;
 

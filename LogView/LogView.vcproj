@@ -320,59 +320,59 @@
 			Name="View"
 			>
 			<File
-				RelativePath=".\DbgView.cpp"
+				RelativePath=".\view\DbgView.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\DbgView.h"
+				RelativePath=".\view\DbgView.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LogServView.cpp"
+				RelativePath=".\view\LogServView.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LogServView.h"
+				RelativePath=".\view\LogServView.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LogSyntaxView.cpp"
+				RelativePath=".\view\LogSyntaxView.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LogSyntaxView.h"
+				RelativePath=".\view\LogSyntaxView.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LogViewBase.cpp"
+				RelativePath=".\view\LogViewBase.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LogViewBase.h"
+				RelativePath=".\view\LogViewBase.h"
 				>
 			</File>
 			<File
-				RelativePath=".\MainView.cpp"
+				RelativePath=".\view\MainView.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\MainView.h"
+				RelativePath=".\view\MainView.h"
 				>
 			</File>
 			<File
-				RelativePath=".\PathEditer.cpp"
+				RelativePath=".\view\PathEditer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\PathEditer.h"
+				RelativePath=".\view\PathEditer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ServTreeView.cpp"
+				RelativePath=".\view\ServTreeView.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ServTreeView.h"
+				RelativePath=".\view\ServTreeView.h"
 				>
 			</File>
 		</Filter>

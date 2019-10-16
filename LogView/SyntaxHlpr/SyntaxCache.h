@@ -3,10 +3,9 @@
 #include <list>
 #include <map>
 #include <vector>
+#include <string>
 #include "SyntaxTextView.h"
 #include "export.h"
-#include <LogLib/mstring.h>
-#include <LogLib/locker.h>
 
 class CSyntaxCache : public SyntaxTextView {
 public:
@@ -14,11 +13,13 @@ public:
     virtual ~CSyntaxCache();
 
     bool InitCache(int interval);
-    void PushToCache(const std::mstring &label, const std::mstring &content);
+    void PushToCache(const std::string &label, const std::string &content);
 
     //clear all cache
     void ClearCache();
 private:
+    void Lock();
+    void UnLock();
     static void CALLBACK TimerCache(HWND hwnd,
         UINT msg,
         UINT_PTR id,
@@ -26,7 +27,7 @@ private:
         );
 
     struct DataCacheDesc {
-        std::mstring mLabel;
+        std::string mLabel;
         void *mParam;
         size_t mStartPos;
         size_t mLength;
@@ -42,8 +43,8 @@ private:
     //cache desc
     std::list<DataCacheDesc> mCacheDesc;
     //cache content
-    std::mstring mCacheContent;
+    std::string mCacheContent;
     //cache locker
-    RLocker mCacheLocker;
+    CRITICAL_SECTION mCacheLocker;
     static std::map<HWND, CSyntaxCache *> msTimerCache;
 };

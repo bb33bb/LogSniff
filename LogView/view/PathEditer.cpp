@@ -1,8 +1,8 @@
 #include <WinSock2.h>
 #include <Windows.h>
-#include "LogReceiver.h"
+#include "../LogReceiver.h"
 #include "PathEditer.h"
-#include "resource.h"
+#include "../resource.h"
 
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     return 0;

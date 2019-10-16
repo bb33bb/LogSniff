@@ -4,10 +4,8 @@
 #include <string>
 #include <set>
 #include <map>
-#include <SyntaxView/include/SciLexer.h>
-#include <SyntaxView/include/Scintilla.h>
-#include <LogLib/mstring.h>
-#include <LogLib/locker.h>
+#include "include/SciLexer.h"
+#include "include/Scintilla.h"
 #include "SyntaxDef.h"
 #include "export.h"
 
@@ -46,7 +44,7 @@ struct LabelParser {
 
 typedef LRESULT (CALLBACK *PWIN_PROC)(HWND, UINT, WPARAM, LPARAM);
 
-class SyntaxTextView : public RLocker {
+class SyntaxTextView {
     struct ProcHookParam {
         PWIN_PROC mOldWndProc;
         std::set<SyntaxTextView *> mSyntaxSet;
@@ -63,15 +61,15 @@ public:
     //SyntaxTextView Create
     bool CreateView(HWND parent, int x, int y, int cx, int cy);
     //Parser Register
-    bool RegisterParser(const std::mstring &label, pfnLabelParser parser, void *param);
+    bool RegisterParser(const std::string &label, pfnLabelParser parser, void *param);
     //Send Window Message
     size_t SendMsg(UINT msg, WPARAM wp, LPARAM lp) const;
     //AppendText To View
-    void AppendText(const std::mstring &label, const std::mstring &text);
+    void AppendText(const std::string &label, const std::string &text);
     //Set View Text
-    void SetText(const std::mstring &label, const std::mstring &text);
+    void SetText(const std::string &label, const std::string &text);
     //Get Current View Text
-    std::mstring GetText() const;
+    std::string GetText() const;
     //Set Line Num
     void SetLineNum(bool lineNum);
     void ClearView();
@@ -85,13 +83,13 @@ public:
     //Auto to EndLine
     bool SetAutoScroll(bool flag);
     //Sel Jump To Next Str
-    bool JmpNextPos(const std::mstring &str);
-    bool JmpFrontPos(const std::mstring &str);
-    bool JmpFirstPos(const std::mstring &str);
-    bool JmpLastPos(const std::mstring &str);
+    bool JmpNextPos(const std::string &str);
+    bool JmpFrontPos(const std::string &str);
+    bool JmpFirstPos(const std::string &str);
+    bool JmpLastPos(const std::string &str);
 
     //Set Keyword For HighLight
-    bool AddHighLight(const std::mstring &keyWord, DWORD colour);
+    bool AddHighLight(const std::string &keyWord, DWORD colour);
     bool ClearHighLight();
 
     void SetStyle(int type, unsigned int textColour, unsigned int backColour);
@@ -117,10 +115,12 @@ private:
     static LRESULT CALLBACK WndSubProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
     void CheckLineNum();
     void ResetLineNum();
+    static void Lock();
+    static void UnLock();
 
 private:
     PWIN_PROC mParentProc;
-    static RLocker *msLocker;
+    static CRITICAL_SECTION *msLocker;
     static std::map<HWND, ProcHookParam> msWinProcCache;
 
     bool mLineNum;
@@ -131,7 +131,7 @@ private:
     HWND m_parent;
     SCINTILLA_FUNC m_pfnSend;
     SCINTILLA_PTR m_param;
-    std::map<std::mstring, DWORD> mHighLight;
-    std::mstring mStrInView;
+    std::map<std::string, DWORD> mHighLight;
+    std::string mStrInView;
 };
 #endif //SYNTAXSHELL_H_H_

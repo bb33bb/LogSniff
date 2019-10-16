@@ -5,15 +5,15 @@
 #include <string>
 #include <LogLib/mstring.h>
 #include <LogLib/StrUtil.h>
-#include "MainView.h"
+#include "view/MainView.h"
 #include "GroupSender.h"
-#include "LogServView.h"
+#include "view/LogServView.h"
 #include "LogReceiver.h"
 #include "LocalSniff/LocalMonitor.h"
 #include "LocalSniff/WinFileNoitfy.h"
 #include "LogServMgr.h"
 #include "DbgMsg.h"
-#include "ServTreeView.h"
+#include "view/ServTreeView.h"
 #include "resource.h"
 #include "LogScript/ScriptEngine.h"
 

@@ -2,14 +2,15 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <LogLib/mstring.h>
-#include "LogServMgr.h"
+#include "../LogServMgr.h"
 
 class CServTreeDlg : public LogServEvent {
     enum TreeNodeType {
         em_tree_root_node,      //树型控件根节点
-        em_tree_file_log,
-        em_tree_dbg_msg,
-        em_tree_dir_list,
+        em_tree_file_log,       //文件日志监控
+        em_tree_dbg_msg,        //调试信息监控
+        em_tree_file_search,    //文件内容检索
+        em_tree_dir_list,       //文件列表信息
         em_tree_dir_root,
         em_tree_dir_child,
         em_tree_file
@@ -35,8 +36,7 @@ class CServTreeDlg : public LogServEvent {
 
         TreeCtrlParam() {
             mNodeType = em_tree_root_node;
-            mServDesc = NULL;
-        }
+         }
     };
 
     //文件树缓存

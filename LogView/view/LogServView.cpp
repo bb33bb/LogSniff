@@ -6,11 +6,11 @@
 #include <LogLib/StrUtil.h>
 #include <LogLib/SqliteOperator.h>
 #include <CommCtrl.h>
-#include "MonitorBase.h"
-#include "resource.h"
-#include "GroupSender.h"
-#include "LogReceiver.h"
-#include "LogServMgr.h"
+#include "../MonitorBase.h"
+#include "../resource.h"
+#include "../GroupSender.h"
+#include "../LogReceiver.h"
+#include "../LogServMgr.h"
 
 using namespace std;
 

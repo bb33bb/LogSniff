@@ -6,7 +6,7 @@
 #include <LogLib/LogUtil.h>
 #include <LogLib/StrUtil.h>
 #include "DbgMsg.h"
-#include "MainView.h"
+#include "view/MainView.h"
 
 using namespace std;
 

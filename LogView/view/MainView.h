@@ -1,6 +1,6 @@
 #pragma once
 #include <Windows.h>
-#include "LogReceiver.h"
+#include "../LogReceiver.h"
 #include <LogLib/mstring.h>
 
 enum LogViewMode {
