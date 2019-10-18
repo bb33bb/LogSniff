@@ -11,6 +11,9 @@
 #define IDD_SERV_TREE                   107
 #define IDR_DLL1                        108
 #define IDR_SYNTAX_DLL                  108
+#define IDD_TAB_CONFIG                  109
+#define IDD_LOCAL_FRAME                 110
+#define IDD_TAB_LOG                     111
 #define IDC_BUTTON2                     1003
 #define IDC_SERV_REFUSH                 1003
 #define IDC_LOGPATH_DELETE              1003
@@ -19,6 +22,7 @@
 #define IDC_SERV_EDIT_PATH              1004
 #define IDC_LIST1                       1005
 #define IDC_SERV_LIST                   1005
+#define IDC_CFG_PATH_LIST               1005
 #define IDC_BUTTON1                     1006
 #define IDC_SERV_SELECT                 1006
 #define IDC_MAIN_SELECT                 1006
@@ -35,11 +39,17 @@
 #define IDC_EDT_DESC                    1012
 #define IDC_LOGPATH_LIST                1013
 #define IDC_EDIT1                       1014
+#define IDC_CFG_PATH                    1014
+#define IDC_CFG_EXT                     1015
 #define IDC_SERV_TREE                   1019
 #define IDC_EDIT2                       1020
 #define IDC_EDT_FILTER                  1020
 #define IDC_COMBO1                      1026
 #define IDC_COM_MODE                    1026
+#define IDC_CFG_OK                      1027
+#define IDC_CFG_INFO                    1028
+#define IDC_LOCAL_TAB                   1029
+#define IDC_CK_                         1031
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -64,9 +74,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1027
+#define _APS_NEXT_CONTROL_VALUE         1032
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

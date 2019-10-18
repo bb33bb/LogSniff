@@ -13,6 +13,9 @@
 #include "ServTreeView.h"
 #include "DbgView.h"
 #include <LogLib/TextDecoder.h>
+#include "LogFrameBase.h"
+#include "../GlobalDef.h"
+#include "LocalFrame.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -24,19 +27,22 @@ static HWND gs_hStatBar = NULL;
 static HWND gs_hFilter = NULL;
 static HWND gs_hCkRegular = NULL;
 static HWND gsFindMode = NULL;
-static CLogSyntaxView *gsLogView = NULL;
-static CDbgView *gsDbgView = NULL;
+//static CLogSyntaxView *gsLogView = NULL;
+//static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
-static CLogViewBase *gsCurView = NULL;
+static CLogFrameBase *gsCurView = NULL;
 
 //配置选项
-static BOOL gsTopMost = FALSE;
-static BOOL gsAutoScroll = FALSE;
-static BOOL gsPause = FALSE;
+//static BOOL gsTopMost = FALSE;
+//static BOOL gsAutoScroll = FALSE;
+//static BOOL gsPause = FALSE;
 
 //定时器更新状态，防止刷新过于频繁
 static DWORD gsStatusCur = 0;
 static DWORD gsStatusLast = 0;
+
+//日志展示框架集合
+static map<mstring, CLogFrameBase *> gsLogFrameSet;
 
 static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR          (WM_USER + 1123)
@@ -145,21 +151,21 @@ static void _OnPopupMenu() {
     GetCursorPos(&pt);
 
     HMENU menu = CreatePopupMenu();
-    if (gsTopMost)
+    if (gShowConfig.mTopMost)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
     } else {
         AppendMenuA(menu, MF_ENABLED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
     }
 
-    if (gsAutoScroll)
+    if (gShowConfig.mAutoScroll)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
     } else {
         AppendMenuA(menu, MF_ENABLED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
     }
 
-    if (gsPause)
+    if (gShowConfig.mPause)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_PAUSE, MENU_NAME_PAUSE);
     } else {
@@ -189,12 +195,9 @@ static LRESULT CALLBACK _MouseProc(int code, WPARAM wp, LPARAM lp) {
 
     if (NULL != ptr)
     {
-        if (ptr->hwnd == gsLogView->GetWindow() || ptr->hwnd == gsDbgView->GetWindow())
+        if (WM_RBUTTONUP == wp)
         {
-            if (WM_RBUTTONUP == wp)
-            {
-                _OnPopupMenu();
-            }
+            _OnPopupMenu();
         }
     }
     return CallNextHookEx(gsPfnMouseHook, code, wp, lp);
@@ -226,34 +229,13 @@ static void _UpdateStatusBarReally() {
         content1 += "  远端服务";
     }
 
-    if (gsCurView == gsDbgView)
-    {
-        content1 += "  <调试信息>";
-    } else {
-        content1 += "  <文件日志>";
-    }
-
-    content1 += "    工作模式:";
-    int cur = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
-    if (0 == cur)
-    {
-        content1 += "  过滤模式";
-    } else {
-        content1 += "  查找模式";
-    }
     _SetStatusText(1, content1.c_str());
-
-    mstring content3;
-    int a = 0, b = 0;
-    gsCurView->GetLineCount(a, b);
-    content3 = FormatA("全部数据:%d, 展示数据:%d", a, b);
-    _SetStatusText(2, content3.c_str());
-
     _SetStatusText(3, "联系作者  QQ: 412776488 邮箱: lougdhr@126.com");
 }
 
 void SwitchWorkMode(LogViewMode mode) {
     gsWorkMode = mode;
+    /*
     HWND logView = gsLogView->GetWindow();
     HWND dbgView = gsDbgView->GetWindow();
     if (em_mode_debugMsg == gsWorkMode)
@@ -270,11 +252,12 @@ void SwitchWorkMode(LogViewMode mode) {
         gsCurView = gsLogView;
     }
     SetWindowTextA(gs_hFilter, gsCurView->GetRuleStr().c_str());
+    */
     UpdateStatusBar();
 }
 
 void PushLogContent(const LogInfoCache *cache) {
-    if (gsPause)
+    if (gShowConfig.mPause)
     {
         return;
     }
@@ -309,16 +292,16 @@ void PushLogContent(const LogInfoCache *cache) {
         logContent += "\n";
     }
 
-    gsLogView->PushLog(logContent);
+    gsCurView->OnFileLog(logContent);
 }
 
 void PushDbgContent(const std::mstring &content) {
-    if (gsPause)
+    if (gShowConfig.mPause)
     {
         return;
     }
 
-    gsDbgView->PushLog(content);
+    gsCurView->OnDbgLog(content);
 }
 
 static VOID _CreateStatusBar(HWND hdlg)
@@ -332,17 +315,6 @@ static VOID _CreateStatusBar(HWND hdlg)
     wide[3] = wide[2] + 480;
     wide[4] = wide[3] + 256;
     SendMessage(gs_hStatBar, SB_SETPARTS, sizeof(wide) / sizeof(int), (LPARAM)(LPINT)wide); 
-}
-
-static void _TestFile() {
-    const int bufSize = 1024 * 1024 * 16;
-    static char *buffer = new char[bufSize];
-
-    FILE *fp = fopen("E:\\gdemm\\2018-03-20 030539.log", "rb+");
-    int c = fread(buffer, 1, bufSize, fp);
-    buffer[c] = 0;
-    gsLogView->AppendText(LABEL_LOG_CONTENT, UtoA(buffer));
-    fclose(fp);
 }
 
 //页面布局
@@ -373,11 +345,15 @@ static void _OnMainViewLayout() {
 
     RECT rtTreeView = {0};
     GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
+    MapWindowPoints(NULL, gsServTreeView->GetWindow(), (LPPOINT)&rtTreeView, 2);
 
     int treeWidth = rtTreeView.right - rtTreeView.left;
     int treeHigh = rtTreeView.bottom - rtTreeView.top;
     int logWidth = clientWidth - (spaceWidth * 2 + treeWidth) - spaceWidth;
 
+    HWND hLogFrame = gsCurView->GetHandle();
+    MoveWindow(hLogFrame, spaceWidth * 2 + treeWidth, rtTreeView.top, logWidth, treeHigh + 4, TRUE);
+    /*
     int filterX = spaceWidth * 2 + treeWidth;
     int filterY = 0;
     int filterHigh = 28;
@@ -390,10 +366,9 @@ static void _OnMainViewLayout() {
     int modeWidth = 80;
     MoveWindow(gsFindMode, modeX, modeY, modeWidth, modeHigh, TRUE);
 
-    HWND hLogView = gsLogView->GetWindow();
-    HWND hDbgView = gsDbgView->GetWindow();
-    MoveWindow(hLogView, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
-    MoveWindow(hDbgView, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
+    HWND hLogFrame = gsCurView->GetHandle();
+    MoveWindow(hLogFrame, spaceWidth * 2 + treeWidth, spaceWidth * 2 + filterHigh, logWidth, treeHigh - filterHigh - spaceWidth * 2, TRUE);
+    */
     InvalidateRect(gsMainWnd, NULL, TRUE);
 }
 
@@ -416,8 +391,8 @@ static DWORD WINAPI _TestSelect(LPVOID param) {
     }
     fclose(fp);
 
-    gsLogView->PushLog(UtoA(dd));
-    gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
+    //gsLogView->PushLog(UtoA(dd));
+    //gsLogView->SendMsg(SCI_STYLESETFORE, SCE_C_WORD, RGB(255, 0, 0));
 
     Sleep(1000);
     return 0;
@@ -432,8 +407,29 @@ static DWORD WINAPI _NoitfyThread(LPVOID param) {
     return 0;
 }
 
+//加载所有的日志服务
+static void _LoadLogServ() {
+    size_t s = CLogServMgr::GetInst()->GetServCount();
+    for (size_t i = 0 ; i < s ; i++)
+    {
+        const LogServDesc *desc = CLogServMgr::GetInst()->GetServDesc(i);
+
+        CLogFrameBase *ptr = NULL;
+        if (desc->mLogServType == em_log_serv_local) {
+            ptr = new CLocalLogFrame();
+            gsCurView = ptr;
+        } else {
+        }
+
+        gsLogFrameSet[desc->mUnique] = ptr;
+    }
+}
+
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
+
+    _LoadLogServ();
+    gsCurView->CreateDlg(gsMainWnd, IDD_LOCAL_FRAME);
     gsNotifyEvent = CreateEventA(NULL, FALSE, FALSE, EVENT_SNIFFER_MUTEX);
     CloseHandle(CreateThread(NULL, 0, _NoitfyThread, NULL, 0, NULL));
 
@@ -447,10 +443,10 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SendMessageA(gsFindMode, CB_SETCURSEL, 0, 0);
 
     _CreateStatusBar(hdlg);
-    gsLogView = new CLogSyntaxView();
-    gsLogView->CreateLogView(gsMainWnd, 0, 0, 1, 1);
-    gsDbgView = new CDbgView();
-    gsDbgView->CreateDbgView(gsMainWnd, 0, 0, 1, 1);
+    //gsLogView = new CLogSyntaxView();
+    //gsLogView->CreateLogView(gsMainWnd, 0, 0, 1, 1);
+    //gsDbgView = new CDbgView();
+    //gsDbgView->CreateDbgView(gsMainWnd, 0, 0, 1, 1);
 
     gs_hCkRegular = GetDlgItem(gsMainWnd, IDC_CK_REGULAR);
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
@@ -459,14 +455,12 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     _OnMainViewLayout();
     SwitchWorkMode(em_mode_logFile);
 
-    HWND hLogView = gsLogView->GetWindow();
-    HWND hDbgView = gsDbgView->GetWindow();
+    HWND hLogFrame = gsCurView->GetHandle();
     CTL_PARAMS arry[] = {
         {0, gs_hFilter, 0, 0, 1, 0},
         {0, gs_hCkRegular, 1, 0, 0, 0},
         {IDC_MAIN_SELECT, NULL, 1, 0, 0, 0},
-        {0, hLogView, 0, 0, 1, 1},
-        {0, hDbgView, 0, 0, 1, 1},
+        {0, hLogFrame, 0, 0, 1, 1},
         {0, gs_hStatBar, 0, 1, 1, 0},
         {0, gsServTreeView->GetWindow(), 0, 0, 0, 1},
         {IDC_COM_MODE, 0, 1, 0, 0, 0}
@@ -529,10 +523,9 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         }
     } else if (id == MENU_ID_TOPMOST)
     {
-        gsTopMost = !gsTopMost;
-        dp("top most:%d", gsTopMost);
+        gShowConfig.mTopMost = !gShowConfig.mTopMost;
 
-        if (gsTopMost)
+        if (gShowConfig.mTopMost)
         {
             SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
         } else {
@@ -540,17 +533,13 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         }
     } else if (id == MENU_ID_AUTO_SCROLL)
     {
-        gsAutoScroll = !gsAutoScroll;
-        gsDbgView->SetAutoScroll(!!gsAutoScroll);
-        gsLogView->SetAutoScroll(!!gsAutoScroll);
+        gShowConfig.mAutoScroll = !gShowConfig.mAutoScroll;
     } else if (id == MENU_ID_PAUSE)
     {
-        gsPause = !gsPause;
+        gShowConfig.mPause = !gShowConfig.mPause;
     } else if (id == MENU_ID_CLEAR)
     {
-        gsCurView->ClearCache();
         gsCurView->ClearView();
-        gsCurView->ClearLogView();
         UpdateStatusBar();
     } else if (id == MENU_ID_FIND)
     {
@@ -588,8 +577,6 @@ static INT_PTR _OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
             {
                 if (notify->updated & SC_UPDATE_SELECTION)
                 {
-                    size_t pos1 = gsLogView->SendMsg(SCI_GETSELECTIONSTART, 0, 0);
-                    size_t pos2 = gsLogView->SendMsg(SCI_GETSELECTIONEND, 0, 0);
                 }
             }
             break;
@@ -654,7 +641,7 @@ static void _ActiveWindow() {
         }
     }
 
-    if (!gsTopMost)
+    if (!gShowConfig.mTopMost)
     {
         SetForegroundWindow(gsMainWnd);
         SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);

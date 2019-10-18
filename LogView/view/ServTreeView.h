@@ -6,14 +6,11 @@
 
 class CServTreeDlg : public LogServEvent {
     enum TreeNodeType {
-        em_tree_root_node,      //树型控件根节点
-        em_tree_file_log,       //文件日志监控
-        em_tree_dbg_msg,        //调试信息监控
-        em_tree_file_search,    //文件内容检索
-        em_tree_dir_list,       //文件列表信息
-        em_tree_dir_root,
-        em_tree_dir_child,
-        em_tree_file
+        em_tree_local_root_node,      //树型控件根节点
+        em_tree_local_config,         //本地日志配置选项
+        em_tree_local_file_log,       //文件日志监控
+        em_tree_local_dbg_msg,        //调试信息监控
+        em_tree_local_file_search,    //文件内容检索
     };
 
     struct TreeRootCache {
@@ -35,7 +32,7 @@ class CServTreeDlg : public LogServEvent {
         mstring mFilePath;
 
         TreeCtrlParam() {
-            mNodeType = em_tree_root_node;
+            mNodeType = em_tree_local_root_node;
          }
     };
 

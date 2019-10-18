@@ -180,6 +180,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\GlobalDef.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GroupSender.cpp"
 				>
 			</File>
@@ -197,6 +201,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\GlobalDef.h"
+				>
+			</File>
 			<File
 				RelativePath=".\GroupSender.h"
 				>
@@ -328,6 +336,26 @@
 				>
 			</File>
 			<File
+				RelativePath=".\view\DialogBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\DialogBase.h"
+				>
+			</File>
+			<File
+				RelativePath=".\view\LocalFrame.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\LocalFrame.h"
+				>
+			</File>
+			<File
+				RelativePath=".\view\LogFrameBase.h"
+				>
+			</File>
+			<File
 				RelativePath=".\view\LogServView.cpp"
 				>
 			</File>
@@ -373,6 +401,22 @@
 			</File>
 			<File
 				RelativePath=".\view\ServTreeView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabCfgPage.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabCfgPage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabLogPage.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabLogPage.h"
 				>
 			</File>
 		</Filter>

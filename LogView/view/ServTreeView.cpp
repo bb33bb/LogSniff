@@ -153,12 +153,19 @@ INT_PTR CServTreeDlg::OnNotify(WPARAM wp, LPARAM lp) {
         desc = (const TreeCtrlParam *)itm.lParam;
         int d = 123;
 
-        if (desc->mNodeType == em_tree_file_log)
+        //文件内容监控日志
+        if (desc->mNodeType == em_tree_local_file_log)
         {
             SwitchWorkMode(em_mode_logFile);
-        } else if (desc->mNodeType == em_tree_dbg_msg)
+        }
+        //调试信息日志
+        else if (desc->mNodeType == em_tree_local_dbg_msg)
         {
             SwitchWorkMode(em_mode_debugMsg);
+        }
+        //已有文件内容检索
+        else if (desc->mNodeType == em_tree_local_file_search)
+        {
         }
     } else if (headr->code == NM_RCLICK) {
         sel = TreeView_GetSelection(mTreeCtrl);
@@ -168,7 +175,7 @@ INT_PTR CServTreeDlg::OnNotify(WPARAM wp, LPARAM lp) {
         TreeView_GetItem(mTreeCtrl, &itm);
 
         desc = (const TreeCtrlParam *)itm.lParam;
-        if (desc && desc->mNodeType == em_tree_dir_root)
+        if (desc && desc->mNodeType == em_tree_local_root_node)
         {
             int dd = 12345;
         }
@@ -180,31 +187,29 @@ INT_PTR CServTreeDlg::OnServAddedInternal(const LogServDesc *desc) {
     if (desc->mLogServType == em_log_serv_local)
     {
         TreeCtrlParam *root = new TreeCtrlParam();
-        root->mNodeType = em_tree_root_node;
+        root->mNodeType = em_tree_local_root_node;
         root->mServDesc = desc;
         HTREEITEM t1 = InsertItem(NULL, "本地服务", root);
 
         TreeCtrlParam *param1 = new TreeCtrlParam();
-        param1->mNodeType = em_tree_file_log;
+        param1->mNodeType = em_tree_local_dbg_msg;
         param1->mServDesc = desc;
-        HTREEITEM t2 = InsertItem(t1, "文件日志", param1);
+        HTREEITEM t2 = InsertItem(t1, "调试信息", param1);
 
         TreeCtrlParam *param2 = new TreeCtrlParam();
-        param2->mNodeType = em_tree_dbg_msg;
+        param2->mNodeType = em_tree_local_dbg_msg;
         param2->mServDesc = desc;
         HTREEITEM t3 = InsertItem(t1, "调试信息", param2);
 
         TreeCtrlParam *param3 = new TreeCtrlParam();
-        param3->mNodeType = em_tree_dir_list;
+        param3->mNodeType = em_tree_local_file_log;
         param3->mServDesc = desc;
-        HTREEITEM t4 = InsertItem(t1, "监视目录", param3);
+        HTREEITEM t4 = InsertItem(t1, "文件日志", param3);
 
         if (InsertServToCache(desc, t2, t4)) {
             OnServTreeUpdate(desc);
 
             SendMessage(mTreeCtrl, TVM_EXPAND, TVE_EXPAND, (LPARAM)t1);
-            SendMessage(mTreeCtrl, TVM_EXPAND, TVE_EXPAND, (LPARAM)t4);
-            SendMessage(mTreeCtrl, TVM_SELECTITEM, TVGN_CARET, (LPARAM)t2);
         }
     }
     return 0;
@@ -251,65 +256,6 @@ bool CServTreeDlg::InsertServToCache(const LogServDesc *desc, HTREEITEM hFileLog
 }
 
 void CServTreeDlg::OnServTreeUpdate(const LogServDesc *desc) {
-    const list<mstring> &newPathSet = desc->mPathSet;
-    TreeRootCache *cache = GetCacheFromDesc(desc);
-
-    list<mstring> &oldPathSet = cache->mPathList;
-    list<mstring> added;
-    list<mstring> deled;
-
-    list<mstring>::const_iterator it;
-    list<mstring>::const_iterator ij;
-    for (it = newPathSet.begin() ; it != newPathSet.end() ; it++)
-    {
-        for (ij = oldPathSet.begin() ; ij != oldPathSet.end() ; ij++)
-        {
-            if (*it == *ij)
-            {
-                break;
-            }
-        }
-
-        if (ij == oldPathSet.end())
-        {
-            added.push_back(*it);
-        }
-    }
-
-    for (it = oldPathSet.begin() ; it != oldPathSet.end() ; it++)
-    {
-        for (ij = newPathSet.begin() ; ij != newPathSet.end() ; ij++)
-        {
-            if (*it == *ij)
-            {
-                break;
-            }
-        }
-
-        if (ij == newPathSet.end())
-        {
-            deled.push_back(*it);
-        }
-    }
-
-    for (it = deled.begin() ; it != deled.end() ; it++)
-    {
-        DeleteChildByName(cache->mFileSetItem, *it);
-    }
-
-    for (it = added.begin() ; it != added.end() ; it++)
-    {
-        TreeCtrlParam *param = new TreeCtrlParam();
-        param->mNodeType = em_tree_dir_root;
-        param->mServDesc = desc;
-        param->mFilePath = *it;
-        InsertPathToFileTree(*it);
-        //InsertItem(cache->mFileSetItem, PathFindFileNameA(it->c_str()), param);
-    }
-
-    InvalidateRect(mTreeCtrl, NULL, TRUE);
-    SendMessageA(mTreeCtrl, TVM_EXPAND, TVE_EXPAND, (LPARAM)cache->mFileSetItem);
-    cache->mPathList = desc->mPathSet;
 }
 
 INT_PTR CServTreeDlg::OnServAlterInternal(const LogServDesc *desc) {
@@ -353,75 +299,6 @@ INT_PTR CServTreeDlg::OnClose(WPARAM wp, LPARAM lp) {
 }
 
 void CServTreeDlg::InsertPathToFileTree(const mstring &path) {
-    struct ParentNode {
-        HTREEITEM mParentItem;
-        mstring mFilePath;
-    };
-
-    const LogServDesc *desc = mTreeCache[0]->mServDesc;
-    TreeCtrlParam *param = new TreeCtrlParam();
-    param->mNodeType = em_tree_dir_root;
-    param->mServDesc = desc;
-    param->mFilePath = path;
-    HTREEITEM rootItem = InsertItem(mTreeCache[0]->mFileSetItem, PathFindFileNameA(path.c_str()), param);
-
-    ParentNode first;
-    first.mParentItem = rootItem;
-    first.mFilePath = path;
-
-    list<ParentNode> pathSet;
-    pathSet.push_back(first);
-    while (!pathSet.empty()) {
-        ParentNode tmp = *pathSet.begin();
-        pathSet.pop_front();
-
-        mstring findStr = (tmp.mFilePath + "\\*.*");
-        WIN32_FIND_DATAA findData;
-        HANDLE hFind = FindFirstFileA(findStr.c_str(), &findData);
-        if (INVALID_HANDLE_VALUE == hFind) {
-            continue;
-        }
-
-        BOOL bRet = TRUE;
-        do
-        {
-            if (0 == lstrcmpA(findData.cFileName, ".") || 0 == lstrcmpA(findData.cFileName, ".."))
-            {
-                continue;
-            }
-
-            char fileName[MAX_PATH];
-            lstrcpyA(fileName, tmp.mFilePath.c_str());
-            PathAppendA(fileName, findData.cFileName);
-
-            if (INVALID_FILE_ATTRIBUTES == findData.dwFileAttributes)
-            {
-                continue;
-            }
-
-            param = new TreeCtrlParam();
-            if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            {
-                param->mNodeType = em_tree_dir_child;
-                param->mFilePath = fileName;
-                param->mServDesc = desc;
-                HTREEITEM treeItem = InsertItem(tmp.mParentItem, findData.cFileName, param);
-
-                ParentNode child;
-                child.mFilePath = fileName;
-                child.mParentItem = treeItem;
-                pathSet.push_back(child);
-            }
-            else
-            {
-                param->mNodeType = em_tree_file;
-                param->mFilePath = fileName;
-                param->mServDesc = desc;
-                InsertItem(tmp.mParentItem, findData.cFileName, param);
-            }
-        } while (FindNextFileA(hFind, &findData));
-        FindClose(hFind);
-    }
 }
 
 void CServTreeDlg::DeletePathFromFileTree(const mstring &path) {

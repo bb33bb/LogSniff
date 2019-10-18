@@ -1,3 +1,4 @@
+#pragma once
 #include "LogViewBase.h"
 
 class CDbgView : public CLogViewBase {
