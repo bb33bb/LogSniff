@@ -117,9 +117,7 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
         return;
     }
 
-    DWORD tt1 = GetTickCount();
     mstring procName = GetProcName(pid);
-    dp("tt1: %d ms", GetTickCount() - tt1);
 
     mstring procMsg = FormatA("%hs:%d ", procName.c_str(), pid);
     size_t pos1 = 0;

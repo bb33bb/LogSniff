@@ -28,6 +28,7 @@ void __stdcall CloseFileMapping(PFILE_MAPPING_STRUCT pfms);
 std::mstring GetStrFormJson(const Json::Value &json, const std::mstring &name);
 
 int GetIntFromJson(const Value &json, const std::mstring &name);
+std::mstring GetWindowStrA(HWND hwnd);
 std::ustring GetWindowStrW(HWND hwnd);
 void CentreWindow(HWND hSrcWnd, HWND hDstWnd);
 

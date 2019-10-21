@@ -103,7 +103,7 @@ LRESULT SyntaxTextView::WndSubProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         default:
             break;
     }
-    return CallWindowProc(pfnOldProc, hwnd, msg, wp, lp);;
+    return CallWindowProc(pfnOldProc, hwnd, msg, wp, lp);
 }
 
 bool SyntaxTextView::CreateView(HWND parent, int x, int y, int cx, int cy) {

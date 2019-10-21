@@ -57,6 +57,10 @@ int GetIntFromJson(const Value &json, const std::mstring &name) {
     return 0;
 }
 
+mstring GetWindowStrA(HWND hwnd) {
+    return WtoA(GetWindowStrW(hwnd));
+}
+
 std::ustring GetWindowStrW(HWND hwnd) {
     if (!IsWindow(hwnd))
     {
@@ -76,10 +80,6 @@ std::ustring GetWindowStrW(HWND hwnd) {
         GetWindowTextW(hwnd, ptr, size + 4);
         return ptr;
     }
-}
-
-std::mstring __stdcall GetWindowStrA(HWND hwnd) {
-    return WtoA(GetWindowStrW(hwnd));
 }
 
 std::mstring GetStrFormJson(const Value &json, const std::mstring &name) {

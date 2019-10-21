@@ -190,27 +190,6 @@ INT_PTR CServTreeDlg::OnServAddedInternal(const LogServDesc *desc) {
         root->mNodeType = em_tree_local_root_node;
         root->mServDesc = desc;
         HTREEITEM t1 = InsertItem(NULL, "本地服务", root);
-
-        TreeCtrlParam *param1 = new TreeCtrlParam();
-        param1->mNodeType = em_tree_local_dbg_msg;
-        param1->mServDesc = desc;
-        HTREEITEM t2 = InsertItem(t1, "调试信息", param1);
-
-        TreeCtrlParam *param2 = new TreeCtrlParam();
-        param2->mNodeType = em_tree_local_dbg_msg;
-        param2->mServDesc = desc;
-        HTREEITEM t3 = InsertItem(t1, "调试信息", param2);
-
-        TreeCtrlParam *param3 = new TreeCtrlParam();
-        param3->mNodeType = em_tree_local_file_log;
-        param3->mServDesc = desc;
-        HTREEITEM t4 = InsertItem(t1, "文件日志", param3);
-
-        if (InsertServToCache(desc, t2, t4)) {
-            OnServTreeUpdate(desc);
-
-            SendMessage(mTreeCtrl, TVM_EXPAND, TVE_EXPAND, (LPARAM)t1);
-        }
     }
     return 0;
 }

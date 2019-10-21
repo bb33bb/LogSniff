@@ -1,5 +1,6 @@
 #include "LocalFrame.h"
 #include "../../LogLib/winsize.h"
+#include "../DbgMsg.h"
 #include "../resource.h"
 #include <CommCtrl.h>
 
@@ -18,6 +19,7 @@ void CLocalLogFrame::OnFileLog(const mstring &content) {
 }
 
 void CLocalLogFrame::OnDbgLog(const mstring &content) {
+    mDbgPage.AppendLog(LABEL_DBG_CONTENT, content);
 }
 
 void CLocalLogFrame::OnFileSearchLog(const mstring &filePath, const mstring &content) {
@@ -70,6 +72,9 @@ INT_PTR CLocalLogFrame::OnInitDialog(WPARAM wp, LPARAM lp) {
         {NULL, mSearchPage.GetHandle(), 0, 0, 1, 1}
     };
     SetCtlsCoord(hwnd, arry, RTL_NUMBER_OF(arry));
+
+    //初始化调试信息引擎
+    CDbgCapturer::GetInst()->InitCapturer();
     return 0;
 }
 

@@ -341,7 +341,7 @@ static void _OnMainViewLayout() {
 
     //ÉÏÏÂ×óÓÒ¼ä¾à
     const int spaceWidth = 3;
-    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 220, clientHigh - statusHigh - spaceWidth * 2);
+    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 160, clientHigh - statusHigh - spaceWidth * 2);
 
     RECT rtTreeView = {0};
     GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
