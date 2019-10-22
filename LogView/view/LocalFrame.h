@@ -8,8 +8,10 @@
 
 class CLocalLogFrame : public CLogFrameBase {
 public:
-    virtual void SetFilter(const std::mstring &str);
-    virtual void ClearView();
+    CLocalLogFrame();
+    virtual ~CLocalLogFrame();
+
+    virtual void InitLogFrame(const LogServDesc *servDesc);
     virtual void UpdateConfig();
     virtual void OnFileLog(const std::mstring &content);
     virtual void OnDbgLog(const std::mstring &content);
@@ -28,4 +30,5 @@ private:
     CTabLogPage mDbgPage;
     CTabLogPage mLogPage;
     CTabLogPage mSearchPage;
+    const LogServDesc *mServDesc;
 };

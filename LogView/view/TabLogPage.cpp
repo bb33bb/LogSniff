@@ -29,7 +29,7 @@ void CTabLogPage::AppendLog(const mstring &label, const mstring &content) {
     if (label == LABEL_DBG_CONTENT)
     {
         mSyntaxView.PushLog(content);
-    } else if (label == LABEL_DBG_CONTENT)
+    } else if (label == LABEL_LOG_CONTENT)
     {
         mSyntaxView.PushLog(content);
     }

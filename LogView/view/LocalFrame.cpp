@@ -6,16 +6,21 @@
 
 using namespace std;
 
-void CLocalLogFrame::SetFilter(const mstring &str) {
+CLocalLogFrame::CLocalLogFrame() :mServDesc(NULL) {
 }
 
-void CLocalLogFrame::ClearView() {
+CLocalLogFrame::~CLocalLogFrame() {
+}
+
+void CLocalLogFrame::InitLogFrame(const LogServDesc *servDesc) {
+    mServDesc = servDesc;
 }
 
 void CLocalLogFrame::UpdateConfig() {
 }
 
 void CLocalLogFrame::OnFileLog(const mstring &content) {
+    mLogPage.AppendLog(LABEL_LOG_CONTENT, content);
 }
 
 void CLocalLogFrame::OnDbgLog(const mstring &content) {
@@ -28,6 +33,7 @@ void CLocalLogFrame::OnFileSearchLog(const mstring &filePath, const mstring &con
 INT_PTR CLocalLogFrame::OnInitDialog(WPARAM wp, LPARAM lp) {
     HWND hwnd = GetHandle();
     mTabCtrl = GetDlgItem(hwnd, IDC_LOCAL_TAB);
+    mCfgPage.SetServDesc(mServDesc);
     mCfgPage.CreateDlg(hwnd, IDD_TAB_CONFIG);
     mDbgPage.CreateDlg(hwnd, IDD_TAB_LOG);
     mLogPage.CreateDlg(hwnd, IDD_TAB_LOG);

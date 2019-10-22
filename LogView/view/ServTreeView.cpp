@@ -152,21 +152,6 @@ INT_PTR CServTreeDlg::OnNotify(WPARAM wp, LPARAM lp) {
 
         desc = (const TreeCtrlParam *)itm.lParam;
         int d = 123;
-
-        //文件内容监控日志
-        if (desc->mNodeType == em_tree_local_file_log)
-        {
-            SwitchWorkMode(em_mode_logFile);
-        }
-        //调试信息日志
-        else if (desc->mNodeType == em_tree_local_dbg_msg)
-        {
-            SwitchWorkMode(em_mode_debugMsg);
-        }
-        //已有文件内容检索
-        else if (desc->mNodeType == em_tree_local_file_search)
-        {
-        }
     } else if (headr->code == NM_RCLICK) {
         sel = TreeView_GetSelection(mTreeCtrl);
 

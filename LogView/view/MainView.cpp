@@ -24,18 +24,8 @@ using namespace std;
 extern HINSTANCE g_hInstance;
 static HWND gsMainWnd = NULL;
 static HWND gs_hStatBar = NULL;
-static HWND gs_hFilter = NULL;
-static HWND gs_hCkRegular = NULL;
-static HWND gsFindMode = NULL;
-//static CLogSyntaxView *gsLogView = NULL;
-//static CDbgView *gsDbgView = NULL;
 static CServTreeDlg *gsServTreeView = NULL;
 static CLogFrameBase *gsCurView = NULL;
-
-//配置选项
-//static BOOL gsTopMost = FALSE;
-//static BOOL gsAutoScroll = FALSE;
-//static BOOL gsPause = FALSE;
 
 //定时器更新状态，防止刷新过于频繁
 static DWORD gsStatusCur = 0;
@@ -44,11 +34,9 @@ static DWORD gsStatusLast = 0;
 //日志展示框架集合
 static map<mstring, CLogFrameBase *> gsLogFrameSet;
 
-static LogViewMode gsWorkMode = em_mode_debugMsg;
 #define IDC_STATUS_BAR          (WM_USER + 1123)
 #define TIMER_LOG_LOAD          (2010)
 #define TIMER_UPDATE_STATBAR    (2011)
-#define MSG_SET_FILTER      (WM_USER + 1160)
 #define MSG_ACTIVATE_VIEW   (WM_USER + 1163)
 
 #define EVENT_SNIFFER_MUTEX     ("Global\\b036b8da-d9b7-4a66-9ba0-abcf24238")
@@ -93,11 +81,6 @@ static HHOOK gsPfnMouseHook = NULL;
 #define MENU_NAME_ABOUT         ("关于LogSniff")
 
 static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
-    if ('\r' == wParam && gs_hFilter == GetFocus() && (lParam & (1 << 30)))
-    {
-        SendMessageA(gsMainWnd, MSG_SET_FILTER, 0, 0);
-    }
-
     if ((GetKeyState(VK_CONTROL) & (1 << 16)) && (lParam & (1 << 30)))
     {
         //窗口置顶
@@ -233,29 +216,6 @@ static void _UpdateStatusBarReally() {
     _SetStatusText(3, "联系作者  QQ: 412776488 邮箱: lougdhr@126.com");
 }
 
-void SwitchWorkMode(LogViewMode mode) {
-    gsWorkMode = mode;
-    /*
-    HWND logView = gsLogView->GetWindow();
-    HWND dbgView = gsDbgView->GetWindow();
-    if (em_mode_debugMsg == gsWorkMode)
-    {
-        ShowWindow(logView, SW_HIDE);
-        ShowWindow(dbgView, SW_SHOW);
-        SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 调试信息");
-        gsCurView = gsDbgView;
-    } else if (em_mode_logFile == gsWorkMode)
-    {
-        ShowWindow(dbgView, SW_HIDE);
-        ShowWindow(logView, SW_SHOW);
-        SetWindowTextA(gsMainWnd, "LogView - 本地服务 - 文件日志");
-        gsCurView = gsLogView;
-    }
-    SetWindowTextA(gs_hFilter, gsCurView->GetRuleStr().c_str());
-    */
-    UpdateStatusBar();
-}
-
 void PushLogContent(const LogInfoCache *cache) {
     if (gShowConfig.mPause)
     {
@@ -319,15 +279,9 @@ static VOID _CreateStatusBar(HWND hdlg)
 
 //页面布局
 static void _OnMainViewLayout() {
-    RECT rt12 = {0};
-    GetWindowRect(gs_hFilter, &rt12);
-    SetWindowPos(gs_hFilter, 0, rt12.right, rt12.top, rt12.right - rt12.left, 10, SWP_NOMOVE | SWP_NOZORDER);
-
     RECT clientRect = {0};
     GetClientRect(gsMainWnd, &clientRect);
     RECT rt1 = {0};
-    GetWindowRect(gs_hFilter, &rt1);
-    MapWindowPoints(NULL, gsMainWnd, (LPPOINT)&rt1, 2);
     RECT rt2 = {0};
     GetWindowRect(gs_hStatBar, &rt2);
     MapWindowPoints(NULL, gsMainWnd, (LPPOINT)&rt2, 2);
@@ -335,9 +289,6 @@ static void _OnMainViewLayout() {
     int clientWidth = clientRect.right - clientRect.left;
     int clientHigh = clientRect.bottom - clientRect.top;
     int statusHigh = rt2.bottom - rt2.top;
-
-    int top = rt1.bottom + 8;
-    int bottom = rt2.top - 8;
 
     //上下左右间距
     const int spaceWidth = 3;
@@ -421,6 +372,7 @@ static void _LoadLogServ() {
         } else {
         }
 
+        ptr->InitLogFrame(desc);
         gsLogFrameSet[desc->mUnique] = ptr;
     }
 }
@@ -435,30 +387,15 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
 
     gsServTreeView = new CServTreeDlg();
     gsServTreeView->CreateDlg(hdlg);
-    gs_hFilter = GetDlgItem(hdlg, IDC_EDT_FILTER);
-    gsFindMode = GetDlgItem(hdlg, IDC_COM_MODE);
-
-    SendMessageA(gsFindMode, CB_INSERTSTRING, 0, (LPARAM)"过滤模式");
-    SendMessageA(gsFindMode, CB_INSERTSTRING, 1, (LPARAM)"查找模式");
-    SendMessageA(gsFindMode, CB_SETCURSEL, 0, 0);
 
     _CreateStatusBar(hdlg);
-    //gsLogView = new CLogSyntaxView();
-    //gsLogView->CreateLogView(gsMainWnd, 0, 0, 1, 1);
-    //gsDbgView = new CDbgView();
-    //gsDbgView->CreateDbgView(gsMainWnd, 0, 0, 1, 1);
-
-    gs_hCkRegular = GetDlgItem(gsMainWnd, IDC_CK_REGULAR);
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
 
     _OnMainViewLayout();
-    SwitchWorkMode(em_mode_logFile);
 
     HWND hLogFrame = gsCurView->GetHandle();
     CTL_PARAMS arry[] = {
-        {0, gs_hFilter, 0, 0, 1, 0},
-        {0, gs_hCkRegular, 1, 0, 0, 0},
         {IDC_MAIN_SELECT, NULL, 1, 0, 0, 0},
         {0, hLogFrame, 0, 0, 1, 1},
         {0, gs_hStatBar, 0, 1, 1, 0},
@@ -475,16 +412,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     SetWindowPos(hdlg, HWND_TOP, 0, 0, cx, cy, SWP_NOMOVE);
     CentreWindow(hdlg, NULL);
 
-    //SetWindowTextA(hdlg, "LogView-日志文件查看分析工具");
-    //SetTimer(gsMainWnd, TIMER_LOG_LOAD, 100, NULL);
-    //_TestFile();
-    //gsLogView->SetHightStr("Thread");
-    //gsPfnFilterProc = (PWIN_PROC)SetWindowLongPtr(gs_hFilter, GWLP_WNDPROC, (LONG_PTR)_FilterProc);
-
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
-
-    //CloseHandle(CreateThread(NULL, 0, _TestSelect, NULL, 0, NULL));
-
     gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
 
     class CUpdateStatus {
@@ -508,19 +436,6 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     if (id == IDC_MAIN_SELECT)
     {
         ShowLogServView(hdlg);
-    } else if (id == IDC_COM_MODE)
-    {
-        WORD param = HIWORD(wp);
-
-        if (param == CBN_SELCHANGE)
-        {
-            int curSel = SendMessageA(gsFindMode, CB_GETCURSEL, 0, 0);
-            dp("work mode:%d", curSel);
-            //gsDbgView->SwitchWorkMode(curSel);
-            //gsLogView->SwitchWorkMode(curSel);
-            SetWindowTextA(gs_hFilter, "");
-            UpdateStatusBar();
-        }
     } else if (id == MENU_ID_TOPMOST)
     {
         gShowConfig.mTopMost = !gShowConfig.mTopMost;
@@ -539,7 +454,6 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         gShowConfig.mPause = !gShowConfig.mPause;
     } else if (id == MENU_ID_CLEAR)
     {
-        gsCurView->ClearView();
         UpdateStatusBar();
     } else if (id == MENU_ID_FIND)
     {
@@ -607,15 +521,6 @@ static INT_PTR _OnDropFiles(HWND hdlg, WPARAM wp, LPARAM lp) {
         {
         }
     }
-    return 0;
-}
-
-static INT_PTR _OnSetFilter() {
-    char filterStr[256] = {0};
-
-    GetWindowTextA(gs_hFilter, filterStr, 256);
-    gsCurView->SetFilter(filterStr);
-    UpdateStatusBar();
     return 0;
 }
 
@@ -693,11 +598,6 @@ static INT_PTR CALLBACK _MainViewProc(HWND hdlg, UINT msg, WPARAM wp, LPARAM lp)
     case WM_KEYDOWN:
         {
             _OnKeyDown(hdlg, wp, lp);
-        }
-        break;
-    case MSG_SET_FILTER:
-        {
-            _OnSetFilter();
         }
         break;
     case MSG_ACTIVATE_VIEW:
