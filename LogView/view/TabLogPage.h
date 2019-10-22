@@ -25,7 +25,6 @@ private:
     HWND mFltCtrl;
     HWND mCkRegular;
     HWND mFltEdit;
-    PWIN_PROC mOldEditProc;
     static std::map<HWND, CTabLogPage *> msProcCache;
     static RLocker *msLocker;
     std::mstring mFilterStr;

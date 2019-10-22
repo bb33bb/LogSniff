@@ -12,6 +12,7 @@ public:
     virtual ~CLocalLogFrame();
 
     virtual void InitLogFrame(const LogServDesc *servDesc);
+    virtual void ClearView();
     virtual void UpdateConfig();
     virtual void OnFileLog(const std::mstring &content);
     virtual void OnDbgLog(const std::mstring &content);

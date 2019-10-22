@@ -8,6 +8,7 @@
 class CLogFrameBase : public CDialogBase {
 public:
     virtual void InitLogFrame(const LogServDesc *servDesc) = 0;
+    virtual void ClearView() = 0;
     virtual void UpdateConfig() = 0;
     virtual void OnFileLog(const std::mstring &content) = 0;
     virtual void OnDbgLog(const std::mstring &content) = 0;

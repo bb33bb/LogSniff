@@ -3,7 +3,6 @@
 #ifdef __linux__
 #include <sys/socket.h>
 #else
-#include <WinSock2.h>
 #include <Windows.h>
 #endif //__linux__
 #include <string>

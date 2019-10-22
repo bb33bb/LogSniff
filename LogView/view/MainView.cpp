@@ -16,38 +16,11 @@
 #include "LogFrameBase.h"
 #include "../GlobalDef.h"
 #include "LocalFrame.h"
+#include "MainView.h"
 
 #pragma comment(lib, "comctl32.lib")
 
 using namespace std;
-
-extern HINSTANCE g_hInstance;
-static HWND gsMainWnd = NULL;
-static HWND gs_hStatBar = NULL;
-static CServTreeDlg *gsServTreeView = NULL;
-static CLogFrameBase *gsCurView = NULL;
-
-//定时器更新状态，防止刷新过于频繁
-static DWORD gsStatusCur = 0;
-static DWORD gsStatusLast = 0;
-
-//日志展示框架集合
-static map<mstring, CLogFrameBase *> gsLogFrameSet;
-
-#define IDC_STATUS_BAR          (WM_USER + 1123)
-#define TIMER_LOG_LOAD          (2010)
-#define TIMER_UPDATE_STATBAR    (2011)
-#define MSG_ACTIVATE_VIEW   (WM_USER + 1163)
-
-#define EVENT_SNIFFER_MUTEX     ("Global\\b036b8da-d9b7-4a66-9ba0-abcf24238")
-HANDLE gsNotifyEvent = NULL;
-
-typedef LRESULT (CALLBACK *PWIN_PROC)(HWND, UINT, WPARAM, LPARAM);
-static PWIN_PROC gsPfnFilterProc = NULL;
-
-static HHOOK gsPfnKeyboardHook = NULL;
-static DWORD gsLastEnterCount = 0;
-static HHOOK gsPfnMouseHook = NULL;
 
 //快捷菜单
 #define MENU_ID_TOPMOST         (WM_USER + 1200)
@@ -79,6 +52,34 @@ static HHOOK gsPfnMouseHook = NULL;
 
 #define MENU_ID_ABOUT           (WM_USER + 1321)
 #define MENU_NAME_ABOUT         ("关于LogSniff")
+
+extern HINSTANCE g_hInstance;
+static HWND gsMainWnd = NULL;
+static HWND gs_hStatBar = NULL;
+static CServTreeDlg *gsServTreeView = NULL;
+static CLogFrameBase *gsCurView = NULL;
+
+//定时器更新状态，防止刷新过于频繁
+static DWORD gsStatusCur = 0;
+static DWORD gsStatusLast = 0;
+
+//日志展示框架集合
+static map<mstring, CLogFrameBase *> gsLogFrameSet;
+
+#define IDC_STATUS_BAR          (WM_USER + 1123)
+#define TIMER_LOG_LOAD          (2010)
+#define TIMER_UPDATE_STATBAR    (2011)
+#define MSG_ACTIVATE_VIEW   (WM_USER + 1163)
+
+#define EVENT_SNIFFER_MUTEX     ("Global\\b036b8da-d9b7-4a66-9ba0-abcf24238")
+HANDLE gsNotifyEvent = NULL;
+
+typedef LRESULT (CALLBACK *PWIN_PROC)(HWND, UINT, WPARAM, LPARAM);
+static PWIN_PROC gsPfnFilterProc = NULL;
+
+static HHOOK gsPfnKeyboardHook = NULL;
+static DWORD gsLastEnterCount = 0;
+static HHOOK gsPfnMouseHook = NULL;
 
 static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     if ((GetKeyState(VK_CONTROL) & (1 << 16)) && (lParam & (1 << 30)))
@@ -129,7 +130,7 @@ static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
     return CallNextHookEx(gsPfnKeyboardHook, code, wParam, lParam);
 }
 
-static void _OnPopupMenu() {
+void OnPopupMenu() {
     POINT pt = {0};
     GetCursorPos(&pt);
 
@@ -171,19 +172,6 @@ static void _OnPopupMenu() {
     AppendMenuA(menu, MF_ENABLED, MENU_ID_ABOUT, MENU_NAME_ABOUT);
     TrackPopupMenu(menu, TPM_CENTERALIGN, pt.x, pt.y, 0, gsMainWnd, 0);
     DestroyMenu(menu);
-}
-
-static LRESULT CALLBACK _MouseProc(int code, WPARAM wp, LPARAM lp) {
-    MOUSEHOOKSTRUCT *ptr = (MOUSEHOOKSTRUCT *)lp;
-
-    if (NULL != ptr)
-    {
-        if (WM_RBUTTONUP == wp)
-        {
-            _OnPopupMenu();
-        }
-    }
-    return CallNextHookEx(gsPfnMouseHook, code, wp, lp);
 }
 
 static void _SetStatusText(int index, const mstring &text) {
@@ -413,7 +401,6 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     CentreWindow(hdlg, NULL);
 
     gsPfnKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, _KeyboardProc, g_hInstance, GetCurrentThreadId());
-    gsPfnMouseHook = SetWindowsHookEx(WH_MOUSE, _MouseProc, g_hInstance, GetCurrentThreadId());
 
     class CUpdateStatus {
     public:
@@ -454,6 +441,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         gShowConfig.mPause = !gShowConfig.mPause;
     } else if (id == MENU_ID_CLEAR)
     {
+        gsCurView->ClearView();
         UpdateStatusBar();
     } else if (id == MENU_ID_FIND)
     {

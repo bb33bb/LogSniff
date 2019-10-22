@@ -16,6 +16,21 @@ void CLocalLogFrame::InitLogFrame(const LogServDesc *servDesc) {
     mServDesc = servDesc;
 }
 
+void CLocalLogFrame::ClearView() {
+    int sel = TabCtrl_GetCurSel(mTabCtrl);
+
+    if (1 == sel)
+    {
+        mDbgPage.ClearLog();
+    } else if (2 == sel)
+    {
+        mLogPage.ClearLog();
+    } else if (3 == sel)
+    {
+        mSearchPage.ClearLog();
+    }
+}
+
 void CLocalLogFrame::UpdateConfig() {
 }
 

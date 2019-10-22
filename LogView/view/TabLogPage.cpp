@@ -3,6 +3,7 @@
 #include "../../LogLib/winsize.h"
 #include "../../LogLib/LogUtil.h"
 #include <assert.h>
+#include "MainView.h"
 
 using namespace std;
 
@@ -103,6 +104,9 @@ INT_PTR CTabLogPage::GetMsgHook(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         {
             SendMessageW(mHwnd, MSG_FILTER_RETURN, 0, 0);
         }
+    } else if (WM_RBUTTONDOWN == msg && (hwnd == mSyntaxView.GetWindow()))
+    {
+        OnPopupMenu();
     }
     return 0;
 }

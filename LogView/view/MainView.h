@@ -10,3 +10,4 @@ void UpdateStatusBar();
 
 bool IsLogSniffRunning();
 void NotifyLogSniff();
+void OnPopupMenu();
