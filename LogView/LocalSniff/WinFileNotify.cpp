@@ -385,10 +385,13 @@ bool CWinFileNotify::IsFileActive(const FileCacheData *cache) const {
     FILETIME fileTime = {0};
     SystemTimeToFileTime(&localTime, &fileTime);
 
+    dp("local time:%02d-%02d-%02d %02d:%02d:%02d", localTime.wYear, localTime.wMonth, localTime.wDay, localTime.wHour, localTime.wMinute, localTime.wSecond);
+
     ULONGLONG u1 = (((ULONGLONG)cache->mLastWriteTime.dwHighDateTime << 32) | ((ULONGLONG)cache->mLastWriteTime.dwLowDateTime));
     ULONGLONG u2 = (((ULONGLONG)fileTime.dwHighDateTime << 32) | ((ULONGLONG)fileTime.dwLowDateTime));
 
-    ULONGLONG ms = ((u2 - u1) / 1000);
+    //1ns == 10^6ms
+    ULONGLONG ms = ((u2 - u1) / 10000);
     if (u2 > u1 && ms > msActiveTimeCount)
     {
         return false;
