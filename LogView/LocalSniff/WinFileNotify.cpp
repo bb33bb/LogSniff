@@ -314,7 +314,8 @@ HFileNotify CWinFileNotify::Register(const std::string &filePath, const std::str
     {
         EnumFiles(filePath, TRUE, LogEnumHandler, NULL);
 
-        newInfo->mIocp = CreateIoCompletionPort(newInfo->mhDir, mIocp, gsDefaultCompleteKey, 0);
+        //关联完成端口句柄时(即第二个参数是已有的完成端口句柄)不再产生新的完成端口句柄故不需要释放
+        CreateIoCompletionPort(newInfo->mhDir, mIocp, gsDefaultCompleteKey, 0);
         PostRequest(newInfo);
         mIoSet.push_back(newInfo);
         return newInfo->mIndex;
@@ -325,11 +326,6 @@ HFileNotify CWinFileNotify::Register(const std::string &filePath, const std::str
 }
 
 void CWinFileNotify::Close(const IoInfo *info) const {
-    if (info->mIocp)
-    {
-        CloseHandle(info->mIocp);
-    }
-
     if (info->mhDir)
     {
         CloseHandle(info->mhDir);

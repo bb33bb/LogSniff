@@ -35,7 +35,6 @@ struct FileNotifyRegister {
 
 class CWinFileNotify : public RLocker {
     struct IoInfo {
-        HANDLE mIocp;
         std::string mDirPath;
         OVERLAPPED ol;
 
@@ -49,7 +48,6 @@ class CWinFileNotify : public RLocker {
         pfnWinFileNotify pfnFileNotify;
 
         IoInfo () {
-            mIocp = NULL;
             memset(&ol, 0x00, sizeof(ol));
             mhDir = NULL;
             memset(&mNotify, 0x00, sizeof(FILE_NOTIFY_INFORMATION));
