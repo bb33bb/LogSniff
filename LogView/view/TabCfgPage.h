@@ -11,6 +11,7 @@ public:
     void MoveView(int x, int y, int cx, int cy) const;
 
 protected:
+    bool IsPathInCache(const std::mstring &path) const;
     void LoadPathSet() const;
     void InitListCtrl() const;
     void OnInitDialog(WPARAM wp, LPARAM lp);

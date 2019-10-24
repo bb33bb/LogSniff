@@ -49,7 +49,8 @@
 #define IDC_CFG_OK                      1027
 #define IDC_CFG_INFO                    1028
 #define IDC_LOCAL_TAB                   1029
-#define IDC_CK_                         1031
+#define IDC_CFG_OK2                     1029
+#define IDC_CFG_DEL                     1029
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003

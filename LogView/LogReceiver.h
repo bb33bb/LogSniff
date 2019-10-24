@@ -16,6 +16,7 @@ struct LogInfoCache {
 
 #define LOGVIEW_VERSION     "1001"
 
+//log content receiver
 class CLogReceiver : public CMonitorEvent, public LogServEvent {
 public:
     static CLogReceiver *GetInst();

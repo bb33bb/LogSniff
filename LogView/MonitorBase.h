@@ -104,7 +104,10 @@ struct LogServDesc {
 
         for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
         {
-            if (*it == low)
+            mstring low2 = *it;
+            low2.makelower();
+
+            if (low2 == low)
             {
                 mPathSet.erase(it);
                 return true;
@@ -119,7 +122,9 @@ struct LogServDesc {
 
         for (list<mstring>::const_iterator it = mPathSet.begin() ; it != mPathSet.end() ; it++)
         {
-            if (mstring::npos != low.find(*it))
+            mstring low2 = *it;
+            low2.makelower();
+            if (mstring::npos != low.find(low2))
             {
                 return true;
             }
