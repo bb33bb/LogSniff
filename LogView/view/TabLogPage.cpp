@@ -9,21 +9,10 @@ using namespace std;
 
 #define MSG_FILTER_RETURN       (WM_USER + 2011)
 
-std::map<HWND, CTabLogPage *> CTabLogPage::msProcCache;
-RLocker *CTabLogPage::msLocker = NULL;
-
 CTabLogPage::CTabLogPage() {
-    if (NULL == msLocker)
-    {
-        msLocker = new RLocker();
-    }
 }
 
 CTabLogPage::~CTabLogPage() {
-}
-
-void CTabLogPage::MoveWindow(int x, int y, int cx, int cy) const {
-    ::MoveWindow(mHwnd, x, y, cx, cy, TRUE);
 }
 
 void CTabLogPage::AppendLog(const mstring &label, const mstring &content) {

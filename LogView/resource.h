@@ -14,6 +14,7 @@
 #define IDD_TAB_CONFIG                  109
 #define IDD_LOCAL_FRAME                 110
 #define IDD_TAB_LOG                     111
+#define IDD_TAB_LOG_SEARCH              112
 #define IDC_BUTTON2                     1003
 #define IDC_SERV_REFUSH                 1003
 #define IDC_LOGPATH_DELETE              1003
@@ -51,6 +52,8 @@
 #define IDC_LOCAL_TAB                   1029
 #define IDC_CFG_OK2                     1029
 #define IDC_CFG_DEL                     1029
+#define IDC_COM_SEARCH                  1032
+#define IDC_CK_SEARCH_REGULAR           1033
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -77,7 +80,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

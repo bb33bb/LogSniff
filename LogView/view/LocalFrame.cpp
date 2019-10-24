@@ -52,7 +52,8 @@ INT_PTR CLocalLogFrame::OnInitDialog(WPARAM wp, LPARAM lp) {
     mCfgPage.CreateDlg(hwnd, IDD_TAB_CONFIG);
     mDbgPage.CreateDlg(hwnd, IDD_TAB_LOG);
     mLogPage.CreateDlg(hwnd, IDD_TAB_LOG);
-    mSearchPage.CreateDlg(hwnd, IDD_TAB_LOG);
+    mSearchPage.SetLogServDesc(mServDesc);
+    mSearchPage.CreateDlg(hwnd, IDD_TAB_LOG_SEARCH);
 
     //Init Tab Ctrl
     TCITEMW tc = {0};
@@ -76,7 +77,7 @@ INT_PTR CLocalLogFrame::OnInitDialog(WPARAM wp, LPARAM lp) {
     GetClientRect(hwnd, &rtTab);
     TabCtrl_AdjustRect(mTabCtrl, FALSE, &rtTab);
     MapWindowPoints(mTabCtrl, hwnd, (LPPOINT)&rtTab, 2);
-    mCfgPage.MoveView(rtTab.left, rtTab.top, rtTab.right - rtTab.left, rtTab.bottom - rtTab.top);
+    mCfgPage.MoveWindow(rtTab.left, rtTab.top, rtTab.right - rtTab.left, rtTab.bottom - rtTab.top);
     mDbgPage.MoveWindow(rtTab.left, rtTab.top, rtTab.right - rtTab.left, rtTab.bottom - rtTab.top);
     mLogPage.MoveWindow(rtTab.left, rtTab.top, rtTab.right - rtTab.left, rtTab.bottom - rtTab.top);
     mSearchPage.MoveWindow(rtTab.left, rtTab.top, rtTab.right - rtTab.left, rtTab.bottom - rtTab.top);

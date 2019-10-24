@@ -34,6 +34,4 @@ private:
     std::mstring mRuleStr;
     size_t mTotalCount;
     size_t mShowCount;
-
-    std::vector<DWORD> mColourSet;
 };

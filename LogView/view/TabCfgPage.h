@@ -8,7 +8,6 @@ public:
     CTabCfgPage();
     virtual ~CTabCfgPage();
     void SetServDesc(const LogServDesc *servDesc);
-    void MoveView(int x, int y, int cx, int cy) const;
 
 protected:
     bool IsPathInCache(const std::mstring &path) const;

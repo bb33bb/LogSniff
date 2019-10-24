@@ -7,7 +7,6 @@ public:
     virtual ~CLogSyntaxView();
 
     bool CreateLogView(HWND hParent, int x, int y, int cx, int cy);
-    bool SetHightStr(const std::string &str);
 private:
     void initLogView();
 private:

@@ -22,6 +22,10 @@ BOOL CDialogBase::CreateDlg(HWND parent, DWORD id) {
     return (TRUE == IsWindow(mHwnd));
 }
 
+void CDialogBase::MoveWindow(int x, int y, int cx, int cy) const {
+    ::MoveWindow(mHwnd, x, y, cx, cy, TRUE);
+}
+
 void CDialogBase::ShowDlg() const {
     ShowWindow(mHwnd, SW_SHOW);
 }

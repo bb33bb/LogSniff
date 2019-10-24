@@ -23,12 +23,6 @@ bool CLogSyntaxView::CreateLogView(HWND hParent, int x, int y, int cx, int cy) {
     return true;
 }
 
-bool CLogSyntaxView::SetHightStr(const std::string &str) {
-    mKeywordStr = str;
-    SendMsg(SCI_COLOURISE, 0, -1);
-    return true;
-}
-
 void CLogSyntaxView::initLogView() {
     ShowMargin(true);
     SetLineNum(true);

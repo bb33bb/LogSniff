@@ -328,14 +328,6 @@
 			Name="View"
 			>
 			<File
-				RelativePath=".\view\DbgView.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\view\DbgView.h"
-				>
-			</File>
-			<File
 				RelativePath=".\view\DialogBase.cpp"
 				>
 			</File>
@@ -396,6 +388,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\view\SearchSyntaxView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\SearchSyntaxView.h"
+				>
+			</File>
+			<File
 				RelativePath=".\view\ServTreeView.cpp"
 				>
 			</File>
@@ -417,6 +417,14 @@
 			</File>
 			<File
 				RelativePath=".\view\TabLogPage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabSearchPage.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\TabSearchPage.h"
 				>
 			</File>
 		</Filter>

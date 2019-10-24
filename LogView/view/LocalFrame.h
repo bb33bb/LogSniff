@@ -1,10 +1,10 @@
 #pragma once
 #include <Windows.h>
 #include "LogFrameBase.h"
-#include "DbgView.h"
 #include "LogSyntaxView.h"
 #include "TabCfgPage.h"
 #include "TabLogPage.h"
+#include "TabSearchPage.h"
 
 class CLocalLogFrame : public CLogFrameBase {
 public:
@@ -30,6 +30,6 @@ private:
     CTabCfgPage mCfgPage;
     CTabLogPage mDbgPage;
     CTabLogPage mLogPage;
-    CTabLogPage mSearchPage;
+    CTabSearchPage mSearchPage;
     const LogServDesc *mServDesc;
 };

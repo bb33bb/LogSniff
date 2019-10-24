@@ -1,4 +1,5 @@
 #include "TextDecoder.h"
+#include "StrUtil.h"
 
 using namespace std;
 
@@ -56,11 +57,26 @@ TextEncodeType CTextDecoder::GetTextType(const string &text) {
     {
         return em_text_utf8;
     }
-    return em_text_no_unicode;
+    return type;
 }
 
 string CTextDecoder::GetTextStr(const string &text, TextEncodeType type) {
     string result;
+    switch (type) {
+        case em_text_gbk:
+            result = text;
+            break;
+        case em_text_utf8:
+            result = UtoA(text);
+            break;
+        case em_text_unicode_le:
+            result = WtoA((const wchar_t *)text.c_str());
+            break;
+        default:
+            //未决类型默认为gbk
+            result = text;
+            break;
+    }
     return result;
 }
 

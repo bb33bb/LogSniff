@@ -11,7 +11,6 @@
 #include "LogServView.h"
 #include "LogSyntaxView.h"
 #include "ServTreeView.h"
-#include "DbgView.h"
 #include <LogLib/TextDecoder.h>
 #include "LogFrameBase.h"
 #include "../GlobalDef.h"

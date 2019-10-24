@@ -5,9 +5,14 @@
 #define LABEL_LOG_CONTENT   "LogContent"
 #define LABEL_DBG_CONTENT   "DbgContent"
 
-#define LABEL_CMD_SEND   "CmdSend"
-#define LABEL_CMD_RECV   "CmdRecv"
-#define LABEL_CMD_HIGHT  "cmdHight"
+//LogView 文件内容检索标签
+#define LABEL_SEARCH_FILE   "SearchFile"
+#define LABEL_SEARCH_LOG    "SearchLog"
+
+#define LABEL_CMD_SEND      "CmdSend"
+#define LABEL_CMD_RECV      "CmdRecv"
+#define LABEL_CMD_HIGHT     "cmdHight"
+
 
 #define LABEL_CALLSTACK     "CallStack"
 #define LABEL_TCP_PIPE1     "TcpPipe1"
@@ -49,6 +54,10 @@ STYLE 用于设置字体的颜色等属性，需要注意,最大的STYLE值是256,
 #define STYLE_DEMO_HEX2         123    //hex str
 #define STYLE_DEMO_HEX3         124    //hex byte
 #define STYLE_DEMO_PROC         125    //模块函数
+
+//File Search Style
+#define STYLE_SEARCH_FILE       126    //File Path
+#define STYLE_SEARCH_LOG        127    //File Log
 
 #define STYLE_LOG_KEYWORD_BASE  160    //日志关键字
 #define STYLE_LOG_WARN          251    //日志警告

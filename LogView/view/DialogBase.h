@@ -13,6 +13,7 @@ public:
     void HideDlg() const;
     HWND GetHandle() const;
     HWND GetParent() const;
+    void MoveWindow(int x, int y, int cx, int cy) const;
 protected:
     //系统消息回调
     virtual INT_PTR MessageProc(UINT msg, WPARAM wp, LPARAM lp);

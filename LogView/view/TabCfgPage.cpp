@@ -17,10 +17,6 @@ void CTabCfgPage::SetServDesc(const LogServDesc *servDesc) {
     mServDesc = servDesc;
 }
 
-void CTabCfgPage::MoveView(int x, int y, int cx, int cy) const {
-    MoveWindow(mHwnd, x, y, cx, cy, TRUE);
-}
-
 void CTabCfgPage::InitListCtrl() const {
     ListView_SetExtendedListViewStyle(mPathList, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
     LVCOLUMNA col;

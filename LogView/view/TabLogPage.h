@@ -9,7 +9,6 @@ class CTabLogPage : public CDialogBase {
 public:
     CTabLogPage();
     virtual ~CTabLogPage();
-    void MoveWindow(int x, int y, int cx, int cy) const;
     void AppendLog(const std::mstring &label, const std::mstring &content);
     void ClearLog();
 
@@ -25,7 +24,5 @@ private:
     HWND mFltCtrl;
     HWND mCkRegular;
     HWND mFltEdit;
-    static std::map<HWND, CTabLogPage *> msProcCache;
-    static RLocker *msLocker;
     std::mstring mFilterStr;
 };
