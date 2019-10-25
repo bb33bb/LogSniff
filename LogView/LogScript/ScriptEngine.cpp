@@ -403,7 +403,7 @@ void CScriptEngine::ClearCache() {
     mVarSet.clear();
 }
 
-bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterResult &result) {
+bool CScriptEngine::InputLog(const mstring &content, size_t initPos, LogFilterResult &result) const {
     mstring filterStr;
 
     if (mRuleSet.empty()) {

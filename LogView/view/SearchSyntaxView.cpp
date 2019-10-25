@@ -73,6 +73,7 @@ void CSearchView::InitSearchView() {
 
     InitStyle();
     InitViewStyle();
+    InitCache(100);
     RegisterParser(LABEL_SEARCH_FILE, SearchPathParser, this);
     RegisterParser(LABEL_SEARCH_LOG, SearchLogParser, this);
 }
@@ -89,6 +90,9 @@ void CSearchView::SetStyleSet(map<mstring, int> &set1) {
 }
 
 void CSearchView::PushSearchResult(const mstring &filePath, const mstring &content) {
+    PushToCache(LABEL_SEARCH_FILE, filePath);
+    PushToCache(LABEL_SEARCH_FILE, "\n");
+    PushToCache(LABEL_SEARCH_LOG, content);
 }
 
 void CSearchView::GetLineCount(int &total, int &show) {
@@ -110,6 +114,8 @@ void CSearchView::SearchPathParser(
     void *param
     )
 {
+    s->SetState(STYLE_SEARCH_FILE);
+    s->ForwardBytes(length);
 }
 
 void CSearchView::SearchLogParser(
@@ -121,4 +127,6 @@ void CSearchView::SearchLogParser(
     void *param
     )
 {
+    s->SetState(STYLE_SEARCH_LOG);
+    s->ForwardBytes(length);
 }

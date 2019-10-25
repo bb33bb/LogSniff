@@ -21,7 +21,7 @@ public:
 
 private:
     void SearchSingleFile(const std::mstring &filePath, std::list<SearchInfo> &result) const;
-    void SearchStrInFiles() const;
+    void SearchStrInFiles();
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnSearchReturn(WPARAM wp, LPARAM lp);
     INT_PTR OnClose(WPARAM wp, LPARAM lp);

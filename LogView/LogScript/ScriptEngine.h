@@ -66,7 +66,7 @@ public:
     virtual ~CScriptEngine();
     bool Compile(const std::mstring &script);
     std::map<std::mstring, int> GetStyleSet();
-    bool InputLog(const std::mstring &content, size_t initPos, LogFilterResult &result);
+    bool InputLog(const std::mstring &content, size_t initPos, LogFilterResult &result) const;
 
 private:
     std::vector<FilterRule> SimpleCompile(const std::mstring &script) const;

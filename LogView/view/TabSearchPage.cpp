@@ -73,6 +73,9 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
 
     mstring lineStr;
     mstring decodeStr;
+
+    SearchInfo content;
+    content.mFilePath = filePath;
     while (getline(fp, lineStr)) {
         //没有文件bom头,只能根据文件内容或者编码类型
         if (em_text_unknown == encodeType)
@@ -81,14 +84,23 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
         }
 
         decodeStr = CTextDecoder::GetInst()->GetTextStr(lineStr, encodeType);
-        //if (mScriptEngine.InputLog())
+        decodeStr += "\n";
+
+        LogFilterResult result;
+        if (mScriptEngine.InputLog(decodeStr, 0, result))
         {
+            content.mContent += result.mContent;
         }
+    }
+
+    if (!content.mContent.empty())
+    {
+        result.push_back(content);
     }
     return;
 }
 
-void CTabSearchPage::SearchStrInFiles() const {
+void CTabSearchPage::SearchStrInFiles() {
     const list<mstring> &set1 = mServDesc->mPathSet;
     list<mstring> fileSet;
 
@@ -114,12 +126,19 @@ void CTabSearchPage::SearchStrInFiles() const {
     {
         SearchSingleFile(*ij, result);
     }
+
+    for (list<SearchInfo>::const_iterator it2 = result.begin() ; it2 != result.end() ; it2++)
+    {
+        mSyntaxView.PushSearchResult(it2->mFilePath, it2->mContent);
+    }
 }
 
 INT_PTR CTabSearchPage::OnSearchReturn(WPARAM wp, LPARAM lp) {
+    mSyntaxView.ClearSearchView();
     mFilterStr = GetWindowStrA(mFltEdit);
 
     mScriptEngine.Compile(mFilterStr);
+    SearchStrInFiles();
     return 0;
 }
 
