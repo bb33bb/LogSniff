@@ -60,39 +60,107 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
     int bomLen = 0;
     TextEncodeType encodeType = CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
 
-    fstream fp(filePath.c_str(), ios::in);
-    if (!fp.is_open())
+    FILE *fp = fopen(filePath.c_str(), "rb");
+
+    if (NULL == fp)
     {
         return;
     }
 
+    fseek(fp, 0, SEEK_END);
+    long fileSize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
     if (bomLen > 0)
     {
-        fp.seekg(bomLen);
+        fseek(fp, bomLen, SEEK_SET);
     }
 
+    char buff[4096 * 2];
+    const size_t maxRead = 4096 - 2;
     mstring lineStr;
     mstring decodeStr;
 
     SearchInfo content;
     content.mFilePath = filePath;
-    while (getline(fp, lineStr)) {
-        //没有文件bom头,只能根据文件内容或者编码类型
+
+    long readCount = 0;
+    long totalCount = 0;
+    bool readEnd = false;
+
+    while (true) {
+        readCount = 0;
+        while (true) {
+            if (1 != fread(buff + readCount, 1, 1, fp))
+            {
+                readEnd = true;
+                break;
+            }
+
+            if (readCount >= maxRead)
+            {
+                break;
+            }
+
+            if ('\n' == buff[readCount])
+            {
+                if (encodeType == em_text_unicode_le)
+                {
+                    readCount++;
+                    fread(buff + readCount, 1, 1, fp);
+                } else if (encodeType == em_text_unknown)
+                {
+                    //测试是否是宽字符
+                    if (totalCount < fileSize)
+                    {
+                        char c = 0x00;
+                        long cur = ftell(fp);
+                        fread(&c, 1, 1, fp);
+
+                        if (c == 0x00)
+                        {
+                            encodeType = em_text_unicode_le;
+                            readCount++;
+                            buff[readCount] = 0x00;
+                        } else {
+                            fseek(fp, cur, SEEK_SET);
+                        }
+                    }
+                }
+                break;
+            }
+            readCount++;
+            totalCount++;
+        }
+        // str end flag
+        buff[readCount] = 0x00, buff[readCount + 1] = 0x00;
+
         if (em_text_unknown == encodeType)
         {
-            encodeType = CTextDecoder::GetInst()->GetTextType(lineStr);
+            encodeType = CTextDecoder::GetInst()->GetTextType(buff);
         }
 
-        decodeStr = CTextDecoder::GetInst()->GetTextStr(lineStr, encodeType);
-        decodeStr += "\n";
+        if (em_text_unicode_le == encodeType)
+        {
+            //Unicode补齐最后一位
+            decodeStr = CTextDecoder::GetInst()->GetTextStr(string(buff, readCount + 2), encodeType);
+        } else {
+            decodeStr = CTextDecoder::GetInst()->GetTextStr(buff, encodeType);
+        }
 
         LogFilterResult result;
         if (mScriptEngine.InputLog(decodeStr, 0, result))
         {
             content.mContent += result.mContent;
         }
+
+        if (readEnd)
+        {
+            break;
+        }
     }
 
+    fclose(fp);
     if (!content.mContent.empty())
     {
         result.push_back(content);
@@ -129,7 +197,7 @@ void CTabSearchPage::SearchStrInFiles() {
 
     for (list<SearchInfo>::const_iterator it2 = result.begin() ; it2 != result.end() ; it2++)
     {
-        mSyntaxView.PushSearchResult(it2->mFilePath, it2->mContent);
+        mSyntaxView.PushSearchResult(it2->mFilePath, it2->mContent + "\n");
     }
 }
 
