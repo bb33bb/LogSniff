@@ -28,7 +28,6 @@ TextEncodeType CTextDecoder::GetFileType(const string &filePath, int &bomLen) {
 
     unsigned char bom[3] = {0};
     fread(bom, 1, 3, fp);
-    fclose(fp);
 
     TextEncodeType type = em_text_unknown;
     if (bom[0] == 0xff && bom[1] == 0xfe)
@@ -43,7 +42,18 @@ TextEncodeType CTextDecoder::GetFileType(const string &filePath, int &bomLen) {
     {
         type = em_text_utf8;
         bomLen = 3;
+    } else {
+        //尝试通过文件内容识别文件编码格式
+        char buff[4096];
+        fseek(fp, 0, SEEK_SET);
+
+        size_t count = fread(buff, 1, sizeof(buff), fp);
+        if (count > 0 && count <= sizeof(buff))
+        {
+            type = GetTextType(string(buff, count));
+        }
     }
+    fclose(fp);
     return type;
 }
 

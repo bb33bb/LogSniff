@@ -60,6 +60,11 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
     int bomLen = 0;
     TextEncodeType encodeType = CTextDecoder::GetInst()->GetFileType(filePath, bomLen);
 
+    if (em_text_unknown == encodeType)
+    {
+        encodeType = em_text_utf8;
+    }
+
     FILE *fp = fopen(filePath.c_str(), "rb");
 
     if (NULL == fp)
@@ -77,7 +82,7 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
     }
 
     char buff[4096 * 2];
-    const size_t maxRead = 4096 - 2;
+    const size_t maxRead = (4096 * 2 - 4);
     mstring lineStr;
     mstring decodeStr;
 
@@ -88,58 +93,39 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
     long totalCount = 0;
     bool readEnd = false;
 
+    //每次读取的字节数
+    int readOnceCount = 1;
+
+    if (encodeType == em_text_unicode_le)
+    {
+        readOnceCount = sizeof(wchar_t);
+    }
+
     while (true) {
         readCount = 0;
         while (true) {
-            if (1 != fread(buff + readCount, 1, 1, fp))
+            if (readOnceCount != fread(buff + readCount, 1, readOnceCount, fp))
             {
                 readEnd = true;
                 break;
             }
 
+            if (0 == memcmp(buff + readCount, "\n", readOnceCount))
+            {
+                readCount += readOnceCount;
+                totalCount += readOnceCount;
+                break;
+            }
+            readCount += readOnceCount;
+            totalCount += readOnceCount;
+
             if (readCount >= maxRead)
             {
                 break;
             }
-
-            if ('\n' == buff[readCount])
-            {
-                if (encodeType == em_text_unicode_le)
-                {
-                    readCount++;
-                    fread(buff + readCount, 1, 1, fp);
-                } else if (encodeType == em_text_unknown)
-                {
-                    //测试是否是宽字符
-                    if (totalCount < fileSize)
-                    {
-                        char c = 0x00;
-                        long cur = ftell(fp);
-                        fread(&c, 1, 1, fp);
-
-                        if (c == 0x00)
-                        {
-                            encodeType = em_text_unicode_le;
-                            readCount++;
-                            buff[readCount] = 0x00;
-                        } else {
-                            fseek(fp, cur, SEEK_SET);
-                        }
-                    }
-                }
-                break;
-            }
-            readCount++;
-            totalCount++;
         }
-        // str end flag
+
         buff[readCount] = 0x00, buff[readCount + 1] = 0x00;
-
-        if (em_text_unknown == encodeType)
-        {
-            encodeType = CTextDecoder::GetInst()->GetTextType(buff);
-        }
-
         if (em_text_unicode_le == encodeType)
         {
             //Unicode补齐最后一位
