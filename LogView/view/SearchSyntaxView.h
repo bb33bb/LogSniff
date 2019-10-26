@@ -27,6 +27,8 @@ private:
         StyleContextBase *s,
         void *param
         );
+
+    void OnSearchLogStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const;
     static void __stdcall SearchLogParser(
         int initStyle,
         unsigned int startPos,

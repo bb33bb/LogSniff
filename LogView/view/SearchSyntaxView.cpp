@@ -1,4 +1,5 @@
 #include "SearchSyntaxView.h"
+#include <Shlwapi.h>
 
 using namespace std;
 
@@ -118,6 +119,50 @@ void CSearchView::SearchPathParser(
     s->ForwardBytes(length);
 }
 
+void CSearchView::OnSearchLogStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const {
+    if (mStyleSet.empty())
+    {
+        sc->SetState(STYLE_SEARCH_LOG);
+        sc->ForwardBytes(length);
+        return;
+    }
+
+    int lastPos = 0;
+    for (int i = 0 ; i < length ;)
+    {
+        bool match = false;
+        for (map<mstring, int>::const_iterator it = mStyleSet.begin() ; it != mStyleSet.end() ; it++)
+        {
+            if (0 == StrCmpNIA(it->first.c_str(), ptr + i, it->first.size()))
+            {
+                if (i > lastPos)
+                {
+                    sc->SetState(STYLE_SEARCH_LOG);
+                    sc->ForwardBytes(i - lastPos);
+                }
+
+                sc->SetState(it->second);
+                sc->ForwardBytes(it->first.size());
+                i += it->first.size();
+                lastPos = i;
+                match = true;
+                break;
+            }
+        }
+
+        if (!match)
+        {
+            i++;
+        }
+    }
+
+    if (lastPos < length)
+    {
+        sc->SetState(STYLE_SEARCH_LOG);
+        sc->ForwardBytes(length - lastPos);
+    }
+}
+
 void CSearchView::SearchLogParser(
     int initStyle,
     unsigned int startPos,
@@ -127,6 +172,6 @@ void CSearchView::SearchLogParser(
     void *param
     )
 {
-    s->SetState(STYLE_SEARCH_LOG);
-    s->ForwardBytes(length);
+    CSearchView *pThis = (CSearchView *)param;
+    pThis->OnSearchLogStyle(ptr, startPos, length, s);
 }

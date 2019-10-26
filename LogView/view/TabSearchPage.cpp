@@ -191,7 +191,11 @@ INT_PTR CTabSearchPage::OnSearchReturn(WPARAM wp, LPARAM lp) {
     mSyntaxView.ClearSearchView();
     mFilterStr = GetWindowStrA(mFltEdit);
 
-    mScriptEngine.Compile(mFilterStr);
+    if (mScriptEngine.Compile(mFilterStr))
+    {
+        mSyntaxView.SetStyleSet(mScriptEngine.GetStyleSet());
+    }
+
     SearchStrInFiles();
     return 0;
 }
