@@ -188,7 +188,10 @@ mstring CSearchView::GetLogFileInfo(const mstring &filePath) const {
 
     DWORD high = 0;
     DWORD low = GetFileSize(hFile, &high);
-    result += FormatA("文件大小:%d KB\n", low / 1024);
+
+    char buff[128];
+    sprintf(buff, "文件大小:%.2f KB\n", (float)low / (float)1024);
+    result += buff;
     return result;
 }
 

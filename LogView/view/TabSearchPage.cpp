@@ -6,6 +6,7 @@
 #include "../../LogLib/StrUtil.h"
 #include <assert.h>
 #include <fstream>
+#include <Shlwapi.h>
 #include "MainView.h"
 
 using namespace std;
@@ -160,32 +161,55 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
 
 void CTabSearchPage::SearchStrInFiles() {
     const list<mstring> &set1 = mServDesc->mPathSet;
-    list<mstring> fileSet;
+    //按时间顺序获取日志文件数据
+    map<mstring, mstring> logSet;
 
     for (list<mstring>::const_iterator it = set1.begin() ; it != set1.end() ; it++)
     {
         struct LocalProc {
+            static mstring GetFileIndex(const mstring &filePath) {
+                HANDLE hFile = CreateFileA(
+                    filePath.c_str(),
+                    GENERIC_READ,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    NULL,
+                    OPEN_EXISTING,
+                    0,
+                    NULL
+                    );
+                HandleAutoClose abc(hFile);
+
+                FILETIME t1 = {0}, t2 = {0}, t3 = {0};
+                GetFileTime(hFile, &t1, &t2, &t3);
+                return FormatA(
+                    "%08x%08x_%hs",
+                    t1.dwHighDateTime,
+                    t1.dwLowDateTime,
+                    PathFindFileNameA(filePath.c_str())
+                    );
+            }
+
             static bool FileHandler(bool isDir, LPCSTR filePath, void *param) {
-                list<mstring> *set1 = (list<mstring> *)param;
+                map<mstring, mstring> *set1 = (map<mstring, mstring> *)param;
 
                 if (MonitorBase::IsLogFile(filePath))
                 {
-                    set1->push_back(filePath);
+                    set1->insert(make_pair(GetFileIndex(filePath), filePath));
                 }
                 return true;
             }
         };
 
-        EnumFiles(*it, TRUE, LocalProc::FileHandler, &fileSet);
+        EnumFiles(*it, TRUE, LocalProc::FileHandler, &logSet);
     }
 
     list<SearchInfo> result;
-    for (list<mstring>::const_iterator ij = fileSet.begin() ; ij != fileSet.end() ; ij++)
+    for (map<mstring, mstring>::const_iterator ij = logSet.begin() ; ij != logSet.end() ; ij++)
     {
-        SearchSingleFile(*ij, result);
+        SearchSingleFile(ij->second, result);
     }
 
-    for (list<SearchInfo>::const_iterator it2 = result.begin() ; it2 != result.end() ; it2++)
+    for (list<SearchInfo>::const_reverse_iterator it2 = result.rbegin() ; it2 != result.rend() ; it2++)
     {
         mSyntaxView.PushSearchResult(it2->mFilePath, it2->mContent + "\n");
     }
