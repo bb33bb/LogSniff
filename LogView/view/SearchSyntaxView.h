@@ -19,6 +19,10 @@ private:
     void InitStyle();
     void InitViewStyle();
     void InitSearchView();
+    //1分钟前, 1小时20分钟前, 1天前, 1周前, 1月前
+    //time:Local FileTime
+    std::mstring GetTimeDesc(const FILETIME &time) const;
+    std::mstring GetLogFileInfo(const std::mstring &filePath) const;
     static void __stdcall SearchPathParser(
         int initStyle,
         unsigned int startPos,

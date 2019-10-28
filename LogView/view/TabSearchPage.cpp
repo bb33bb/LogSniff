@@ -3,6 +3,7 @@
 #include "../../LogLib/winsize.h"
 #include "../../LogLib/LogUtil.h"
 #include "../../LogLib/TextDecoder.h"
+#include "../../LogLib/StrUtil.h"
 #include <assert.h>
 #include <fstream>
 #include "MainView.h"
@@ -101,6 +102,7 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
         readOnceCount = sizeof(wchar_t);
     }
 
+    int lineCount = 0;
     while (true) {
         readCount = 0;
         while (true) {
@@ -114,6 +116,7 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
             {
                 readCount += readOnceCount;
                 totalCount += readOnceCount;
+                lineCount++;
                 break;
             }
             readCount += readOnceCount;
@@ -137,6 +140,7 @@ void CTabSearchPage::SearchSingleFile(const mstring &filePath, list<SearchInfo> 
         LogFilterResult result;
         if (mScriptEngine.InputLog(decodeStr, 0, result))
         {
+            content.mContent += FormatA("line:%d ", lineCount);
             content.mContent += result.mContent;
         }
 
