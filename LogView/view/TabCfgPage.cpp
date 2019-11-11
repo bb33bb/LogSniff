@@ -96,6 +96,41 @@ bool CTabCfgPage::IsPathInCache(const mstring &path) const {
     return false;
 }
 
+//log dir test
+bool CTabCfgPage::CheckLogDir(const mstring &logPath, mstring &reason) const {
+    struct FileEnumParam {
+        int mFileCount;
+        int mLogCount;
+        mstring mReason;
+        bool mStat;
+
+        FileEnumParam() {
+            mStat = true;
+            mFileCount = 0, mLogCount = 0;
+        }
+    };
+
+    struct LocalProc {
+        static bool FileHandler(bool isDir, LPCSTR filePath, void *param) {
+            FileEnumParam *ptr = (FileEnumParam *)param;
+
+            ptr->mFileCount++;
+            if (ptr->mFileCount >= 2048)
+            {
+                ptr->mStat = false;
+                ptr->mReason = "文件夹文件数量过多,请添加合适的日志目录";
+                return false;
+            }
+            return true;
+        }
+    };
+
+    FileEnumParam param;
+    EnumFiles(logPath.c_str(), true, LocalProc::FileHandler, &param);
+    reason = param.mReason;
+    return param.mStat;
+}
+
 void CTabCfgPage::OnCommand(WPARAM wp, LPARAM lp) {
     WORD id = LOWORD(wp);
 
@@ -111,15 +146,30 @@ void CTabCfgPage::OnCommand(WPARAM wp, LPARAM lp) {
 
         if (INVALID_FILE_ATTRIBUTES == GetFileAttributesA(str.c_str()))
         {
-            MessageBoxA(mEditStatus, "不存在的日志路径", "警告", MB_ICONERROR | MB_OK);
+            MessageBoxA(mHwnd, "不存在的日志路径", "警告", MB_ICONERROR | MB_OK);
+            return;
+        }
+
+        if (!(FILE_ATTRIBUTE_DIRECTORY | GetFileAttributesA(str.c_str())))
+        {
+            MessageBoxA(mHwnd, "必须添加文件夹路径", "警告", MB_ICONERROR | MB_OK);
             return;
         }
 
         if (IsPathInCache(str))
         {
-            MessageBoxA(mEditStatus, "日志路径已存在", "警告", MB_ICONERROR | MB_OK);
+            MessageBoxA(mHwnd, "日志路径已存在", "警告", MB_ICONERROR | MB_OK);
             return; 
         }
+
+        //日志路径检测,过大的文件夹路径予以警告提示
+        mstring reason;
+        if (!CheckLogDir(str, reason))
+        {
+            MessageBoxA(mHwnd, reason.c_str(), "警告", MB_ICONERROR | MB_OK);
+            return;
+        }
+
         CLogReceiver::GetInst()->AddPathMonitor(str);
         LoadPathSet();
     } else if (IDC_CFG_DEL == id)

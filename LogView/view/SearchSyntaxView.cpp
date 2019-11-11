@@ -123,7 +123,7 @@ mstring CSearchView::GetTimeDesc(const FILETIME &time) const {
     //一天之内
     else if (d3 >= (60 * 60) && d3 < (60 * 60 * 24))
     {
-        return FormatA("%llu小时%llu分钟前", d3 / 60 / 60, d3 % (60 * 60));
+        return FormatA("%llu小时%llu分钟前", d3 / 60 / 60, (d3 % (60 * 60)) / 60);
     }
     //一天之外
     else

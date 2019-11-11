@@ -233,8 +233,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,15
- PRODUCTVERSION 1,0,0,15
+ FILEVERSION 1,0,0,18
+ PRODUCTVERSION 1,0,0,18
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -250,12 +250,12 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "FileDescription", "LogSniff 日志数据探测分析工具，方便的探测分析日志数据"
-            VALUE "FileVersion", "1, 0, 0, 15"
+            VALUE "FileVersion", "1, 0, 0, 18"
             VALUE "InternalName", "LogView"
             VALUE "LegalCopyright", "Copyright (C) 2019"
             VALUE "OriginalFilename", "LogView.exe"
             VALUE "ProductName", "LogView 应用程序"
-            VALUE "ProductVersion", "1, 0, 0, 15"
+            VALUE "ProductVersion", "1, 0, 0, 18"
         END
     END
     BLOCK "VarFileInfo"

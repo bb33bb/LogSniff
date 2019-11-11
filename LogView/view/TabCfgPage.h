@@ -10,6 +10,7 @@ public:
     void SetServDesc(const LogServDesc *servDesc);
 
 protected:
+    bool CheckLogDir(const std::mstring &logPath, std::mstring &reason) const;
     bool IsPathInCache(const std::mstring &path) const;
     void LoadPathSet() const;
     void InitListCtrl() const;
