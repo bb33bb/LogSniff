@@ -22,7 +22,12 @@ private:
 private:
     CLogSyntaxView mSyntaxView;
     HWND mFltCtrl;
-    HWND mCkRegular;
     HWND mFltEdit;
+    //group ctrl
+    HWND mGroupCtrl;
+    //rule radio
+    HWND mRadioRule;
+    //regex radio
+    HWND mRadioRegex;
     std::mstring mFilterStr;
 };

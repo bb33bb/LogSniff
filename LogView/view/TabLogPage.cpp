@@ -33,7 +33,9 @@ void CTabLogPage::ClearLog() {
 INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     HWND hwnd = GetHandle();
     mFltCtrl = GetDlgItem(hwnd, IDC_COM_FILTER);
-    mCkRegular = GetDlgItem(hwnd, IDC_CK_REGULAR);
+    mGroupCtrl = GetDlgItem(hwnd, IDC_ST_GROUP);
+    mRadioRule = GetDlgItem(hwnd, IDC_RADIO_RULE);
+    mRadioRegex = GetDlgItem(hwnd, IDC_RADIO_REGULAR);
 
     COMBOBOXINFO info = { sizeof(COMBOBOXINFO) };
     GetComboBoxInfo(mFltCtrl, &info);
@@ -54,7 +56,10 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
 
     CTL_PARAMS arry[] = {
         {IDC_COM_FILTER, NULL, 0, 0, 1, 0},
-        {IDC_CK_REGULAR, NULL, 1, 0, 0, 0},
+        {0, mGroupCtrl, 1, 0, 0, 0},
+        {0, mRadioRule, 1, 0, 0, 0},
+        {IDC_BTN_HELP, 0, 1, 0, 0, 0},
+        {0, mRadioRegex, 1, 0, 0, 0},
         {0, mSyntaxView.GetWindow(), 0, 0, 1, 1}
     };
     SetCtlsCoord(hwnd, arry, RTL_NUMBER_OF(arry));

@@ -328,6 +328,14 @@
 			Name="View"
 			>
 			<File
+				RelativePath=".\view\AboutDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\view\AboutDlg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\view\DialogBase.cpp"
 				>
 			</File>

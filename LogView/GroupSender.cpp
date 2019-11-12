@@ -68,12 +68,15 @@ string CGroupSender::GetIpBySocket() const {
     }
 
     hostent *result = gethostbyname("www.baidu.com");
+    if (NULL == result)
+    {
+        closesocket(fd);
+        return "";
+    }
     sockaddr_in servAddr ;
     servAddr.sin_addr.S_un.S_addr = (*(u_long *)result->h_addr_list[0]);
     servAddr.sin_family = AF_INET ;
     servAddr.sin_port = htons(80);
-
-    string dd = inet_ntoa(servAddr.sin_addr);
 
     unsigned long ul = 1;
     ioctlsocket(fd, FIONBIO, (unsigned long*)&ul);

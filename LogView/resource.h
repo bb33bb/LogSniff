@@ -15,6 +15,7 @@
 #define IDD_LOCAL_FRAME                 110
 #define IDD_TAB_LOG                     111
 #define IDD_TAB_LOG_SEARCH              112
+#define IDD_ABOUT                       113
 #define IDC_BUTTON2                     1003
 #define IDC_SERV_REFUSH                 1003
 #define IDC_LOGPATH_DELETE              1003
@@ -29,6 +30,8 @@
 #define IDC_MAIN_SELECT                 1006
 #define IDC_LOGPATH_ADD                 1006
 #define IDC_BTN_ADD_PATH                1006
+#define IDC_BTN_HELP                    1006
+#define IDC_ABOUT_BTN_OK                1006
 #define IDC_LOGPATH_SET                 1007
 #define IDC_BTN_SERV_CFG                1007
 #define IDC_CK_REG                      1008
@@ -54,6 +57,10 @@
 #define IDC_CFG_DEL                     1029
 #define IDC_COM_SEARCH                  1032
 #define IDC_CK_SEARCH_REGULAR           1033
+#define IDC_RADIO_RULE                  1035
+#define IDC_RADIO_REGULAR               1036
+#define IDC_ST_GROUP                    1037
+#define IDC_ABOUT_PICTURE               1038
 #define ID_40001                        40001
 #define ID_40002                        40002
 #define ID_40003                        40003
@@ -73,14 +80,29 @@
 #define ID_40017                        40017
 #define ID_40018                        40018
 #define ID_40019                        40019
+#define ID_40020                        40020
+#define ID_40021                        40021
+#define ID_40022                        40022
+#define IDM_SAVE                        40023
+#define IDM_SAVE_FILE                   40024
+#define IDM_UTF8                        40025
+#define IDM_GBK                         40026
+#define IDM_UTF16                       40027
+#define IDM_TOPMOST                     40028
+#define IDM_SUSPEND                     40029
+#define IDM_CLEAR                       40030
+#define IDM_AUTO_SCROLL                 40033
+#define IDM_SHOW_CONFIG                 40034
+#define IDM_HELP                        40035
+#define IDM_ABOUT                       40036
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        112
-#define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1034
+#define _APS_NEXT_RESOURCE_VALUE        115
+#define _APS_NEXT_COMMAND_VALUE         40037
+#define _APS_NEXT_CONTROL_VALUE         1039
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

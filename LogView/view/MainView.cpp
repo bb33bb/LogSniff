@@ -16,6 +16,7 @@
 #include "../GlobalDef.h"
 #include "LocalFrame.h"
 #include "MainView.h"
+#include "AboutDlg.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -454,6 +455,8 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     {
     } else if (id == MENU_ID_ABOUT)
     {
+        CAboutDlg dlg;
+        dlg.DoModule(gsMainWnd, IDD_ABOUT);
     }
     return 0;
 }

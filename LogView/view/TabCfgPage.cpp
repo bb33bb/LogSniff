@@ -172,6 +172,7 @@ void CTabCfgPage::OnCommand(WPARAM wp, LPARAM lp) {
 
         CLogReceiver::GetInst()->AddPathMonitor(str);
         LoadPathSet();
+        SetWindowTextA(mEditPath, "");
     } else if (IDC_CFG_DEL == id)
     {
         struct SelectNode {
