@@ -3,6 +3,7 @@
 #include "../../LogLib/winsize.h"
 #include "../../LogLib/LogUtil.h"
 #include <assert.h>
+#include <CommCtrl.h>
 #include "MainView.h"
 
 using namespace std;
@@ -36,6 +37,8 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     mGroupCtrl = GetDlgItem(hwnd, IDC_ST_GROUP);
     mRadioRule = GetDlgItem(hwnd, IDC_RADIO_RULE);
     mRadioRegex = GetDlgItem(hwnd, IDC_RADIO_REGULAR);
+
+    SendMessageA(mRadioRule, BM_SETCHECK, BST_CHECKED, 0);
 
     COMBOBOXINFO info = { sizeof(COMBOBOXINFO) };
     GetComboBoxInfo(mFltCtrl, &info);

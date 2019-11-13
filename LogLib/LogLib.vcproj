@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\deelx.h"
+				>
+			</File>
+			<File
 				RelativePath=".\locker.h"
 				>
 			</File>
