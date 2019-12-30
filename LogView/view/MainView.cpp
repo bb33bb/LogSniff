@@ -80,51 +80,59 @@ static PWIN_PROC gsPfnFilterProc = NULL;
 static HHOOK gsPfnKeyboardHook = NULL;
 static DWORD gsLastEnterCount = 0;
 static HHOOK gsPfnMouseHook = NULL;
+static DWORD gsCtrlLastCount = GetTickCount();
 
 static LRESULT CALLBACK _KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
-    if ((GetKeyState(VK_CONTROL) & (1 << 16)) && (lParam & (1 << 30)))
+    DWORD curCount = GetTickCount();
+    if (VK_CONTROL == wParam) {
+        gsCtrlLastCount = curCount;
+        return CallNextHookEx(gsPfnKeyboardHook, code, wParam, lParam);
+    }
+
+    if ((curCount - gsCtrlLastCount < 100) || (GetKeyState(VK_CONTROL) & (1 << 16)) && (lParam & (1 << 30)))
     {
         //窗口置顶
         if ('P' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_TOPMOST, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_TOPMOST, 0);
         }
         //自动滚屏
         else if ('B' == wParam) {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_AUTO_SCROLL, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_AUTO_SCROLL, 0);
         }
         //暂停嗅探
         else if ('U' == wParam) {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_PAUSE, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_PAUSE, 0);
         }
         //清空页面
         else if ('X' == wParam) {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_CLEAR, 0);
+            dp("clear view");
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_CLEAR, 0);
         }
         //查找数据
         else if ('F' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_FIND, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_FIND, 0);
         }
         //全选
         else if ('A' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SELECT_ALL, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SELECT_ALL, 0);
         }
         //复制
         else if ('C' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_COPY, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_COPY, 0);
         }
         //导出
         else if ('E' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_EXPORT, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_EXPORT, 0);
         }
         //服务设置
         else if ('S' == wParam)
         {
-            SendMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SET, 0);
+            PostMessageA(gsMainWnd, WM_COMMAND, MENU_ID_SET, 0);
         }
     }
     return CallNextHookEx(gsPfnKeyboardHook, code, wParam, lParam);

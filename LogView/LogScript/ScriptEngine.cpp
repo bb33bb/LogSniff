@@ -304,6 +304,7 @@ map<mstring, int> CScriptEngine::GetStyleSet() {
     mRuleStyle["warn"] = STYLE_LOG_WARN;
     mRuleStyle["´íÎó"] = STYLE_LOG_ERROR;
     mRuleStyle["error"] = STYLE_LOG_ERROR;
+    mRuleStyle["err"] = STYLE_LOG_ERROR;
     return mRuleStyle;
 }
 
