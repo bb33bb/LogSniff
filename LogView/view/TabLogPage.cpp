@@ -31,6 +31,10 @@ void CTabLogPage::ClearLog() {
     mSyntaxView.ClearLogView();
 }
 
+void CTabLogPage::SetAutoScroll(bool flag) {
+    mSyntaxView.SetAutoScroll(flag);
+}
+
 INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     HWND hwnd = GetHandle();
     mFltCtrl = GetDlgItem(hwnd, IDC_COM_FILTER);

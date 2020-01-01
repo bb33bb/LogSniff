@@ -444,6 +444,7 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
     } else if (id == MENU_ID_AUTO_SCROLL)
     {
         gShowConfig.mAutoScroll = !gShowConfig.mAutoScroll;
+        gsCurView->UpdateConfig();
     } else if (id == MENU_ID_PAUSE)
     {
         gShowConfig.mPause = !gShowConfig.mPause;

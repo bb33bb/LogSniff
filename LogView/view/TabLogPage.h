@@ -11,6 +11,7 @@ public:
     virtual ~CTabLogPage();
     void AppendLog(const std::mstring &label, const std::mstring &content);
     void ClearLog();
+    void SetAutoScroll(bool flag);
 
 private:
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
