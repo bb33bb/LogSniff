@@ -143,21 +143,22 @@ void OnPopupMenu() {
     GetCursorPos(&pt);
 
     HMENU menu = CreatePopupMenu();
-    if (gShowConfig.mTopMost)
+    GlobalConfig cfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
+    if (cfg.mTopMost)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
     } else {
         AppendMenuA(menu, MF_ENABLED, MENU_ID_TOPMOST, MENU_NAME_TOPMOST);
     }
 
-    if (gShowConfig.mAutoScroll)
+    if (cfg.mAutoScroll)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
     } else {
         AppendMenuA(menu, MF_ENABLED, MENU_ID_AUTO_SCROLL, MENU_NAME_AUTO_SCROLL);
     }
 
-    if (gShowConfig.mPause)
+    if (cfg.mPause)
     {
         AppendMenuA(menu, MF_ENABLED | MF_CHECKED, MENU_ID_PAUSE, MENU_NAME_PAUSE);
     } else {
@@ -213,7 +214,7 @@ static void _UpdateStatusBarReally() {
 }
 
 void PushLogContent(const LogInfoCache *cache) {
-    if (gShowConfig.mPause)
+    if (LogViewConfigMgr::GetInst()->GetGlobalCfg().mPause)
     {
         return;
     }
@@ -252,8 +253,7 @@ void PushLogContent(const LogInfoCache *cache) {
 }
 
 void PushDbgContent(const std::mstring &content) {
-    if (gShowConfig.mPause)
-    {
+    if (LogViewConfigMgr::GetInst()->GetGlobalCfg().mPause) {
         return;
     }
 
@@ -433,21 +433,28 @@ static INT_PTR _OnCommand(HWND hdlg, WPARAM wp, LPARAM lp) {
         ShowLogServView(hdlg);
     } else if (id == MENU_ID_TOPMOST)
     {
-        gShowConfig.mTopMost = !gShowConfig.mTopMost;
+        GlobalConfig cfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
+        cfg.mTopMost = !cfg.mTopMost;
 
-        if (gShowConfig.mTopMost)
+        if (cfg.mTopMost)
         {
             SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
         } else {
             SetWindowPos(gsMainWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
         }
+        LogViewConfigMgr::GetInst()->SetGlobalCfg(cfg);
     } else if (id == MENU_ID_AUTO_SCROLL)
     {
-        gShowConfig.mAutoScroll = !gShowConfig.mAutoScroll;
+        GlobalConfig cfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
+        cfg.mAutoScroll = !cfg.mAutoScroll;
         gsCurView->UpdateConfig();
+        LogViewConfigMgr::GetInst()->SaveConfig();
     } else if (id == MENU_ID_PAUSE)
     {
-        gShowConfig.mPause = !gShowConfig.mPause;
+        GlobalConfig cfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
+        cfg.mPause = !cfg.mPause;
+        gsCurView->UpdateConfig();
+        LogViewConfigMgr::GetInst()->SaveConfig();
     } else if (id == MENU_ID_CLEAR)
     {
         gsCurView->ClearView();
@@ -545,7 +552,7 @@ static void _ActiveWindow() {
         }
     }
 
-    if (!gShowConfig.mTopMost)
+    if (!LogViewConfigMgr::GetInst()->GetGlobalCfg().mTopMost)
     {
         SetForegroundWindow(gsMainWnd);
         SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);

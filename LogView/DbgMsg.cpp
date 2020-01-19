@@ -119,7 +119,20 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
 
     mstring procName = GetProcName(pid);
 
-    mstring procMsg = FormatA("%hs:%d ", procName.c_str(), pid);
+    SYSTEMTIME time = {0};
+    GetLocalTime(&time);
+    mstring timeStr = FormatA(
+        "%04d-%02d-%02d %02d:%02d:%02d %03d",
+        time.wYear,
+        time.wMonth,
+        time.wDay,
+        time.wHour,
+        time.wMinute,
+        time.wSecond,
+        time.wMilliseconds
+        );
+
+    mstring procMsg = FormatA("%hs %hs:%d ", timeStr.c_str(), procName.c_str(), pid);
     size_t pos1 = 0;
     size_t pos2 = 0;
 

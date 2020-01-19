@@ -32,15 +32,11 @@ void CLocalLogFrame::ClearView() {
 }
 
 void CLocalLogFrame::UpdateConfig() {
-    extern ShowConfig gShowConfig;
+    GlobalConfig cfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
 
-    int sel = TabCtrl_GetCurSel(mTabCtrl);
-
-    if (1 == sel) {
-        mDbgPage.SetAutoScroll(gShowConfig.mAutoScroll == TRUE);
-    } else if (2 == sel) {
-        mLogPage.SetAutoScroll(gShowConfig.mAutoScroll == TRUE);
-    } else if (3 == sel) {
+    if (cfg.mAutoScroll) {
+        mDbgPage.SetAutoScroll(cfg.mAutoScroll);
+        mLogPage.SetAutoScroll(cfg.mAutoScroll);
     }
 }
 
