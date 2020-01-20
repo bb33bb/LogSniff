@@ -22,11 +22,12 @@ mstring LogViewConfigMgr::GetCfgJsonPath() const {
 }
 
 void LogViewConfigMgr::SaveConfig() {
-    Value jsonObj;
-    Value globalObj;
-    Value dbgViewObj;
-    Value fileLogViewObj;
-    Value fileSearchViewObj;
+    Value jsonObj(objectValue);
+    Value globalObj(objectValue);
+    Value dbgViewObj(objectValue);
+    Value fileLogViewObj(objectValue);
+    Value fileSearchViewObj(objectValue);
+    Value arrayObj(arrayValue);
     list<mstring>::const_iterator it;
 
     globalObj["topmost"] = mGlobalCfg.mTopMost;
@@ -34,34 +35,54 @@ void LogViewConfigMgr::SaveConfig() {
     globalObj["curView"] = mGlobalCfg.mCurView;
     jsonObj["globalCfg"] = globalObj;
 
+    arrayObj.clear();
     for (it = mDbgViewCfg.mFilterList.begin(); it != mDbgViewCfg.mFilterList.end(); it++) {
-        dbgViewObj["fltList"].append(*it);
+        arrayObj.append(*it);
     }
+    dbgViewObj["fltList"] = arrayObj;
     jsonObj["dbgViewCfg"] = dbgViewObj;
 
+    arrayObj.clear();
     for (it = mFileLogViewCfg.mFilterList.begin(); it != mFileLogViewCfg.mFilterList.end(); it++) {
-        fileLogViewObj["fltList"].append(*it);
+        arrayObj.append(*it);
     }
+    fileLogViewObj["fltList"] = arrayObj;
     jsonObj["fileLogViewCfg"] = fileLogViewObj;
 
+    arrayObj.clear();
     for (it = mFileSearchViewCfg.mFilterList.begin(); it != mFileSearchViewCfg.mFilterList.end(); it++) {
-        fileSearchViewObj["fltList"].append(*it);
+        arrayObj.append(*it);
     }
+    fileSearchViewObj["fltList"] = arrayObj;
     jsonObj["fileSearchViewCfg"] = fileSearchViewObj;
 
     mstring cfgContent = StyledWriter().write(jsonObj);
     DeleteFileA(GetCfgJsonPath().c_str());
-    ofstream fp(GetCfgJsonPath().c_str());
 
+    ofstream fp(GetCfgJsonPath().c_str());
     fp << cfgContent;
+    fp.close();
 }
 
 void LogViewConfigMgr::SetGlobalCfg(const GlobalConfig &cfg) {
     mGlobalCfg = cfg;
+    SaveConfig();
 }
 
 GlobalConfig LogViewConfigMgr::GetGlobalCfg() const {
     return mGlobalCfg;
+}
+
+void LogViewConfigMgr::SetDbgViewCfg(const DbgLogViewConfig &cfg) {
+    mDbgViewCfg = cfg;
+}
+
+DbgLogViewConfig LogViewConfigMgr::GetDbgViewCfg() const {
+    return mDbgViewCfg;
+}
+
+FileLogViewConfig LogViewConfigMgr::GetFileLogViewCfg() const {
+    return mFileLogViewCfg;
 }
 
 void LogViewConfigMgr::LoadConfig() {
@@ -87,6 +108,40 @@ void LogViewConfigMgr::LoadConfig() {
     }
 }
 
-void EnterDbgViewFilter(const std::mstring &filterStr);
-void EnterFileLogViewFilter(const std::mstring &filterStr);
-void EnterFileSearchViewFilter(const std::mstring &filterStr);
+//插入搜索串,规则如下
+//如果集合中存在,将其顺序调整为第一个,如果不存在,直接将其追加到头部
+void LogViewConfigMgr::InsertStrToList(const mstring &str, list<mstring> *set1) const {
+    for (list<mstring>::const_iterator it = set1->begin(); it != set1->end(); it++) {
+        if (*it == str) {
+            set1->erase(it);
+            break;
+        }
+    }
+    set1->push_front(str);
+}
+
+//缓存最新使用的搜索串
+void LogViewConfigMgr::EnterFilterStr(EM_LOGVIEW_TYPE eType, const std::mstring &str) {
+    list<mstring> *set1 = NULL;
+    switch (eType) {
+        case EM_VIEW_DBGLOG:
+            set1 = &mDbgViewCfg.mFilterList;
+            break;
+        case EM_VIEW_FILELOG:
+            set1 = &mFileLogViewCfg.mFilterList;
+            break;
+        case EM_VIEW_FILESEARCH:
+            set1 = &mFileSearchViewCfg.mFilterList;
+            break;
+        default:
+            return;
+    }
+
+    if (set1) {
+        InsertStrToList(str, set1);
+        SaveConfig();
+    }
+}
+
+void LogViewConfigMgr::EnterSearchStr(EM_LOGVIEW_TYPE eType, const std::mstring &str) {
+}

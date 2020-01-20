@@ -373,6 +373,16 @@ static void _LoadLogServ() {
     }
 }
 
+static void _LoadCacheConfig() {
+    LogViewConfigMgr::GetInst()->LoadConfig();
+    GlobalConfig globalCfg = LogViewConfigMgr::GetInst()->GetGlobalCfg();
+
+    if (globalCfg.mTopMost) {
+        SetWindowPos(gsMainWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+    gsCurView->UpdateConfig();
+}
+
 static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsMainWnd = hdlg;
 
@@ -422,6 +432,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     };
     SetTimer(gsMainWnd, TIMER_UPDATE_STATBAR, 100, CUpdateStatus::TimerProc);
     UpdateStatusBar();
+    _LoadCacheConfig();
     return 0;
 }
 

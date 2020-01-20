@@ -45,7 +45,7 @@ public:
     GlobalConfig GetGlobalCfg() const;
 
     void SetDbgViewCfg(const DbgLogViewConfig &cfg);
-    GlobalConfig GetDbgViewCfg() const;
+    DbgLogViewConfig GetDbgViewCfg() const;
 
     void SetFileLogViewCfg(const FileLogViewConfig &cfg);
     FileLogViewConfig GetFileLogViewCfg() const;
@@ -53,12 +53,13 @@ public:
     void SetFileSearchViewCfg(const FileSearchViewConfig &cfg);
     FileSearchViewConfig GetFileSearchViewCfg() const;
 
-    void EnterDbgViewFilter(const std::mstring &filterStr);
-    void EnterFileLogViewFilter(const std::mstring &filterStr);
-    void EnterFileSearchViewFilter(const std::mstring &filterStr);
+    //缓存最新使用的搜索串
+    void EnterFilterStr(EM_LOGVIEW_TYPE eType, const std::mstring &str);
+    void EnterSearchStr(EM_LOGVIEW_TYPE eType, const std::mstring &str);
 private:
     LogViewConfigMgr() {}
     virtual ~LogViewConfigMgr() {}
+    void InsertStrToList(const std::mstring &str, std::list<std::mstring> *set1) const;
     std::mstring GetCfgJsonPath() const;
 
 private:

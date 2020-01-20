@@ -2,6 +2,7 @@
 #include "../resource.h"
 #include "../../LogLib/winsize.h"
 #include "../../LogLib/LogUtil.h"
+#include "../GlobalDef.h"
 #include <assert.h>
 #include <CommCtrl.h>
 #include "MainView.h"
@@ -14,6 +15,10 @@ CTabLogPage::CTabLogPage() {
 }
 
 CTabLogPage::~CTabLogPage() {
+}
+
+void CTabLogPage::SetType(EM_LOGVIEW_TYPE type) {
+    mType = type;
 }
 
 void CTabLogPage::AppendLog(const mstring &label, const mstring &content) {
@@ -56,13 +61,18 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
 
     int x = rtFlt.left;
     int y = rtFlt.bottom + 5;
-    int width = (rtClient.right - rtClient.left) - 2 * x;
+    int width = (rtClient.right - rtClient.left) - 10;
     int high = (rtClient.bottom - rtClient.top) - y - 5;
-    mSyntaxView.CreateLogView(hwnd, x, y, width, high);
+    mSyntaxView.CreateLogView(hwnd, 5, y, width, high);
     mSyntaxView.InitLogBase();
 
     CTL_PARAMS arry[] = {
-        {IDC_COM_FILTER, NULL, 0, 0, 1, 0},
+        {IDC_TEXT_FILTER, NULL, 0, 0, 0, 0},
+        {IDC_COM_FILTER, NULL, 0, 0, 0.5f, 0},
+        {IDC_TEXT_FIND, NULL, 0.5f, 0, 0, 0},
+        {IDC_COM_FIND, NULL, 0.5f, 0, 0.5f, 0},
+        {IDC_BTN_NEXT, NULL, 1, 0, 0, 0},
+        {IDC_BTN_FRONT, NULL, 1, 0, 0, 0},
         {0, mGroupCtrl, 1, 0, 0, 0},
         {0, mRadioRule, 1, 0, 0, 0},
         {IDC_BTN_HELP, 0, 1, 0, 0, 0},
@@ -74,7 +84,36 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
 }
 
 INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
-    mSyntaxView.SetFilter(GetWindowStrA(mFltEdit));
+    mstring str(GetWindowStrA(mFltEdit));
+    str.trim();
+
+    if (str.empty()) {
+        return 0;
+    }
+    mSyntaxView.SetFilter(str);
+    LogViewConfigMgr::GetInst()->EnterFilterStr(mType, str);
+    dp("str:%hs", str.c_str());
+    int count = SendMessageA(mFltCtrl, CB_GETCOUNT, 0, 0);
+    for (int i = 0; i < count; i++) {
+        SendMessageA(mFltCtrl, CB_DELETESTRING, 0, 0);
+    }
+
+    list<mstring> set1;
+    if (mType == EM_VIEW_DBGLOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetDbgViewCfg().mFilterList;
+    } else if (mType == EM_VIEW_FILELOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
+    }
+
+    int pos = 0;
+    for (list<mstring>::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        SendMessageA(mFltCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
+        pos++;
+    }
+
+    mstring strFirst = *(set1.begin());
+    SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)strFirst.c_str());
+    SendMessageA(mFltEdit, EM_SETSEL, strFirst.size(), strFirst.size());
     return 0;
 }
 
@@ -103,7 +142,7 @@ INT_PTR CTabLogPage::GetMsgHook(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     {
         if (wp == VK_RETURN)
         {
-            SendMessageW(mHwnd, MSG_FILTER_RETURN, 0, 0);
+            PostMessageA(mHwnd, MSG_FILTER_RETURN, 0, 0);
         }
     } else if (WM_RBUTTONDOWN == msg && (hwnd == mSyntaxView.GetWindow()))
     {

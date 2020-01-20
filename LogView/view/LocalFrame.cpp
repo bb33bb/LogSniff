@@ -7,6 +7,8 @@
 using namespace std;
 
 CLocalLogFrame::CLocalLogFrame() :mServDesc(NULL) {
+    mDbgPage.SetType(EM_VIEW_DBGLOG);
+    mLogPage.SetType(EM_VIEW_FILELOG);
 }
 
 CLocalLogFrame::~CLocalLogFrame() {
@@ -38,6 +40,8 @@ void CLocalLogFrame::UpdateConfig() {
         mDbgPage.SetAutoScroll(cfg.mAutoScroll);
         mLogPage.SetAutoScroll(cfg.mAutoScroll);
     }
+    TabCtrl_SetCurSel(mTabCtrl, cfg.mCurView);
+    SwitchView(cfg.mCurView);
 }
 
 void CLocalLogFrame::OnFileLog(const mstring &content) {
@@ -110,6 +114,34 @@ INT_PTR CLocalLogFrame::OnCommand(WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+void CLocalLogFrame::SwitchView(EM_LOGVIEW_TYPE eViewSel) {
+    if (EM_VIEW_CONFIG == eViewSel)
+    {
+        mCfgPage.ShowDlg();
+        mDbgPage.HideDlg();
+        mLogPage.HideDlg();
+        mSearchPage.HideDlg();
+    } else if (EM_VIEW_DBGLOG == eViewSel)
+    {
+        mCfgPage.HideDlg();
+        mDbgPage.ShowDlg();
+        mLogPage.HideDlg();
+        mSearchPage.HideDlg();
+    } else if (EM_VIEW_FILELOG == eViewSel)
+    {
+        mCfgPage.HideDlg();
+        mDbgPage.HideDlg();
+        mLogPage.ShowDlg();
+        mSearchPage.HideDlg();
+    } else if (EM_VIEW_FILESEARCH == eViewSel)
+    {
+        mCfgPage.HideDlg();
+        mDbgPage.HideDlg();
+        mLogPage.HideDlg();
+        mSearchPage.ShowDlg();
+    }
+}
+
 INT_PTR CLocalLogFrame::OnNotify(WPARAM wp, LPARAM lp) {
     NMHDR *hdr = (NMHDR *)lp;
 
@@ -119,42 +151,7 @@ INT_PTR CLocalLogFrame::OnNotify(WPARAM wp, LPARAM lp) {
         {
         case TCN_SELCHANGE:
             {
-                switch (TabCtrl_GetCurSel(mTabCtrl)) {
-                    case 0:
-                        {
-                            mCfgPage.ShowDlg();
-                            mDbgPage.HideDlg();
-                            mLogPage.HideDlg();
-                            mSearchPage.HideDlg();
-                        }
-                        break;
-                    case 1:
-                        {
-                            mCfgPage.HideDlg();
-                            mDbgPage.ShowDlg();
-                            mLogPage.HideDlg();
-                            mSearchPage.HideDlg();
-                        }
-                        break;
-                    case 2:
-                        {
-                            mCfgPage.HideDlg();
-                            mDbgPage.HideDlg();
-                            mLogPage.ShowDlg();
-                            mSearchPage.HideDlg();
-                        }
-                        break;
-                    case 3:
-                        {
-                            mCfgPage.HideDlg();
-                            mDbgPage.HideDlg();
-                            mLogPage.HideDlg();
-                            mSearchPage.ShowDlg();
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                SwitchView((EM_LOGVIEW_TYPE)TabCtrl_GetCurSel(mTabCtrl));
             }
             break;
         default:
