@@ -44,6 +44,10 @@ void CTabLogPage::InsertStrList(const list<mstring> &set1) const {
 
     int pos = 0;
     for (list<mstring>::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        if (it->empty()) {
+            continue;
+        }
+
         SendMessageA(mFltCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
         pos++;
     }
@@ -62,6 +66,7 @@ void CTabLogPage::LoadCfg() {
         set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
     }
     InsertStrList(set1);
+    OnFilterReturn(0, 0);
 }
 
 void CTabLogPage::ClearLog() {
@@ -120,9 +125,6 @@ INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
     mstring str(GetWindowStrA(mFltEdit));
     str.trim();
 
-    if (str.empty()) {
-        return 0;
-    }
     mSyntaxView.SetFilter(str);
     LogViewConfigMgr::GetInst()->EnterFilterStr(mType, str);
 
