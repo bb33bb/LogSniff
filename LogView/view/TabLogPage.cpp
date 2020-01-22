@@ -121,10 +121,7 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     return 0;
 }
 
-INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
-    mstring str(GetWindowStrA(mFltEdit));
-    str.trim();
-
+void CTabLogPage::OnEnterStr(const mstring &str) {
     mSyntaxView.SetFilter(str);
     LogViewConfigMgr::GetInst()->EnterFilterStr(mType, str);
 
@@ -135,6 +132,25 @@ INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
         set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
     }
     InsertStrList(set1);
+}
+
+INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
+    mstring str(GetWindowStrA(mFltEdit));
+    str.trim();
+
+    OnEnterStr(str);
+    return 0;
+}
+
+INT_PTR CTabLogPage::OnCommand(WPARAM wp, LPARAM lp) {
+    WORD msg = HIWORD(wp);
+    WORD id = LOWORD(wp);
+
+    if (id == IDC_COM_FILTER && msg == CBN_SELENDOK) {
+        size_t pos = SendMessageA(mFltCtrl, CB_GETCURSEL, 0, 0);
+
+        PostMessageA(mHwnd, MSG_FILTER_RETURN, 0, 0);
+    }
     return 0;
 }
 
@@ -150,6 +166,9 @@ INT_PTR CTabLogPage::MessageProc(UINT msg, WPARAM wp, LPARAM lp) {
     else if (MSG_FILTER_RETURN == msg)
     {
         return OnFilterReturn(wp, lp);
+    }
+    else if (WM_COMMAND == msg) {
+        OnCommand(wp, lp);
     }
     else if (WM_CLOSE == msg)
     {

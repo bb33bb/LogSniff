@@ -17,9 +17,11 @@ public:
     void LoadCfg();
 
 private:
+    void OnEnterStr(const std::mstring &str);
     void InsertStrList(const std::list<std::mstring> &set1) const;
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnFilterReturn(WPARAM wp, LPARAM lp);
+    INT_PTR OnCommand(WPARAM wp, LPARAM lp);
     INT_PTR OnClose(WPARAM wp, LPARAM lp);
     virtual INT_PTR MessageProc(UINT msg, WPARAM wp, LPARAM lp);
     virtual INT_PTR GetMsgHook(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
