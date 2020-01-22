@@ -100,11 +100,24 @@ void LogViewConfigMgr::LoadConfig() {
     mGlobalCfg.mAutoScroll = globalObj["autoScroll"].asBool();
     mGlobalCfg.mCurView = (EM_LOGVIEW_TYPE)globalObj["curView"].asInt();
 
-    Value fileLogViewObj = jsonObj["fileLogViewCfg"];
-    Value fltArray = fileLogViewObj["fltList"];
     size_t i = 0;
+    Value fltArray;
+    Value dbgLogViewObj = jsonObj["dbgViewCfg"];
+    fltArray = dbgLogViewObj["fltList"];
+    for (i = 0; i < fltArray.size(); i++) {
+        mDbgViewCfg.mFilterList.push_back(fltArray[i].asString());
+    }
+
+    Value fileLogViewObj = jsonObj["fileLogViewCfg"];
+    fltArray = fileLogViewObj["fltList"];
     for (i = 0; i < fltArray.size(); i++) {
         mFileLogViewCfg.mFilterList.push_back(fltArray[i].asString());
+    }
+
+    Value fileSearchObj = jsonObj["fileSearchViewCfg"];
+    fltArray = fileSearchObj["fltList"];
+    for (i = 0; i < fltArray.size(); i++) {
+        mFileSearchViewCfg.mFilterList.push_back(fltArray[i].asString());
     }
 }
 

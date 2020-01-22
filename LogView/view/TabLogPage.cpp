@@ -31,6 +31,39 @@ void CTabLogPage::AppendLog(const mstring &label, const mstring &content) {
     }
 }
 
+void CTabLogPage::InsertStrList(const list<mstring> &set1) const {
+    size_t count = SendMessageA(mFltCtrl, CB_GETCOUNT, 0, 0);
+    for (size_t i = 0; i < count; i++) {
+        SendMessageA(mFltCtrl, CB_DELETESTRING, 0, 0);
+    }
+
+    if (set1.empty()) {
+        SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)"");
+        return;
+    }
+
+    int pos = 0;
+    for (list<mstring>::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        SendMessageA(mFltCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
+        pos++;
+    }
+
+    mstring strFirst = *(set1.begin());
+    SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)strFirst.c_str());
+    SendMessageA(mFltEdit, EM_SETSEL, strFirst.size(), strFirst.size());
+}
+
+void CTabLogPage::LoadCfg() {
+    list<mstring> set1;
+
+    if (mType == EM_VIEW_DBGLOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetDbgViewCfg().mFilterList;
+    } else if (mType == EM_VIEW_FILELOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
+    }
+    InsertStrList(set1);
+}
+
 void CTabLogPage::ClearLog() {
     mSyntaxView.ClearCache();
     mSyntaxView.ClearLogView();
@@ -92,11 +125,6 @@ INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
     }
     mSyntaxView.SetFilter(str);
     LogViewConfigMgr::GetInst()->EnterFilterStr(mType, str);
-    dp("str:%hs", str.c_str());
-    int count = SendMessageA(mFltCtrl, CB_GETCOUNT, 0, 0);
-    for (int i = 0; i < count; i++) {
-        SendMessageA(mFltCtrl, CB_DELETESTRING, 0, 0);
-    }
 
     list<mstring> set1;
     if (mType == EM_VIEW_DBGLOG) {
@@ -104,16 +132,7 @@ INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
     } else if (mType == EM_VIEW_FILELOG) {
         set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
     }
-
-    int pos = 0;
-    for (list<mstring>::const_iterator it = set1.begin(); it != set1.end(); it++) {
-        SendMessageA(mFltCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
-        pos++;
-    }
-
-    mstring strFirst = *(set1.begin());
-    SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)strFirst.c_str());
-    SendMessageA(mFltEdit, EM_SETSEL, strFirst.size(), strFirst.size());
+    InsertStrList(set1);
     return 0;
 }
 

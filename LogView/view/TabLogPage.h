@@ -14,8 +14,10 @@ public:
     void AppendLog(const std::mstring &label, const std::mstring &content);
     void ClearLog();
     void SetAutoScroll(bool flag);
+    void LoadCfg();
 
 private:
+    void InsertStrList(const std::list<std::mstring> &set1) const;
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnFilterReturn(WPARAM wp, LPARAM lp);
     INT_PTR OnClose(WPARAM wp, LPARAM lp);

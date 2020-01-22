@@ -42,6 +42,8 @@ void CLocalLogFrame::UpdateConfig() {
     }
     TabCtrl_SetCurSel(mTabCtrl, cfg.mCurView);
     SwitchView(cfg.mCurView);
+
+    mDbgPage.LoadCfg(), mLogPage.LoadCfg();
 }
 
 void CLocalLogFrame::OnFileLog(const mstring &content) {
