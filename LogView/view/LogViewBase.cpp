@@ -15,16 +15,15 @@ void CLogViewBase::InitLogBase() {
     mShowCount = 0;
     RegisterParser(LABEL_LOG_CONTENT, LogContentParser, this);
 
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 0, RGB(0, 0, 0), RGB(0, 0xff, 0));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 1, RGB(0, 0, 0), RGB(0xd0, 0xd0, 0xff));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 2, RGB(0, 0, 0), RGB(0xd0, 0xff, 0xd0));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 3, RGB(0, 0, 0), RGB(0xcd, 0xcd, 0x00));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 4, RGB(0, 0, 0), RGB(0xca, 0xff, 0x70));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 5, RGB(0, 0, 0), RGB(0xb0, 0xe2, 0xff));
-    SetStyle(STYLE_LOG_KEYWORD_BASE + 6, RGB(0, 0, 0), RGB(0xff, 0xd7, 0x00));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 0, RGB(0, 0, 0), RGB(0xd0, 0xd0, 0xff));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 1, RGB(0, 0, 0), RGB(0xd0, 0xff, 0xd0));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 2, RGB(0, 0, 0), RGB(0xcd, 0xcd, 0x00));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 3, RGB(0, 0, 0), RGB(0xca, 0xff, 0x70));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 4, RGB(0, 0, 0), RGB(0xb0, 0xe2, 0xff));
+    SetStyle(STYLE_LOG_KEYWORD_BASE + 5, RGB(0, 0, 0), RGB(0xff, 0xd7, 0x00));
 
     int i = 0, j = 0;
-    for (i = STYLE_LOG_KEYWORD_BASE + 7 ; i < 255 ; i++)
+    for (i = STYLE_LOG_KEYWORD_BASE + 6 ; i < 255 ; i++)
     {
         static DWORD sMagic = 0x12f;
         srand(GetTickCount() + sMagic++);
@@ -134,6 +133,60 @@ void CLogViewBase::ClearLogView() {
     ClearView();
 }
 
+//ÉèÖÃÑ¡Ôñ¹Ø¼ü×Ö
+void CLogViewBase::SetSelKeyword(const mstring &str) {
+    mSelHighlightStr = str;
+    UpdateView();
+}
+
+INT_PTR CLogViewBase::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
+    NotifyHeader *header = (NotifyHeader *)lp;
+    SCNotification *notify = (SCNotification *)lp;
+
+    switch (header->code) {
+        case SCN_UPDATEUI:
+            {
+                if (notify->updated & SC_UPDATE_SELECTION)
+                {
+                    size_t pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
+                    size_t pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
+                    Sci_TextRange content;
+                    if (pos2 > pos1) {
+                        size_t line1 = SendMsg(SCI_LINEFROMPOSITION, pos1, 0);
+                        size_t line2 = SendMsg(SCI_LINEFROMPOSITION, pos2, 0);
+                        if (line1 != line2) {
+                            SetSelKeyword("");
+                            break;
+                        }
+
+                        static char *sBuffer = NULL;
+                        static size_t sBuffSize = 0;
+
+                        if (sBuffSize < (pos2 - pos1 + 1)) {
+                            if (sBuffer) {
+                                delete []sBuffer;
+                            }
+
+                            sBuffSize = (pos2 - pos1 + 4096);
+                            sBuffer = new char[sBuffSize];
+                        }
+
+                        content.chrg.cpMin = pos1, content.chrg.cpMax = pos2;
+                        content.lpstrText = sBuffer;
+                        SendMsg(SCI_GETTEXTRANGE, 0, (LPARAM)&content);
+                        SetSelKeyword(sBuffer);
+                        dp("text:%hs", content.lpstrText)
+                    }
+                }
+                OnViewUpdate();
+            }
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
 void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const {
     map<mstring, int> style = mScriptEngine->GetStyleSet();
     if (style.empty())
@@ -146,6 +199,19 @@ void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int len
     int lastPos = 0;
     for (int i = 0 ; i < length ;)
     {
+        if (!mSelHighlightStr.empty() && 0 == StrCmpNIA(mSelHighlightStr.c_str(), ptr + i, mSelHighlightStr.size())) {
+            if (i > lastPos) {
+                sc->SetState(STYLE_CONTENT);
+                sc->ForwardBytes(i - lastPos);
+            }
+
+            sc->SetState(STYLE_SELECT_KEYWORD);
+            sc->ForwardBytes(mSelHighlightStr.size());
+            i += mSelHighlightStr.size();
+            lastPos = i;
+            continue;
+        }
+
         bool match = false;
         for (map<mstring, int>::const_iterator it = style.begin() ; it != style.end() ; it++)
         {

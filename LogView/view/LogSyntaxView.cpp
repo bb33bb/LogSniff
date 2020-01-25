@@ -52,6 +52,11 @@ void CLogSyntaxView::initLogView() {
     SendMsg(SCI_SETFOLDMARGINHICOLOUR, 1, RGB(255, 0, 0));
     SetStyle(STYLE_LINENUMBER, RGB(128, 128, 128), RGB(228, 228, 228));
 
+    //查找关键字
+    SetStyle(STYLE_FIND_KEYWORD, RGB(0, 0, 0), RGB(0, 255, 0));
+    //选择关键字
+    SetStyle(STYLE_SELECT_KEYWORD, RGB(0, 0, 0), RGB(0, 255, 0));
+
     //选择区域背景色和透明度
     SendMsg(SCI_SETSELBACK, true, RGB(0, 0, 0));
     SendMsg(SCI_SETSELALPHA, 50, 0);

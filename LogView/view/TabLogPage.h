@@ -21,6 +21,10 @@ private:
     void InsertStrList(const std::list<std::mstring> &set1) const;
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnFilterReturn(WPARAM wp, LPARAM lp);
+    //查找接口,下一个匹配项
+    INT_PTR OnFindNext();
+    //查找接口,前面一个匹配项
+    INT_PTR OnFindFront();
     INT_PTR OnCommand(WPARAM wp, LPARAM lp);
     INT_PTR OnClose(WPARAM wp, LPARAM lp);
     virtual INT_PTR MessageProc(UINT msg, WPARAM wp, LPARAM lp);
@@ -29,8 +33,12 @@ private:
 private:
     CLogSyntaxView mSyntaxView;
     EM_LOGVIEW_TYPE mType;
+    //Filter Ctrl
     HWND mFltCtrl;
     HWND mFltEdit;
+    //Find Ctrl
+    HWND mFindCtrl;
+    HWND mFindEdit;
     //group ctrl
     HWND mGroupCtrl;
     //rule radio

@@ -10,6 +10,7 @@
 using namespace std;
 
 #define MSG_FILTER_RETURN       (WM_USER + 2011)
+#define MSG_FIND_RETURN         (WM_USER + 2012)
 
 CTabLogPage::CTabLogPage() {
 }
@@ -80,16 +81,21 @@ void CTabLogPage::SetAutoScroll(bool flag) {
 
 INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     HWND hwnd = GetHandle();
-    mFltCtrl = GetDlgItem(hwnd, IDC_COM_FILTER);
     mGroupCtrl = GetDlgItem(hwnd, IDC_ST_GROUP);
     mRadioRule = GetDlgItem(hwnd, IDC_RADIO_RULE);
     mRadioRegex = GetDlgItem(hwnd, IDC_RADIO_REGULAR);
 
     SendMessageA(mRadioRule, BM_SETCHECK, BST_CHECKED, 0);
 
-    COMBOBOXINFO info = { sizeof(COMBOBOXINFO) };
-    GetComboBoxInfo(mFltCtrl, &info);
-    mFltEdit = info.hwndItem;
+    mFltCtrl = GetDlgItem(hwnd, IDC_COM_FILTER);
+    COMBOBOXINFO info1 = { sizeof(COMBOBOXINFO) };
+    GetComboBoxInfo(mFltCtrl, &info1);
+    mFltEdit = info1.hwndItem;
+
+    mFindCtrl = GetDlgItem(hwnd, IDC_COM_FIND);
+    COMBOBOXINFO info2 = { sizeof(COMBOBOXINFO) };
+    GetComboBoxInfo(mFindCtrl, &info2);
+    mFindEdit = info2.hwndItem;
 
     RECT rtClient = {0};
     GetClientRect(hwnd, &rtClient);
@@ -142,6 +148,23 @@ INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
     return 0;
 }
 
+INT_PTR CTabLogPage::OnFindNext() {
+    mstring str = GetWindowStrA(mFindEdit);
+    str.trim();
+
+    if (str.empty()) {
+        mSyntaxView.SetSelKeyword("");
+    } else {
+        mSyntaxView.SetSelKeyword(str);
+        mSyntaxView.JmpFirstPos(str);
+    }
+    return 0;
+}
+
+INT_PTR CTabLogPage::OnFindFront() {
+    return 0;
+}
+
 INT_PTR CTabLogPage::OnCommand(WPARAM wp, LPARAM lp) {
     WORD msg = HIWORD(wp);
     WORD id = LOWORD(wp);
@@ -166,6 +189,8 @@ INT_PTR CTabLogPage::MessageProc(UINT msg, WPARAM wp, LPARAM lp) {
     else if (MSG_FILTER_RETURN == msg)
     {
         return OnFilterReturn(wp, lp);
+    } else if (MSG_FIND_RETURN == msg) {
+        return OnFindNext();
     }
     else if (WM_COMMAND == msg) {
         OnCommand(wp, lp);
@@ -184,7 +209,12 @@ INT_PTR CTabLogPage::GetMsgHook(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         {
             PostMessageA(mHwnd, MSG_FILTER_RETURN, 0, 0);
         }
-    } else if (WM_RBUTTONDOWN == msg && (hwnd == mSyntaxView.GetWindow()))
+    } else if (hwnd == mFindEdit && WM_KEYDOWN == msg) {
+        if (wp == VK_RETURN) {
+            PostMessageA(mHwnd, MSG_FIND_RETURN, 0, 0);
+        }
+    }
+    else if (WM_RBUTTONDOWN == msg && (hwnd == mSyntaxView.GetWindow()))
     {
         OnPopupMenu();
     }

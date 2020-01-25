@@ -14,7 +14,11 @@ public:
     void GetLineCount(int &total, int &show);
     std::mstring GetRuleStr();
     void ClearLogView();
+
+    //设置选择关键字
+    void SetSelKeyword(const std::mstring &str);
 private:
+    virtual INT_PTR OnNotify(HWND hdlg, WPARAM wp, LPARAM lp);
     void OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const;
     static void __stdcall LogContentParser(
         int initStyle,
@@ -34,4 +38,7 @@ private:
     std::mstring mRuleStr;
     size_t mTotalCount;
     size_t mShowCount;
+
+    //选择高亮串
+    std::mstring mSelHighlightStr;
 };

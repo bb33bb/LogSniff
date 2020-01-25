@@ -59,6 +59,9 @@ STYLE 用于设置字体的颜色等属性，需要注意,最大的STYLE值是256,
 #define STYLE_SEARCH_FILE       126    //File Path
 #define STYLE_SEARCH_LOG        127    //File Log
 
+#define STYLE_FIND_KEYWORD      128    //日志搜索关键字
+#define STYLE_SELECT_KEYWORD    129    //选择关键字
+
 #define STYLE_LOG_KEYWORD_BASE  160    //日志关键字
 #define STYLE_LOG_WARN          251    //日志警告
 #define STYLE_LOG_ERROR         252    //日志错误

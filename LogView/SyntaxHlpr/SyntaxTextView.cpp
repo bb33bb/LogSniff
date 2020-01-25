@@ -3,6 +3,9 @@
 #include "include/Scintilla.h"
 #include "include/SciLexer.h"
 #include "SyntaxTextView.h"
+#include "../../LogLib/crc32.h"
+#include "../../LogLib/mstring.h"
+#include "../../LogLib/LogUtil.h"
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -33,26 +36,42 @@ bool SyntaxTextView::ClearHighLight() {
 }
 
 void SyntaxTextView::OnViewUpdate() const {
+    size_t length = SendMsg(SCI_GETTEXTLENGTH, 0, 0);
+    SendMsg(SCI_SETINDICATORCURRENT, NOTE_KEYWORD, 0);
+    SendMsg(SCI_INDICATORCLEARRANGE, 0, length);
+
+    if (mHighLight.empty())
+    {
+        return;
+    }
+
+    int firstLine = SendMsg(SCI_GETFIRSTVISIBLELINE, 0, 0);
+    int lineCount = SendMsg(SCI_LINESONSCREEN, 0, 0);
+    int lastLine = firstLine + lineCount;
+    int curLine = firstLine;
+
+    int startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
+    int lastPos = SendMsg(SCI_GETLINEENDPOSITION, lastLine, 0);
+
+    if (lastPos <= startPos)
+    {
+        return;
+    }
+
+    mstring str = mStrInView.substr(startPos, lastPos - startPos);
+    for (map<string, DWORD>::const_iterator it = mHighLight.begin() ; it != mHighLight.end() ; it++)
+    {
+        size_t pos1 = 0;
+        size_t pos2 = 0;
+        while (mstring::npos != (pos1 = str.find_in_rangei(it->first, pos2))) {
+            SendMsg(SCI_INDICATORFILLRANGE, pos1 + startPos, it->first.size());
+
+            pos2 = pos1 + it->first.size();
+        }
+    }
 }
 
 INT_PTR SyntaxTextView::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
-    NotifyHeader *header = (NotifyHeader *)lp;
-    SCNotification *notify = (SCNotification *)lp;
-
-    switch (header->code) {
-        case SCN_UPDATEUI:
-            {
-                if (notify->updated & SC_UPDATE_SELECTION)
-                {
-                    size_t pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
-                    size_t pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
-                }
-                OnViewUpdate();
-            }
-            break;
-        default:
-            break;
-    }
     return 0;
 }
 
@@ -136,7 +155,7 @@ bool SyntaxTextView::CreateView(HWND parent, int x, int y, int cx, int cy) {
         SendMsg(SCI_INDICSETFORE, NOTE_KEYWORD, RGB(0, 0xff, 0));
 
         SendMsg(SCI_INDICSETSTYLE, NOTE_SELECT, INDIC_ROUNDBOX);
-        SendMsg(SCI_INDICSETALPHA, NOTE_SELECT, 100);
+        SendMsg(SCI_INDICSETALPHA, NOTE_SELECT, 255);
         SendMsg(SCI_INDICSETFORE, NOTE_SELECT, RGB(0, 0, 0xff));
 
         if (IsWindow(m_parent))

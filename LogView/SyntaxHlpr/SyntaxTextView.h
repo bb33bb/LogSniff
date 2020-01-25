@@ -111,7 +111,7 @@ protected:
     virtual void OnViewUpdate() const;
 
 private:
-    INT_PTR OnNotify(HWND hdlg, WPARAM wp, LPARAM lp);
+    virtual INT_PTR OnNotify(HWND hdlg, WPARAM wp, LPARAM lp);
     static LRESULT CALLBACK WndSubProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
     void CheckLineNum();
     void ResetLineNum();
