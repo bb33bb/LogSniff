@@ -178,7 +178,6 @@ INT_PTR CLogViewBase::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
                         dp("text:%hs", content.lpstrText)
                     }
                 }
-                OnViewUpdate();
             }
             break;
         default:
