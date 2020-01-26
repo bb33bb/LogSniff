@@ -17,10 +17,12 @@ public:
     void LoadCfg();
 
 private:
-    void OnEnterStr(const std::mstring &str);
-    void InsertStrList(const std::list<std::mstring> &set1) const;
+    void OnEnterFilterStr(const std::mstring &str);
+    void OnEnterFindStr(const std::mstring &str);
+    void InsertStrList(HWND hComCtrl, HWND hComEdit, const std::list<std::mstring> &set1) const;
     INT_PTR OnInitDialog(WPARAM wp, LPARAM lp);
     INT_PTR OnFilterReturn(WPARAM wp, LPARAM lp);
+    INT_PTR OnFindReturn(WPARAM wp, LPARAM lp);
     //查找接口,下一个匹配项
     INT_PTR OnFindNext();
     //查找接口,前面一个匹配项

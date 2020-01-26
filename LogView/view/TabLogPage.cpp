@@ -32,14 +32,14 @@ void CTabLogPage::AppendLog(const mstring &label, const mstring &content) {
     }
 }
 
-void CTabLogPage::InsertStrList(const list<mstring> &set1) const {
-    size_t count = SendMessageA(mFltCtrl, CB_GETCOUNT, 0, 0);
+void CTabLogPage::InsertStrList(HWND hComCtrl, HWND hComEdit, const list<mstring> &set1) const {
+    size_t count = SendMessageA(hComCtrl, CB_GETCOUNT, 0, 0);
     for (size_t i = 0; i < count; i++) {
-        SendMessageA(mFltCtrl, CB_DELETESTRING, 0, 0);
+        SendMessageA(hComCtrl, CB_DELETESTRING, 0, 0);
     }
 
     if (set1.empty()) {
-        SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)"");
+        SendMessageA(hComEdit, WM_SETTEXT, 0, (LPARAM)"");
         return;
     }
 
@@ -49,25 +49,32 @@ void CTabLogPage::InsertStrList(const list<mstring> &set1) const {
             continue;
         }
 
-        SendMessageA(mFltCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
+        SendMessageA(hComCtrl, CB_INSERTSTRING, pos, (LPARAM)it->c_str());
         pos++;
     }
 
     mstring strFirst = *(set1.begin());
-    SendMessageA(mFltEdit, WM_SETTEXT, 0, (LPARAM)strFirst.c_str());
-    SendMessageA(mFltEdit, EM_SETSEL, strFirst.size(), strFirst.size());
+    SendMessageA(hComEdit, WM_SETTEXT, 0, (LPARAM)strFirst.c_str());
+    SendMessageA(hComEdit, EM_SETSEL, strFirst.size(), strFirst.size());
 }
 
 void CTabLogPage::LoadCfg() {
     list<mstring> set1;
+    list<mstring> set2;
 
     if (mType == EM_VIEW_DBGLOG) {
         set1 = LogViewConfigMgr::GetInst()->GetDbgViewCfg().mFilterList;
+        set2 = LogViewConfigMgr::GetInst()->GetDbgViewCfg().mFindList;
     } else if (mType == EM_VIEW_FILELOG) {
         set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
+        set2 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFindList;
     }
-    InsertStrList(set1);
+
+    InsertStrList(mFltCtrl, mFltEdit, set1);
     OnFilterReturn(0, 0);
+
+    InsertStrList(mFindCtrl, mFindEdit, set2);
+    OnFindReturn(0, 0);
 }
 
 void CTabLogPage::ClearLog() {
@@ -127,7 +134,7 @@ INT_PTR CTabLogPage::OnInitDialog(WPARAM wp, LPARAM lp) {
     return 0;
 }
 
-void CTabLogPage::OnEnterStr(const mstring &str) {
+void CTabLogPage::OnEnterFilterStr(const mstring &str) {
     mSyntaxView.SetFilter(str);
     LogViewConfigMgr::GetInst()->EnterFilterStr(mType, str);
 
@@ -137,14 +144,35 @@ void CTabLogPage::OnEnterStr(const mstring &str) {
     } else if (mType == EM_VIEW_FILELOG) {
         set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFilterList;
     }
-    InsertStrList(set1);
+    InsertStrList(mFltCtrl, mFltEdit, set1);
+}
+
+void CTabLogPage::OnEnterFindStr(const mstring &str) {
+    mSyntaxView.SetHighLight(str);
+    LogViewConfigMgr::GetInst()->EnterSearchStr(mType, str);
+
+    list<mstring> set1;
+    if (mType == EM_VIEW_DBGLOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetDbgViewCfg().mFindList;
+    } else if (mType == EM_VIEW_FILELOG) {
+        set1 = LogViewConfigMgr::GetInst()->GetFileLogViewCfg().mFindList;
+    }
+    InsertStrList(mFindCtrl, mFindEdit, set1);
 }
 
 INT_PTR CTabLogPage::OnFilterReturn(WPARAM wp, LPARAM lp) {
     mstring str(GetWindowStrA(mFltEdit));
     str.trim();
 
-    OnEnterStr(str);
+    OnEnterFilterStr(str);
+    return 0;
+}
+
+INT_PTR CTabLogPage::OnFindReturn(WPARAM wp, LPARAM lp) {
+    mstring str(GetWindowStrA(mFindEdit));
+    str.trim();
+
+    OnEnterFindStr(str);
     return 0;
 }
 
@@ -190,7 +218,7 @@ INT_PTR CTabLogPage::MessageProc(UINT msg, WPARAM wp, LPARAM lp) {
     {
         return OnFilterReturn(wp, lp);
     } else if (MSG_FIND_RETURN == msg) {
-        return OnFindNext();
+        return OnFindReturn(wp, lp);
     }
     else if (WM_COMMAND == msg) {
         OnCommand(wp, lp);

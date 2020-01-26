@@ -40,6 +40,12 @@ void LogViewConfigMgr::SaveConfig() {
         arrayObj.append(*it);
     }
     dbgViewObj["fltList"] = arrayObj;
+
+    arrayObj.clear();
+    for (it = mDbgViewCfg.mFindList.begin(); it != mDbgViewCfg.mFindList.end(); it++) {
+        arrayObj.append(*it);
+    }
+    dbgViewObj["findList"] = arrayObj;
     jsonObj["dbgViewCfg"] = dbgViewObj;
 
     arrayObj.clear();
@@ -47,6 +53,12 @@ void LogViewConfigMgr::SaveConfig() {
         arrayObj.append(*it);
     }
     fileLogViewObj["fltList"] = arrayObj;
+
+    arrayObj.clear();
+    for (it = mFileLogViewCfg.mFindList.begin(); it != mFileLogViewCfg.mFindList.end(); it++) {
+        arrayObj.append(*it);
+    }
+    fileLogViewObj["findList"] = arrayObj;
     jsonObj["fileLogViewCfg"] = fileLogViewObj;
 
     arrayObj.clear();
@@ -54,6 +66,12 @@ void LogViewConfigMgr::SaveConfig() {
         arrayObj.append(*it);
     }
     fileSearchViewObj["fltList"] = arrayObj;
+
+    arrayObj.clear();
+    for (it = mFileSearchViewCfg.mFindList.begin(); it != mFileSearchViewCfg.mFindList.end(); it++) {
+        arrayObj.append(*it);
+    }
+    fileSearchViewObj["findList"] = arrayObj;
     jsonObj["fileSearchViewCfg"] = fileSearchViewObj;
 
     mstring cfgContent = StyledWriter().write(jsonObj);
@@ -102,16 +120,24 @@ void LogViewConfigMgr::LoadConfig() {
 
     size_t i = 0;
     Value fltArray;
+    Value findArray;
     Value dbgLogViewObj = jsonObj["dbgViewCfg"];
     fltArray = dbgLogViewObj["fltList"];
     for (i = 0; i < fltArray.size(); i++) {
         mDbgViewCfg.mFilterList.push_back(fltArray[i].asString());
+    }
+    findArray = dbgLogViewObj["findList"];
+    for (i = 0; i < findArray.size(); i++) {
+        mDbgViewCfg.mFindList.push_back(findArray[i].asString());
     }
 
     Value fileLogViewObj = jsonObj["fileLogViewCfg"];
     fltArray = fileLogViewObj["fltList"];
     for (i = 0; i < fltArray.size(); i++) {
         mFileLogViewCfg.mFilterList.push_back(fltArray[i].asString());
+    }
+    findArray = fileLogViewObj["findList"];
+    for (i = 0; i < findArray.size(); i++) {
     }
 
     Value fileSearchObj = jsonObj["fileSearchViewCfg"];
@@ -157,4 +183,23 @@ void LogViewConfigMgr::EnterFilterStr(EM_LOGVIEW_TYPE eType, const std::mstring 
 }
 
 void LogViewConfigMgr::EnterSearchStr(EM_LOGVIEW_TYPE eType, const std::mstring &str) {
+    list<mstring> *set1 = NULL;
+    switch (eType) {
+        case EM_VIEW_DBGLOG:
+            set1 = &mDbgViewCfg.mFindList;
+            break;
+        case EM_VIEW_FILELOG:
+            set1 = &mFileLogViewCfg.mFindList;
+            break;
+        case EM_VIEW_FILESEARCH:
+            set1 = &mFileSearchViewCfg.mFindList;
+            break;
+        default:
+            return;
+    }
+
+    if (set1) {
+        InsertStrToList(str, set1);
+        SaveConfig();
+    }
 }

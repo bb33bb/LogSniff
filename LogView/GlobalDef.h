@@ -25,14 +25,17 @@ struct GlobalConfig {
 
 struct DbgLogViewConfig {
     std::list<std::mstring> mFilterList;
+    std::list<std::mstring> mFindList;
 };
 
 struct FileLogViewConfig {
     std::list<std::mstring> mFilterList;
+    std::list<std::mstring> mFindList;
 };
 
 struct FileSearchViewConfig {
     std::list<std::mstring> mFilterList;
+    std::list<std::mstring> mFindList;
 };
 
 class LogViewConfigMgr {
