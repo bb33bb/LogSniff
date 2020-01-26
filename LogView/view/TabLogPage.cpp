@@ -153,9 +153,9 @@ INT_PTR CTabLogPage::OnFindNext() {
     str.trim();
 
     if (str.empty()) {
-        mSyntaxView.SetSelKeyword("");
+        mSyntaxView.ClearHighLight();
     } else {
-        mSyntaxView.SetSelKeyword(str);
+        mSyntaxView.SetHighLight(str);
         mSyntaxView.JmpFirstPos(str);
     }
     return 0;

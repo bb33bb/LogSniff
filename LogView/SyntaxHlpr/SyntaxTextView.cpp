@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <Shlwapi.h>
 #include <fstream>
 #include "include/Scintilla.h"
 #include "include/SciLexer.h"
@@ -72,6 +73,51 @@ void SyntaxTextView::OnViewUpdate() const {
 }
 
 INT_PTR SyntaxTextView::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
+    NotifyHeader *header = (NotifyHeader *)lp;
+    SCNotification *notify = (SCNotification *)lp;
+
+    switch (header->code) {
+        case SCN_UPDATEUI:
+            {
+                if (notify->updated & SC_UPDATE_SELECTION)
+                {
+                    size_t pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
+                    size_t pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
+                    Sci_TextRange content;
+                    if (pos2 > pos1) {
+                        size_t line1 = SendMsg(SCI_LINEFROMPOSITION, pos1, 0);
+                        size_t line2 = SendMsg(SCI_LINEFROMPOSITION, pos2, 0);
+                        if (line1 != line2) {
+                            ClearHighLight();
+                            break;
+                        }
+
+                        static char *sBuffer = NULL;
+                        static size_t sBuffSize = 0;
+
+                        if (sBuffSize < (pos2 - pos1 + 1)) {
+                            if (sBuffer) {
+                                delete []sBuffer;
+                            }
+
+                            sBuffSize = (pos2 - pos1 + 4096);
+                            sBuffer = new char[sBuffSize];
+                        }
+
+                        content.chrg.cpMin = pos1, content.chrg.cpMax = pos2;
+                        content.lpstrText = sBuffer;
+                        SendMsg(SCI_GETTEXTRANGE, 0, (LPARAM)&content);
+                        ClearHighLight();
+                        AddHighLight(sBuffer);
+                        dp("text:%hs", content.lpstrText)
+                    }
+                }
+                OnViewUpdate();
+            }
+            break;
+        default:
+            break;
+    }
     return 0;
 }
 
@@ -202,8 +248,15 @@ void SyntaxTextView::ClearView() {
     SetText(LABEL_DEFAULT, "");
 }
 
-bool SyntaxTextView::AddHighLight(const std::string &keyWord, DWORD colour) {
-    mHighLight[keyWord] = colour;
+bool SyntaxTextView::AddHighLight(const std::string &keyWord) {
+    mHighLight[keyWord] = 0;
+    OnViewUpdate();
+    return true;
+}
+
+bool SyntaxTextView::SetHighLight(const std::string &keyWord) {
+    mHighLight.clear();
+    mHighLight[keyWord] = 0;
     OnViewUpdate();
     return true;
 }
@@ -420,6 +473,10 @@ string SyntaxTextView::GetText() const {
 
 //从当前选中的位置开始向后查找.如果没有,从当前可见页开始查找
 bool SyntaxTextView::JmpNextPos(const string &str) {
+    if (str.empty()) {
+        return false;
+    }
+
     int pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
     int pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
 
@@ -432,12 +489,13 @@ bool SyntaxTextView::JmpNextPos(const string &str) {
         startPos = SendMsg(SCI_POSITIONFROMLINE, firstLine, 0);
     }
 
-    size_t pos3 = mStrInView.find(str, startPos);
-    if (string::npos == pos3)
+    LPCSTR ptr = StrStrIA(mStrInView.c_str() + startPos, str.c_str());
+    if (NULL == ptr)
     {
         return false;
     }
 
+    size_t pos3 = ptr - mStrInView.c_str();
     size_t line = SendMsg(SCI_LINEFROMPOSITION, pos3, 0);
     SendMsg(SCI_SETSEL, pos3, pos3 + str.size());
 

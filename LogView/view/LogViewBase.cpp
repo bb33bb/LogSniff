@@ -133,59 +133,6 @@ void CLogViewBase::ClearLogView() {
     ClearView();
 }
 
-//ÉèÖÃÑ¡Ôñ¹Ø¼ü×Ö
-void CLogViewBase::SetSelKeyword(const mstring &str) {
-    mSelHighlightStr = str;
-    UpdateView();
-}
-
-INT_PTR CLogViewBase::OnNotify(HWND hdlg, WPARAM wp, LPARAM lp) {
-    NotifyHeader *header = (NotifyHeader *)lp;
-    SCNotification *notify = (SCNotification *)lp;
-
-    switch (header->code) {
-        case SCN_UPDATEUI:
-            {
-                if (notify->updated & SC_UPDATE_SELECTION)
-                {
-                    size_t pos1 = SendMsg(SCI_GETSELECTIONSTART, 0, 0);
-                    size_t pos2 = SendMsg(SCI_GETSELECTIONEND, 0, 0);
-                    Sci_TextRange content;
-                    if (pos2 > pos1) {
-                        size_t line1 = SendMsg(SCI_LINEFROMPOSITION, pos1, 0);
-                        size_t line2 = SendMsg(SCI_LINEFROMPOSITION, pos2, 0);
-                        if (line1 != line2) {
-                            SetSelKeyword("");
-                            break;
-                        }
-
-                        static char *sBuffer = NULL;
-                        static size_t sBuffSize = 0;
-
-                        if (sBuffSize < (pos2 - pos1 + 1)) {
-                            if (sBuffer) {
-                                delete []sBuffer;
-                            }
-
-                            sBuffSize = (pos2 - pos1 + 4096);
-                            sBuffer = new char[sBuffSize];
-                        }
-
-                        content.chrg.cpMin = pos1, content.chrg.cpMax = pos2;
-                        content.lpstrText = sBuffer;
-                        SendMsg(SCI_GETTEXTRANGE, 0, (LPARAM)&content);
-                        SetSelKeyword(sBuffer);
-                        dp("text:%hs", content.lpstrText)
-                    }
-                }
-            }
-            break;
-        default:
-            break;
-    }
-    return 0;
-}
-
 void CLogViewBase::OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const {
     map<mstring, int> style = mScriptEngine->GetStyleSet();
     if (style.empty())

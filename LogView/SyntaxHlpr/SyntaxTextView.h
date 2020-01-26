@@ -89,7 +89,8 @@ public:
     bool JmpLastPos(const std::string &str);
 
     //Set Keyword For HighLight
-    bool AddHighLight(const std::string &keyWord, DWORD colour);
+    bool AddHighLight(const std::string &keyWord);
+    bool SetHighLight(const std::string &keyWord);
     bool ClearHighLight();
 
     void SetStyle(int type, unsigned int textColour, unsigned int backColour);

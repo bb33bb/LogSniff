@@ -14,11 +14,7 @@ public:
     void GetLineCount(int &total, int &show);
     std::mstring GetRuleStr();
     void ClearLogView();
-
-    //ÉèÖÃÑ¡Ôñ¹Ø¼ü×Ö
-    void SetSelKeyword(const std::mstring &str);
 private:
-    virtual INT_PTR OnNotify(HWND hdlg, WPARAM wp, LPARAM lp);
     void OnLogStrStyle(const char *ptr, unsigned int startPos, int length, StyleContextBase *sc) const;
     static void __stdcall LogContentParser(
         int initStyle,
