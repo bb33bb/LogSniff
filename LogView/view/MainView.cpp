@@ -288,18 +288,20 @@ static void _OnMainViewLayout() {
 
     //ÉÏÏÂ×óÓÒ¼ä¾à
     const int spaceWidth = 3;
-    gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 160, clientHigh - statusHigh - spaceWidth * 2);
+    //gsServTreeView->MoveWindow(spaceWidth, spaceWidth, 160, clientHigh - statusHigh - spaceWidth * 2);
 
-    RECT rtTreeView = {0};
-    GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
-    MapWindowPoints(NULL, gsServTreeView->GetWindow(), (LPPOINT)&rtTreeView, 2);
+    //RECT rtTreeView = {0};
+    //GetWindowRect(gsServTreeView->GetWindow(), &rtTreeView);
+    //MapWindowPoints(NULL, gsServTreeView->GetWindow(), (LPPOINT)&rtTreeView, 2);
 
-    int treeWidth = rtTreeView.right - rtTreeView.left;
-    int treeHigh = rtTreeView.bottom - rtTreeView.top;
-    int logWidth = clientWidth - (spaceWidth * 2 + treeWidth) - spaceWidth;
+    //int treeWidth = rtTreeView.right - rtTreeView.left;
+    //int treeHigh = rtTreeView.bottom - rtTreeView.top;
+    //int logWidth = clientWidth - (spaceWidth * 2 + treeWidth) - spaceWidth;
+    int logWidth = clientWidth - spaceWidth * 2;
 
     HWND hLogFrame = gsCurView->GetHandle();
-    MoveWindow(hLogFrame, spaceWidth * 2 + treeWidth, rtTreeView.top, logWidth, treeHigh + 4, TRUE);
+    int logFrameHigh = clientHigh - statusHigh - spaceWidth * 2;
+    MoveWindow(hLogFrame, spaceWidth, spaceWidth, logWidth, logFrameHigh + 4, TRUE);
     /*
     int filterX = spaceWidth * 2 + treeWidth;
     int filterY = 0;
@@ -391,8 +393,8 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
     gsNotifyEvent = CreateEventA(NULL, FALSE, FALSE, EVENT_SNIFFER_MUTEX);
     CloseHandle(CreateThread(NULL, 0, _NoitfyThread, NULL, 0, NULL));
 
-    gsServTreeView = new CServTreeDlg();
-    gsServTreeView->CreateDlg(hdlg);
+    //gsServTreeView = new CServTreeDlg();
+    //gsServTreeView->CreateDlg(hdlg);
 
     _CreateStatusBar(hdlg);
     SendMessageW(gsMainWnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)LoadIconW(g_hInstance, MAKEINTRESOURCEW(IDI_MAIN)));
@@ -405,7 +407,7 @@ static INT_PTR _OnInitDialog(HWND hdlg, WPARAM wp, LPARAM lp) {
         {IDC_MAIN_SELECT, NULL, 1, 0, 0, 0},
         {0, hLogFrame, 0, 0, 1, 1},
         {0, gs_hStatBar, 0, 1, 1, 0},
-        {0, gsServTreeView->GetWindow(), 0, 0, 0, 1},
+        //{0, gsServTreeView->GetWindow(), 0, 0, 0, 1},
         {IDC_COM_MODE, 0, 1, 0, 0, 0}
     };
     SetCtlsCoord(hdlg, arry, RTL_NUMBER_OF(arry));

@@ -122,10 +122,7 @@ void CDbgCapturer::OnDbgMsg(DWORD pid, const mstring &content) {
     SYSTEMTIME time = {0};
     GetLocalTime(&time);
     mstring timeStr = FormatA(
-        "%04d-%02d-%02d %02d:%02d:%02d",
-        time.wYear,
-        time.wMonth,
-        time.wDay,
+        "%02d:%02d:%02d",
         time.wHour,
         time.wMinute,
         time.wSecond

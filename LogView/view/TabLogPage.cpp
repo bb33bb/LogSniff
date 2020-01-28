@@ -184,7 +184,6 @@ INT_PTR CTabLogPage::OnFindNext() {
         mSyntaxView.ClearHighLight();
     } else {
         mSyntaxView.SetHighLight(str);
-        mSyntaxView.JmpFirstPos(str);
     }
     return 0;
 }
