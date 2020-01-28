@@ -197,9 +197,11 @@ INT_PTR CTabLogPage::OnCommand(WPARAM wp, LPARAM lp) {
     WORD id = LOWORD(wp);
 
     if (id == IDC_COM_FILTER && msg == CBN_SELENDOK) {
-        size_t pos = SendMessageA(mFltCtrl, CB_GETCURSEL, 0, 0);
-
         PostMessageA(mHwnd, MSG_FILTER_RETURN, 0, 0);
+    }
+
+    if (id == IDC_COM_FIND && msg == CBN_SELENDOK) {
+        PostMessageA(mHwnd, MSG_FIND_RETURN, 0, 0);
     }
     return 0;
 }
