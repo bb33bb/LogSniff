@@ -10,9 +10,6 @@ Windows平台日志嗅探工具，可以方便的嗅探本本地的调试信息�
 4.漂亮的语法高亮展示，不同的高亮颜色区分检索语句中不同的关键字。
 ```
 
-
-![输入图片说明](https://images.gitee.com/uploads/images/2020/0315/161413_00aee409_498054.png "222png.png")
-
 #### 软件架构
 
 ```
@@ -43,12 +40,3 @@ keyword1 && (keyword2 || keyword3)  // 保留单条日志包含keyword1并且包
 
 ![输入图片说明](https://images.gitee.com/uploads/images/2020/0315/181327_3ed5e877_498054.png "4444.png")
 ![输入图片说明](https://images.gitee.com/uploads/images/2020/0315/181339_e5bfbf03_498054.png "5555.png")
-
-#### 码云特技
-
-1. 使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2. 码云官方博客 [blog.gitee.com](https://blog.gitee.com)
-3. 你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
-4. [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
-5. 码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6. 码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
