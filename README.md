@@ -2,7 +2,7 @@
 
 
 ```
-Windows平台日志嗅探工具，可以方便的嗅探本本地的调试信息，包括像DbgView一样捕获系统函数OutputDebugString输出的调试信息以及输出到日志文件的调试信息。
+Windows平台日志嗅探工具，可以方便的嗅探本地的调试信息，包括像DbgView一样捕获系统函数OutputDebugString输出的调试信息以及输出到日志文件的调试信息。
 主要特色功能:
 1.小巧绿色，只有一个可执行文件，没有额外的依赖，运行速度快.
 2.日志数据全部保存到内存里，提供简洁易用的日志检索语句随时进行检索（DbgView过滤后不合规则的数据就扔掉了）。
@@ -37,6 +37,3 @@ keyword1 || keyword2                // 保留单条日志中包含keyword1或者
 !keyword                            // 保留单条日志不包含keyword的日志
 keyword1 && (keyword2 || keyword3)  // 保留单条日志包含keyword1并且包含keyword2或者keyword3的日志
 ```
-
-![输入图片说明](https://images.gitee.com/uploads/images/2020/0315/181327_3ed5e877_498054.png "4444.png")
-![输入图片说明](https://images.gitee.com/uploads/images/2020/0315/181339_e5bfbf03_498054.png "5555.png")
